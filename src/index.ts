@@ -22,12 +22,12 @@ export const TILE_SIZE = 16
 
 export const PlayerEntity = addEntity(World)
 export let PlayerSprite: Sprite
-export let GUI: Display
+export let HUD: Display
 
 window.onload = async (): Promise<void> => {
-  GUI = new Display({ width: 20, height: 30, fontSize: 20, fontStyle: 'bold' })
-  document.body.appendChild(GUI.getContainer()!)
-  GUI.drawText(1, 1, 'Health:  10')
+  HUD = new Display({ width: 20, height: 30, fontSize: 20, fontStyle: 'bold' })
+  document.body.appendChild(HUD.getContainer()!)
+  HUD.drawText(1, 1, 'Health:  10')
 
   await initPixi()
 

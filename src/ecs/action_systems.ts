@@ -1,8 +1,8 @@
 // Do player or enemy actions
-import { AnimateMovement, GridPosition, Health, Lunge, MoveAction, Player, Swimmer, Walker } from './components'
+import { AnimateMovement, GridPosition, Health, Lunge, MoveAction, Swimmer, Walker } from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity } from 'bitecs'
 import { EntityMap, Level, Tile, TileMap } from '../level'
-import { GUI, PlayerEntity } from '../index'
+import { HUD, PlayerEntity } from '../'
 import { SpritesByEID } from '../sprites'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
@@ -50,7 +50,7 @@ export const moveSystem: System = (world) => {
   return world
 }
 
-export const playerSystem: System = (world) => {
-  GUI.drawText(1, 1, `Health: ${Health.current[PlayerEntity].toString().padStart(3)}`)
+export const hudSystem: System = (world) => {
+  HUD.drawText(1, 1, `Health: ${Health.current[PlayerEntity].toString().padStart(3)}`)
   return world
 }

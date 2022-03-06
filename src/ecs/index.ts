@@ -15,7 +15,7 @@ import {
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { runTimer, wanderSystem, sensePlayerSystem, lungeSystem } from './enemy_systems'
-import { moveSystem, playerSystem } from './action_systems'
+import { moveSystem, hudSystem } from './action_systems'
 import { runAnimations } from './anim_systems'
 import { cameraSystem, spriteAddSystem } from './render_systems'
 
@@ -39,7 +39,7 @@ registerComponents(World, [
 const systemGroups = {
   input: inputSystem,
   enemyTurn: pipe(sensePlayerSystem, lungeSystem, wanderSystem),
-  actions: pipe(moveSystem, playerSystem),
+  actions: pipe(moveSystem, hudSystem),
   render: pipe(spriteAddSystem, cameraSystem),
 }
 
