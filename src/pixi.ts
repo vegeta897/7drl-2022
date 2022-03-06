@@ -19,7 +19,7 @@ export const PixiViewport = new Viewport({
   screenWidth: gameWidth,
   screenHeight: gameHeight,
 })
-PixiViewport.setZoom(1)
+PixiViewport.setZoom(2)
 
 PixiApp.stage.addChild(PixiViewport)
 

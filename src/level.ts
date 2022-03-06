@@ -2,7 +2,7 @@ import * as ROT from 'rot-js'
 import { Sprite, Texture } from 'pixi.js'
 import { TILE_SIZE } from './'
 import { PixiViewport } from './pixi'
-import { getDiamondAround, Vector2 } from './vector2'
+import { getDiamondAround, getSquareAround, Vector2 } from './vector2'
 
 const MAP_WIDTH = 80
 const MAP_HEIGHT = 80
@@ -47,12 +47,12 @@ export function createLevel() {
   })
   for (let x = 2; x < MAP_WIDTH - 3; x++) {
     for (let y = 2; y < MAP_HEIGHT - 3; y++) {
-      const diamond2 = getDiamondAround({ x, y }, 1)
+      const diamond2 = getDiamondAround({ x, y }, 2)
       if (diamond2.every((g) => !Level.get(TileMap.keyFromXY(g.x, g.y)))) {
         OpenFloors.push({ x, y })
       }
-      const diamond1 = getDiamondAround({ x, y }, 1)
-      if (diamond1.every((g) => Level.get(TileMap.keyFromXY(g.x, g.y)) === Tile.Water)) {
+      const square3x3 = getSquareAround({ x, y }, 1)
+      if (square3x3.every((g) => Level.get(TileMap.keyFromXY(g.x, g.y)) === Tile.Water)) {
         OpenWaters.push({ x, y })
       }
     }

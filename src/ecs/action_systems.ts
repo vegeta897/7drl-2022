@@ -10,7 +10,7 @@ export const moveSystem: System = (world) => {
     const destX = GridPosition.x[eid] + MoveAction.x[eid]
     const destY = GridPosition.y[eid] + MoveAction.y[eid]
     removeComponent(world, MoveAction, eid)
-    if (MoveAction.clip[eid] === 0) {
+    if (MoveAction.noclip[eid] === 0) {
       const tileType = Level.get(TileMap.keyFromXY(destX, destY)) || 0
       if (tileType === Tile.Wall) continue
       const swimmer = hasComponent(world, Swimmer, eid)

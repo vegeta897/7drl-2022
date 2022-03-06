@@ -44,12 +44,16 @@ export const wanderSystem: System = (world) => {
   for (const eid of wanderers(world)) {
     if (ActionTimer.timeLeft[eid] > 0) continue
     ActionTimer.timeLeft[eid] = 60
-    if (RNG.getUniform() > 0.2) continue
+    if (RNG.getUniform() > Wander.chance[eid] / Wander.maxChance[eid]) {
+      Wander.chance[eid]++
+      continue
+    }
+    Wander.chance[eid] = 0
     const dir = RNG.getItem([Up, Down, Left, Right])!
     addComponent(World, MoveAction, eid)
     MoveAction.x[eid] = dir.x
     MoveAction.y[eid] = dir.y
-    MoveAction.clip[eid] = 0
+    MoveAction.noclip[eid] = 0
   }
   return world
 }

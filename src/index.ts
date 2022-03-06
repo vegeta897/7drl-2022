@@ -33,7 +33,8 @@ window.onload = async (): Promise<void> => {
 
   PixiViewport.moveCenter(PlayerSprite)
 
-  for (let i = 0; i < 20; i++) {
+  console.log(OpenWaters.length)
+  for (let i = 0; i < OpenWaters.length / 3; i++) {
     const fishStart = RNG.getItem(OpenWaters)!
     addFish(fishStart.x, fishStart.y)
   }
@@ -49,6 +50,8 @@ function addFish(x: number, y: number) {
   GridPosition.x[fish] = x
   GridPosition.y[fish] = y
   addComponent(World, Wander, fish)
+  Wander.maxChance[fish] = 10
+  Wander.chance[fish] = RNG.getUniformInt(0, 10)
   addComponent(World, ActionTimer, fish)
   ActionTimer.timeLeft[fish] = 0
   addComponent(World, Swimmer, fish)

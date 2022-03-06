@@ -9,7 +9,7 @@ const GridC = {
 
 export const GridPosition = defineComponent({ ...GridC })
 
-export const MoveAction = defineComponent({ ...GridC, clip: Types.i8 })
+export const MoveAction = defineComponent({ ...GridC, noclip: Types.i8 })
 
 export const AnimateMovement = defineComponent({
   ...GridC,
@@ -22,7 +22,7 @@ export const ActionTimer = defineComponent({
 })
 
 export const Swimmer = defineComponent()
-export const Wander = defineComponent()
+export const Wander = defineComponent({ chance: Types.ui8, maxChance: Types.ui8 })
 
 class GridProxy {
   private store: ComponentType<typeof GridC>

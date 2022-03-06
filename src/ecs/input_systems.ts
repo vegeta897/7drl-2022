@@ -39,10 +39,11 @@ export const inputSystem: System = (world) => {
   }
   if (action !== null) {
     const boost = Keys.has('ControlLeft') || Keys.has('ControlRight')
+    const noclip = Keys.has('ShiftLeft') || Keys.has('ShiftRight')
     addComponent(World, MoveAction, PlayerEntity)
     MoveAction.x[PlayerEntity] = action.x * (boost ? 10 : 1)
     MoveAction.y[PlayerEntity] = action.y * (boost ? 10 : 1)
-    MoveAction.clip[PlayerEntity] = boost ? 1 : 0
+    MoveAction.noclip[PlayerEntity] = noclip || boost ? 1 : 0
     WaitingForInput = false
   } else if (wait) {
     WaitingForInput = false
