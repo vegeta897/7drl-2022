@@ -1,0 +1,24 @@
+{
+  "frames": {
+    "wall": {
+      "frame": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "player": {
+      "frame": { "x": 0, "y": 16, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "bat": {
+      "frame": { "x": 0, "y": 32, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    }
+  },
+  "meta": {
+    "image": "sprites.png",
+    "size": { "w": 16, "h": 16 },
+    "scale": "1"
+  }
+}
