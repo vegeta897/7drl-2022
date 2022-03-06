@@ -1,9 +1,19 @@
-import { addComponent, defineQuery, System } from 'bitecs'
-import { ActionTimer, GridPosition, MoveAction, Wander } from './components'
+import { addComponent, defineQuery, Not, removeComponent, System } from 'bitecs'
+import { ActionTimer, GridPosition, Lunge, MoveAction, SensePlayer, Walker, Wander } from './components'
 import { RNG } from 'rot-js'
-import { Down, Left, Right, Up } from '../vector2'
+import {
+  DirectionGrids,
+  Down,
+  getCardinalDirection,
+  getManhattanDistance,
+  Left,
+  Right,
+  Up,
+  vectorsAreInline,
+} from '../vector2'
 import { runActions, runEnemies, World } from './'
 import { runAnimations } from './anim_systems'
+import { PlayerEntity } from '../'
 
 const TURN_TIME = 60
 let timer = 0
@@ -39,7 +49,46 @@ export async function runTimer() {
   timer = 0
 }
 
-const wanderers = defineQuery([Wander, GridPosition, ActionTimer])
+const playerSensers = defineQuery([GridPosition, ActionTimer, SensePlayer, Not(Lunge)])
+export const sensePlayerSystem: System = (world) => {
+  const playerGrid = { x: GridPosition.x[PlayerEntity], y: GridPosition.y[PlayerEntity] }
+  for (const eid of playerSensers(world)) {
+    const myGrid = { x: GridPosition.x[eid], y: GridPosition.y[eid] }
+    if (!vectorsAreInline(myGrid, playerGrid)) continue
+    const distance = getManhattanDistance(myGrid, playerGrid)
+    if (distance === 0 || distance > SensePlayer.range[eid]) continue
+    addComponent(world, Lunge, eid)
+    Lunge.power[eid] = distance
+    Lunge.direction[eid] = getCardinalDirection(myGrid, playerGrid)
+    console.log('sensed player! direction', Lunge.direction[eid])
+  }
+  return world
+}
+
+const lungers = defineQuery([GridPosition, Lunge, ActionTimer])
+export const lungeSystem: System = (world) => {
+  for (const eid of lungers(world)) {
+    if (ActionTimer.timeLeft[eid] > 0) continue
+    console.log('executing lunge with power', Lunge.power[eid])
+    ActionTimer.timeLeft[eid] = 20
+    const dir = DirectionGrids[Lunge.direction[eid]]
+    addComponent(world, Walker, eid)
+    addComponent(world, MoveAction, eid)
+    MoveAction.x[eid] = dir.x
+    MoveAction.y[eid] = dir.y
+    MoveAction.noclip[eid] = 0
+    Lunge.power[eid]--
+    if (Lunge.power[eid] === 0) {
+      removeComponent(world, Lunge, eid)
+      addComponent(world, Wander, eid)
+      Wander.maxChance[eid] = 10
+      Wander.chance[eid] = 0
+    }
+  }
+  return world
+}
+
+const wanderers = defineQuery([Wander, GridPosition, ActionTimer, Not(Lunge)])
 export const wanderSystem: System = (world) => {
   for (const eid of wanderers(world)) {
     if (ActionTimer.timeLeft[eid] > 0) continue
@@ -50,7 +99,7 @@ export const wanderSystem: System = (world) => {
     }
     Wander.chance[eid] = 0
     const dir = RNG.getItem([Up, Down, Left, Right])!
-    addComponent(World, MoveAction, eid)
+    addComponent(world, MoveAction, eid)
     MoveAction.x[eid] = dir.x
     MoveAction.y[eid] = dir.y
     MoveAction.noclip[eid] = 0

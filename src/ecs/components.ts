@@ -21,8 +21,11 @@ export const ActionTimer = defineComponent({
   timeLeft: Types.ui16,
 })
 
+export const Walker = defineComponent()
 export const Swimmer = defineComponent()
 export const Wander = defineComponent({ chance: Types.ui8, maxChance: Types.ui8 })
+export const SensePlayer = defineComponent({ range: Types.ui8 })
+export const Lunge = defineComponent({ power: Types.ui8, direction: Types.ui8 })
 
 class GridProxy {
   private store: ComponentType<typeof GridC>

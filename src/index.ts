@@ -3,9 +3,9 @@ import { World } from './ecs'
 import { addComponent, addEntity } from 'bitecs'
 import { Sprite, Texture } from 'pixi.js'
 import { initPixi, PixiViewport } from './pixi'
-import { ActionTimer, DisplayObject, GridPosition, Swimmer, Wander } from './ecs/components'
+import { ActionTimer, DisplayObject, GridPosition, SensePlayer, Swimmer, Walker, Wander } from './ecs/components'
 import { SpritesByEID } from './sprites'
-import { createLevel, OpenFloors, OpenWaters } from './level'
+import { createLevel, EntityMap, OpenFloors, OpenWaters, TileMap } from './level'
 import { Display, RNG } from 'rot-js'
 
 export const TILE_SIZE = 16
@@ -30,11 +30,12 @@ window.onload = async (): Promise<void> => {
   const playerStart = RNG.getItem(OpenFloors)!
   GridPosition.x[PlayerEntity] = playerStart.x
   GridPosition.y[PlayerEntity] = playerStart.y
+  EntityMap.set(TileMap.keyFromXY(playerStart.x, playerStart.y), PlayerEntity)
+  addComponent(World, Walker, PlayerEntity)
 
   PixiViewport.moveCenter(PlayerSprite)
 
-  console.log(OpenWaters.length)
-  for (let i = 0; i < OpenWaters.length / 3; i++) {
+  for (let i = 0; i < OpenWaters.length / 4; i++) {
     const fishStart = RNG.getItem(OpenWaters)!
     addFish(fishStart.x, fishStart.y)
   }
@@ -49,10 +50,13 @@ function addFish(x: number, y: number) {
   addComponent(World, GridPosition, fish)
   GridPosition.x[fish] = x
   GridPosition.y[fish] = y
+  EntityMap.set(TileMap.keyFromXY(x, y), fish)
   addComponent(World, Wander, fish)
   Wander.maxChance[fish] = 10
   Wander.chance[fish] = RNG.getUniformInt(0, 10)
   addComponent(World, ActionTimer, fish)
   ActionTimer.timeLeft[fish] = 0
   addComponent(World, Swimmer, fish)
+  addComponent(World, SensePlayer, fish)
+  SensePlayer.range[fish] = 3
 }

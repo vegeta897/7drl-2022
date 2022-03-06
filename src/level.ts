@@ -8,6 +8,7 @@ const MAP_WIDTH = 80
 const MAP_HEIGHT = 80
 
 export let Level: Map<string, Tile>
+export let EntityMap: Map<string, number>
 
 export let OpenFloors: Vector2[] = []
 export let OpenWaters: Vector2[] = []
@@ -19,6 +20,7 @@ export function createLevel() {
     walls.create()
   }
   Level = new Map()
+  EntityMap = new Map()
   const wallTexture = Texture.from('wall')
   walls.connect((x, y, value) => {
     const isBoundary = x === 0 || x === MAP_WIDTH - 1 || y === 0 || y === MAP_HEIGHT - 1
