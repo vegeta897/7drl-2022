@@ -3,7 +3,7 @@ import { World } from './ecs'
 import { addComponent, addEntity } from 'bitecs'
 import { Sprite, Texture } from 'pixi.js'
 import { initPixi, PixiViewport } from './pixi'
-import { ActionTimer, DisplayObject, GridPosition, RandomWalk, Swimmer } from './ecs/components'
+import { ActionTimer, DisplayObject, GridPosition, Swimmer, Wander } from './ecs/components'
 import { SpritesByEID } from './sprites'
 import { createLevel, OpenFloors, OpenWaters } from './level'
 import { Display, RNG } from 'rot-js'
@@ -46,10 +46,10 @@ function addFish(x: number, y: number) {
   PixiViewport.addChild(fishSprite)
   addComponent(World, DisplayObject, fish)
   addComponent(World, GridPosition, fish)
-  addComponent(World, RandomWalk, fish)
-  addComponent(World, ActionTimer, fish)
-  addComponent(World, Swimmer, fish)
-  ActionTimer.timeLeft[fish] = 0
   GridPosition.x[fish] = x
   GridPosition.y[fish] = y
+  addComponent(World, Wander, fish)
+  addComponent(World, ActionTimer, fish)
+  ActionTimer.timeLeft[fish] = 0
+  addComponent(World, Swimmer, fish)
 }

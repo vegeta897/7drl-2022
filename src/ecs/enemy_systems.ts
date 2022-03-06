@@ -1,8 +1,8 @@
-import { addComponent, defineQuery } from 'bitecs'
-import { ActionTimer, MoveAction } from './components'
+import { addComponent, defineQuery, System } from 'bitecs'
+import { ActionTimer, GridPosition, MoveAction, Wander } from './components'
 import { RNG } from 'rot-js'
 import { Down, Left, Right, Up } from '../vector2'
-import { runActions, World } from './'
+import { runActions, runEnemies, World } from './'
 import { runAnimations } from './anim_systems'
 
 const TURN_TIME = 60
@@ -27,7 +27,7 @@ export async function runTimer() {
       }
     }
     if (ready.length > 0) {
-      createEnemyActions(ready)
+      runEnemies()
       runActions()
       await runAnimations(World)
     }
@@ -39,15 +39,17 @@ export async function runTimer() {
   timer = 0
 }
 
-// const randomWalkQuery = defineQuery([ActionTimer, GridPosition, RandomWalk])
-
-function createEnemyActions(entities: number[]) {
-  for (const eid of entities) {
-    ActionTimer.timeLeft[eid] = 30
+const wanderers = defineQuery([Wander, GridPosition, ActionTimer])
+export const wanderSystem: System = (world) => {
+  for (const eid of wanderers(world)) {
+    if (ActionTimer.timeLeft[eid] > 0) continue
+    ActionTimer.timeLeft[eid] = 60
+    if (RNG.getUniform() > 0.2) continue
     const dir = RNG.getItem([Up, Down, Left, Right])!
     addComponent(World, MoveAction, eid)
     MoveAction.x[eid] = dir.x
     MoveAction.y[eid] = dir.y
     MoveAction.clip[eid] = 0
   }
+  return world
 }

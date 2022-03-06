@@ -17,13 +17,12 @@ export const AnimateMovement = defineComponent({
   length: Types.f32,
 })
 
-export const RandomWalk = defineComponent()
-
 export const ActionTimer = defineComponent({
   timeLeft: Types.ui16,
 })
 
 export const Swimmer = defineComponent()
+export const Wander = defineComponent()
 
 class GridProxy {
   private store: ComponentType<typeof GridC>
