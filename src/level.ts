@@ -9,7 +9,8 @@ const MAP_HEIGHT = 80
 
 export let Level: Map<string, Tile>
 
-export let OpenAreas: Vector2[] = []
+export let OpenFloors: Vector2[] = []
+export let OpenWaters: Vector2[] = []
 
 export function createLevel() {
   const walls = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
@@ -46,9 +47,13 @@ export function createLevel() {
   })
   for (let x = 2; x < MAP_WIDTH - 3; x++) {
     for (let y = 2; y < MAP_HEIGHT - 3; y++) {
-      const diamond = getDiamondAround({ x, y }, 2)
-      if (diamond.every((g) => Level.get(TileMap.keyFromXY(g.x, g.y)) !== Tile.Wall)) {
-        OpenAreas.push({ x, y })
+      const diamond2 = getDiamondAround({ x, y }, 1)
+      if (diamond2.every((g) => !Level.get(TileMap.keyFromXY(g.x, g.y)))) {
+        OpenFloors.push({ x, y })
+      }
+      const diamond1 = getDiamondAround({ x, y }, 1)
+      if (diamond1.every((g) => Level.get(TileMap.keyFromXY(g.x, g.y)) === Tile.Water)) {
+        OpenWaters.push({ x, y })
       }
     }
   }

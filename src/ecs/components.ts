@@ -23,6 +23,8 @@ export const ActionTimer = defineComponent({
   timeLeft: Types.ui16,
 })
 
+export const Swimmer = defineComponent()
+
 class GridProxy {
   private store: ComponentType<typeof GridC>
   eid: number
