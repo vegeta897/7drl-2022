@@ -4,6 +4,7 @@ import { Viewport } from 'pixi-viewport'
 import { runRender } from './ecs'
 
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST
+// PIXI.settings.ROUND_PIXELS = true
 
 const gameWidth = 640
 const gameHeight = 640
@@ -18,7 +19,7 @@ export const PixiViewport = new Viewport({
   screenWidth: gameWidth,
   screenHeight: gameHeight,
 })
-PixiViewport.setZoom(2)
+PixiViewport.setZoom(1)
 
 PixiApp.stage.addChild(PixiViewport)
 
