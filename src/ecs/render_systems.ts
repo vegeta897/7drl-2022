@@ -21,6 +21,7 @@ export const spriteAddSystem: System = (world) => {
 }
 
 export const cameraSystem: System = (world) => {
+  if (PlayerSprite.destroyed) return world
   const centerX = PlayerSprite.x + TILE_SIZE / 2
   const centerY = PlayerSprite.y + TILE_SIZE / 2
   const camOffsetX = centerX - PixiViewport.center.x

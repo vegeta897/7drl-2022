@@ -1,5 +1,7 @@
 import { ComponentType, defineComponent, Types } from 'bitecs'
 
+export const Player = defineComponent()
+
 export const DisplayObject = defineComponent()
 
 const GridC = {
@@ -21,6 +23,7 @@ export const ActionTimer = defineComponent({
   timeLeft: Types.ui16,
 })
 
+export const Health = defineComponent({ current: Types.ui16, max: Types.ui16 })
 export const Walker = defineComponent()
 export const Swimmer = defineComponent()
 export const Wander = defineComponent({ chance: Types.ui8, maxChance: Types.ui8 })

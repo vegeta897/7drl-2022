@@ -4,17 +4,18 @@ import {
   AnimateMovement,
   DisplayObject,
   GridPosition,
+  Health,
   Lunge,
   MoveAction,
+  Player,
   SensePlayer,
   Swimmer,
   Walker,
   Wander,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
-import { playerSystem } from './player_systems'
 import { runTimer, wanderSystem, sensePlayerSystem, lungeSystem } from './enemy_systems'
-import { moveSystem } from './action_systems'
+import { moveSystem, playerSystem } from './action_systems'
 import { runAnimations } from './anim_systems'
 import { cameraSystem, spriteAddSystem } from './render_systems'
 
@@ -31,20 +32,20 @@ registerComponents(World, [
   SensePlayer,
   Lunge,
   Walker,
+  Health,
+  Player,
 ])
 
 const systemGroups = {
   input: inputSystem,
-  playerTurn: playerSystem,
   enemyTurn: pipe(sensePlayerSystem, lungeSystem, wanderSystem),
-  actions: moveSystem,
+  actions: pipe(moveSystem, playerSystem),
   render: pipe(spriteAddSystem, cameraSystem),
 }
 
 export async function onInput() {
   systemGroups.input(World)
   if (WaitingForInput) return
-  systemGroups.playerTurn(World)
   runActions()
   await runAnimations(World)
   await runTimer()

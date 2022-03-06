@@ -3,7 +3,17 @@ import { World } from './ecs'
 import { addComponent, addEntity } from 'bitecs'
 import { Sprite, Texture } from 'pixi.js'
 import { initPixi, PixiViewport } from './pixi'
-import { ActionTimer, DisplayObject, GridPosition, SensePlayer, Swimmer, Walker, Wander } from './ecs/components'
+import {
+  ActionTimer,
+  DisplayObject,
+  GridPosition,
+  Health,
+  Player,
+  SensePlayer,
+  Swimmer,
+  Walker,
+  Wander,
+} from './ecs/components'
 import { SpritesByEID } from './sprites'
 import { createLevel, EntityMap, OpenFloors, OpenWaters, TileMap } from './level'
 import { Display, RNG } from 'rot-js'
@@ -12,11 +22,12 @@ export const TILE_SIZE = 16
 
 export const PlayerEntity = addEntity(World)
 export let PlayerSprite: Sprite
+export let GUI: Display
 
 window.onload = async (): Promise<void> => {
-  const display = new Display({ width: 20, height: 30, fontSize: 20, fontStyle: 'bold' })
-  document.body.appendChild(display.getContainer()!)
-  display.drawText(0, 0, 'hello')
+  GUI = new Display({ width: 20, height: 30, fontSize: 20, fontStyle: 'bold' })
+  document.body.appendChild(GUI.getContainer()!)
+  GUI.drawText(1, 1, 'Health:  10')
 
   await initPixi()
 
@@ -25,6 +36,7 @@ window.onload = async (): Promise<void> => {
   PlayerSprite = new Sprite(Texture.from('player'))
   SpritesByEID[PlayerEntity] = PlayerSprite
   PixiViewport.addChild(PlayerSprite)
+  addComponent(World, Player, PlayerEntity)
   addComponent(World, DisplayObject, PlayerEntity)
   addComponent(World, GridPosition, PlayerEntity)
   const playerStart = RNG.getItem(OpenFloors)!
@@ -32,6 +44,9 @@ window.onload = async (): Promise<void> => {
   GridPosition.y[PlayerEntity] = playerStart.y
   EntityMap.set(TileMap.keyFromXY(playerStart.x, playerStart.y), PlayerEntity)
   addComponent(World, Walker, PlayerEntity)
+  addComponent(World, Health, PlayerEntity)
+  Health.max[PlayerEntity] = 10
+  Health.current[PlayerEntity] = 10
 
   PixiViewport.moveCenter(PlayerSprite)
 
@@ -59,4 +74,7 @@ function addFish(x: number, y: number) {
   addComponent(World, Swimmer, fish)
   addComponent(World, SensePlayer, fish)
   SensePlayer.range[fish] = 3
+  addComponent(World, Health, fish)
+  Health.max[fish] = 4
+  Health.current[fish] = 4
 }

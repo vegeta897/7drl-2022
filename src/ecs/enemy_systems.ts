@@ -14,6 +14,7 @@ import {
 import { runActions, runEnemies, World } from './'
 import { runAnimations } from './anim_systems'
 import { PlayerEntity } from '../'
+import { Level, Tile, TileMap } from '../level'
 
 const TURN_TIME = 60
 let timer = 0
@@ -54,9 +55,10 @@ export const sensePlayerSystem: System = (world) => {
   const playerGrid = { x: GridPosition.x[PlayerEntity], y: GridPosition.y[PlayerEntity] }
   for (const eid of playerSensers(world)) {
     const myGrid = { x: GridPosition.x[eid], y: GridPosition.y[eid] }
+    if (Level.get(TileMap.keyFromXY(myGrid.x, myGrid.y)) !== Tile.Water) continue
     if (!vectorsAreInline(myGrid, playerGrid)) continue
     const distance = getManhattanDistance(myGrid, playerGrid)
-    if (distance === 0 || distance > SensePlayer.range[eid]) continue
+    if (distance <= 1 || distance > SensePlayer.range[eid]) continue
     addComponent(world, Lunge, eid)
     Lunge.power[eid] = distance
     Lunge.direction[eid] = getCardinalDirection(myGrid, playerGrid)

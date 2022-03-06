@@ -1,7 +1,9 @@
 // Do player or enemy actions
-import { AnimateMovement, GridPosition, Lunge, MoveAction, Swimmer, Walker } from './components'
-import { defineQuery, System, addComponent, removeComponent, hasComponent } from 'bitecs'
+import { AnimateMovement, GridPosition, Health, Lunge, MoveAction, Player, Swimmer, Walker } from './components'
+import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity } from 'bitecs'
 import { EntityMap, Level, Tile, TileMap } from '../level'
+import { GUI, PlayerEntity } from '../index'
+import { SpritesByEID } from '../sprites'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
@@ -9,18 +11,30 @@ export const moveSystem: System = (world) => {
     const destX = GridPosition.x[eid] + MoveAction.x[eid]
     const destY = GridPosition.y[eid] + MoveAction.y[eid]
     removeComponent(world, MoveAction, eid)
-    if (MoveAction.noclip[eid] === 0) {
-      const tileType = Level.get(TileMap.keyFromXY(destX, destY)) || 0
-      if (tileType === Tile.Wall) continue
-      if (tileType === Tile.Water && !hasComponent(world, Swimmer, eid)) continue
-      if (tileType === Tile.Floor && !hasComponent(world, Walker, eid)) continue
-    }
     const destKey = TileMap.keyFromXY(destX, destY)
     const entityAtDestination = EntityMap.get(destKey)
     if (entityAtDestination !== undefined && entityAtDestination >= 0) {
-      console.log(eid, 'attacks', entityAtDestination)
+      const playerInvolved = [eid, entityAtDestination].includes(PlayerEntity)
+      const attackedHasHealth = hasComponent(world, Health, entityAtDestination)
+      if (playerInvolved && attackedHasHealth) {
+        console.log(eid, 'attacks', entityAtDestination)
+        const healthLeft = --Health.current[entityAtDestination]
+        console.log(entityAtDestination, 'health left:', healthLeft)
+        if (healthLeft <= 0) {
+          removeEntity(world, entityAtDestination)
+          EntityMap.delete(destKey)
+          SpritesByEID[entityAtDestination].destroy()
+          delete SpritesByEID[entityAtDestination]
+        }
+      }
       removeComponent(world, Lunge, eid)
       continue
+    }
+    if (MoveAction.noclip[eid] === 0) {
+      const tileType = Level.get(destKey) || 0
+      if (tileType === Tile.Wall) continue
+      if (tileType === Tile.Water && !hasComponent(world, Swimmer, eid)) continue
+      if (tileType === Tile.Floor && !hasComponent(world, Walker, eid)) continue
     }
     EntityMap.delete(TileMap.keyFromXY(GridPosition.x[eid], GridPosition.y[eid]))
     GridPosition.x[eid] = destX
@@ -33,5 +47,10 @@ export const moveSystem: System = (world) => {
     AnimateMovement.elapsed[eid] = 0
     AnimateMovement.length[eid] = 100
   }
+  return world
+}
+
+export const playerSystem: System = (world) => {
+  GUI.drawText(1, 1, `Health: ${Health.current[PlayerEntity].toString().padStart(3)}`)
   return world
 }
