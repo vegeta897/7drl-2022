@@ -14,19 +14,23 @@ export function initHud() {
   Log = []
 }
 
-function getEntityName(entity: number) {
-  if (hasComponent(World, Player, entity)) return 'you'
-  if (hasComponent(World, Fish, entity)) return 'the fish'
-  return 'Unknown'
+function getEntityName(entity: number, _capitalize = false) {
+  let name = 'unknown'
+  if (hasComponent(World, Player, entity)) name = 'you'
+  if (hasComponent(World, Fish, entity)) name = 'the fish'
+  return _capitalize ? capitalize(name) : name
 }
 
 export function logAttack(attacker: number, victim: number, damage: number) {
-  Log.push(`${getEntityName(attacker)} hit ${getEntityName(victim)} for ${damage} dmg`)
+  Log.unshift(`${getEntityName(attacker, true)} hit ${getEntityName(victim)} for ${damage} dmg`)
 }
 
 export function logKill(victim: number) {
-  Log.push(`You killed ${getEntityName(victim)}`)
+  Log.unshift(`You killed ${getEntityName(victim)}`)
 }
+
+const maxLogLines = 16
+const lowestY = 30
 
 export function drawHud() {
   HUD.clear()
@@ -34,7 +38,20 @@ export function drawHud() {
   if (CastMode) HUD.drawText(3, 3, 'CASTING ⟆\n\nC to confirm\nEsc to cancel')
   if (Log.length > 0) {
     HUD.drawText(1, 8, '=========== LOG ===========')
-    HUD.drawText(2, 9, Log.map(capitalize).join('\n'))
+    let y = 9
+    for (let i = 0; i < Log.length; i++) {
+      y += HUD.drawText(
+        2,
+        y,
+        `%c{#ffffff${Math.round(((maxLogLines - i) / maxLogLines) * 255)
+          .toString(16)
+          .padStart(2, '0')}}${Log[i]}`
+      )
+      if (y >= lowestY) {
+        Log = Log.slice(0, i + 1)
+        break
+      }
+    }
   }
 }
 

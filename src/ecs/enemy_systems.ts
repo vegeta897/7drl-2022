@@ -47,7 +47,7 @@ export const predatorSystem: System = (world) => {
       addComponent(world, Lunge, eid)
       Lunge.power[eid] = distance
       Lunge.direction[eid] = getCardinalDirection(myGrid, grid)
-      Log.push('The fish lunges out of the water!')
+      Log.unshift('The fish lunges out of the water!')
       break
     }
   }

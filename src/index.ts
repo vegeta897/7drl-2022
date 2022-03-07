@@ -5,7 +5,7 @@ import { Sprite, Texture } from 'pixi.js'
 import { initPixi, OverlaySprites, PixiViewport, WorldSprites } from './pixi'
 import { DisplayObject, Fish, GridPosition, Health, Player, Predator, Swimmer, Walker, Wander } from './ecs/components'
 import { SpritesByEID } from './sprites'
-import { createLevel, EntityMap, findPath, OpenFloors, OpenWaters, TileMap } from './level'
+import { createLevel, EntityMap, OpenFloors, OpenWaters, TileMap } from './level'
 import { RNG } from 'rot-js'
 import { drawHud, initHud } from './hud'
 

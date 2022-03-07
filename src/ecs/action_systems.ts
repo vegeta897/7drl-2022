@@ -46,14 +46,14 @@ export const moveSystem: System = (world) => {
         }
       }
       if (hasComponent(world, Bait, targetEntity)) {
-        if (eid === PlayerEntity) Log.push('You ate the bait')
+        if (eid === PlayerEntity) Log.unshift('You ate the bait')
         if (hasComponent(world, Health, eid)) {
           Health.current[eid] = Math.min(Health.max[eid], Health.current[eid] + 1)
         }
         if (hasComponent(world, Fish, eid)) {
           addComponent(world, Stunned, eid)
           Stunned.remaining[eid] = 6
-          Log.push('The fish is eating the bait')
+          Log.unshift('The fish is eating the bait')
         }
         removeEntity(world, targetEntity)
         EntityMap.delete(targetGridKey)
