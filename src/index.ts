@@ -3,18 +3,7 @@ import { World } from './ecs'
 import { addComponent, addEntity } from 'bitecs'
 import { Sprite, Texture } from 'pixi.js'
 import { initPixi, OverlaySprites, PixiViewport, WorldSprites } from './pixi'
-import {
-  ActionTimer,
-  DisplayObject,
-  Fish,
-  GridPosition,
-  Health,
-  Player,
-  Predator,
-  Swimmer,
-  Walker,
-  Wander,
-} from './ecs/components'
+import { DisplayObject, Fish, GridPosition, Health, Player, Predator, Swimmer, Walker, Wander } from './ecs/components'
 import { SpritesByEID } from './sprites'
 import { createLevel, EntityMap, findPath, OpenFloors, OpenWaters, TileMap } from './level'
 import { RNG } from 'rot-js'
@@ -74,8 +63,6 @@ function addFish(x: number, y: number) {
   addComponent(World, Wander, fish)
   Wander.maxChance[fish] = 10
   Wander.chance[fish] = RNG.getUniformInt(0, 10)
-  addComponent(World, ActionTimer, fish)
-  ActionTimer.timeLeft[fish] = 0
   addComponent(World, Swimmer, fish)
   addComponent(World, Predator, fish)
   Predator.range[fish] = 4

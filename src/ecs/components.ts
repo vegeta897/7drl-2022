@@ -11,16 +11,12 @@ const GridC = {
 
 export const GridPosition = defineComponent({ ...GridC })
 
-export const MoveAction = defineComponent({ ...GridC, noclip: Types.i8 })
+export const MoveAction = defineComponent({ ...GridC, noclip: Types.ui8 })
 
 export const AnimateMovement = defineComponent({
   ...GridC,
   elapsed: Types.f32,
   length: Types.f32,
-})
-
-export const ActionTimer = defineComponent({
-  timeLeft: Types.ui16,
 })
 
 export const Health = defineComponent({ current: Types.ui16, max: Types.ui16 })

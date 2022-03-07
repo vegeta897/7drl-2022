@@ -1,6 +1,5 @@
 import { createWorld, pipe, registerComponents } from 'bitecs'
 import {
-  ActionTimer,
   AnimateMovement,
   Bait,
   DisplayObject,
@@ -18,7 +17,7 @@ import {
   Wander,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
-import { runTimer, wanderSystem, predatorSystem, lungeSystem, stunnedSystem, seekWaterSystem } from './enemy_systems'
+import { wanderSystem, predatorSystem, lungeSystem, stunnedSystem, seekWaterSystem } from './enemy_systems'
 import { moveSystem, hudSystem } from './action_systems'
 import { runAnimations } from './anim_systems'
 import { cameraSystem, spriteAddSystem } from './render_systems'
@@ -30,7 +29,6 @@ registerComponents(World, [
   GridPosition,
   MoveAction,
   AnimateMovement,
-  ActionTimer,
   Swimmer,
   Wander,
   Predator,
@@ -54,9 +52,11 @@ const systemGroups = {
 export async function onInput() {
   systemGroups.input(World)
   if (WaitingForInput) return
-  runActions()
-  await runAnimations(World)
-  await runTimer()
+  runActions() // Execute player actions
+  await runAnimations(World) // Animate player actions
+  runEnemies() // Plan enemy actions
+  runActions() // Run enemy actions
+  await runAnimations(World) // Animate enemy actions
   waitForInput()
 }
 
