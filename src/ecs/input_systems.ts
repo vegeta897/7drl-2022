@@ -1,4 +1,4 @@
-import { addComponent, addEntity, System } from 'bitecs'
+import { addComponent, addEntity, removeEntity, System } from 'bitecs'
 import { onInput, World } from './'
 import { CastTargetSprite, PlayerEntity, TILE_SIZE } from '../'
 import { Bait, DisplayObject, GridPosition, MoveAction } from './components'
@@ -14,7 +14,7 @@ import {
   Up,
   vectorsAreParallel,
 } from '../vector2'
-import { drawHud } from '../hud'
+import { drawHud, Log } from '../hud'
 import { Sprite, Texture } from 'pixi.js'
 import { SpritesByEID } from '../sprites'
 import { WorldSprites } from '../pixi'
@@ -29,6 +29,7 @@ type PlayerStates = 'idle' | 'casting' | 'angling'
 export let PlayerState: PlayerStates = 'idle'
 
 export const CastVector = { x: 0, y: 0 }
+let baitEntity: number | null = null
 
 export const inputSystem: System = (world) => {
   const button = getButton()
@@ -48,16 +49,16 @@ export const inputSystem: System = (world) => {
       PlayerState = 'idle'
       CastTargetSprite.visible = false
       if (getDistance(CastVector) > 0) {
-        const bait = addEntity(World)
+        baitEntity = addEntity(World)
         const baitSprite = new Sprite(Texture.from('bait'))
-        SpritesByEID[bait] = baitSprite
+        SpritesByEID[baitEntity] = baitSprite
         WorldSprites.addChild(baitSprite)
-        addComponent(World, DisplayObject, bait)
-        addComponent(World, GridPosition, bait)
-        addComponent(World, Bait, bait)
-        GridPosition.x[bait] = playerGrid.x + CastVector.x
-        GridPosition.y[bait] = playerGrid.y + CastVector.y
-        EntityMap.set(TileMap.keyFromXY(GridPosition.x[bait], GridPosition.y[bait]), bait)
+        addComponent(World, DisplayObject, baitEntity)
+        addComponent(World, GridPosition, baitEntity)
+        addComponent(World, Bait, baitEntity)
+        GridPosition.x[baitEntity] = playerGrid.x + CastVector.x
+        GridPosition.y[baitEntity] = playerGrid.y + CastVector.y
+        EntityMap.set(TileMap.keyFromXY(GridPosition.x[baitEntity], GridPosition.y[baitEntity]), baitEntity)
         WaitingForInput = false
         PlayerState = 'angling'
       }
@@ -65,6 +66,7 @@ export const inputSystem: System = (world) => {
     if (previousState === 'angling') {
       // TODO: Cut line
       // Should cutting line take a turn?
+      baitEntity = null
       PlayerState = 'idle'
     }
   } else if (button === 'wait') {
@@ -89,6 +91,35 @@ export const inputSystem: System = (world) => {
           CastVector.y = moddedCastTo.y
           CastTargetSprite.x = CastVector.x * TILE_SIZE
           CastTargetSprite.y = CastVector.y * TILE_SIZE
+          break
+        }
+      }
+    } else if (previousState === 'angling') {
+      const angleTo = addVector2(CastVector, move)
+      const maxAngleDistance = getDistance(CastVector)
+      for (const mod of [GridZero, Up, Down, Left, Right]) {
+        if (vectorsAreParallel(mod, move)) continue
+        const moddedCastTo = addVector2(angleTo, mod)
+        const moddedDistance = getDistance(moddedCastTo)
+        const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
+        const tile = Level.get(TileMap.keyFromXY(moddedAbsolute.x, moddedAbsolute.y))
+        if (moddedDistance <= maxAngleDistance && tile !== Tile.Wall) {
+          CastVector.x = moddedCastTo.x
+          CastVector.y = moddedCastTo.y
+          EntityMap.delete(TileMap.keyFromXY(GridPosition.x[baitEntity!], GridPosition.y[baitEntity!]))
+          if (moddedDistance === 0) {
+            removeEntity(World, baitEntity!)
+            SpritesByEID[baitEntity!].destroy()
+            delete SpritesByEID[baitEntity!]
+            baitEntity = null
+            PlayerState = 'idle'
+            Log.unshift('You reeled in the bait')
+          } else {
+            GridPosition.x[baitEntity!] = playerGrid.x + CastVector.x
+            GridPosition.y[baitEntity!] = playerGrid.y + CastVector.y
+            EntityMap.set(TileMap.keyFromXY(GridPosition.x[baitEntity!], GridPosition.y[baitEntity!]), baitEntity!)
+          }
+          WaitingForInput = false
           break
         }
       }
