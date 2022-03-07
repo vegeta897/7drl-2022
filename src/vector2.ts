@@ -44,6 +44,7 @@ export const diffVector2 = (a: Vector2, b: Vector2): Vector2 => ({ x: b.x - a.x,
 export const multiplyVector2 = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x * b.x, y: a.y * b.y })
 export const scaleVector2 = (v: Vector2, scalar: number): Vector2 => ({ x: v.x * scalar, y: v.y * scalar })
 export const invertVector2 = (v: Vector2): Vector2 => ({ x: -v.x, y: -v.y })
+export const getUnitVector2 = (v: Vector2): Vector2 => DirectionGrids[getCardinalDirection(GridZero, v)]
 
 export const get4Neighbors = (grid: Vector2): Vector2[] => {
   return [Up, Down, Left, Right].map((d) => addVector2(grid, d))
