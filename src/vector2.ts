@@ -31,8 +31,17 @@ export const getCardinalDirection = (from: Vector2, to: Vector2): Direction => {
 }
 export const vectorsAreInline = (a: Vector2, b: Vector2): boolean => a.x === b.x || a.y === b.y
 
+export const vectorsAreParallel = (a: Vector2, b: Vector2): boolean => {
+  if ((a.x === 0 && a.y === 0) || (b.x === 0 && b.y === 0)) return false
+  if ((a.x !== 0 && a.y !== 0) || (b.x !== 0 && b.y !== 0)) return false
+  return (a.x === 0) === (b.x === 0)
+}
+console.log(vectorsAreParallel({ x: 0, y: 1 }, { x: 0, y: -1 }), true)
+console.log(vectorsAreParallel({ x: 1, y: 0 }, { x: -1, y: 0 }), true)
+
 export const addVector2 = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x + b.x, y: a.y + b.y })
 export const diffVector2 = (a: Vector2, b: Vector2): Vector2 => ({ x: b.x - a.x, y: b.y - a.y })
+export const multiplyVector2 = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x * b.x, y: a.y * b.y })
 
 export const invertVector2 = (v: Vector2): Vector2 => ({ x: -v.x, y: -v.y })
 
@@ -54,7 +63,8 @@ export const getSquareAround = (grid: Vector2, radius: number): Vector2[] => {
   return inSquare
 }
 
-export const getManhattanDistance = (a: Vector2, b: Vector2): number => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+export const getManhattanDistance = (a: Vector2, b: Vector2 = { x: 0, y: 0 }): number =>
+  Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
 export const getDiamondAround = (grid: Vector2, radius: number): Vector2[] => {
   return getSquareAround(grid, radius).filter((g) => getManhattanDistance(grid, g) <= radius)

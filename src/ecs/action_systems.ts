@@ -2,8 +2,9 @@
 import { AnimateMovement, GridPosition, Health, Lunge, MoveAction, Swimmer, Walker } from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity } from 'bitecs'
 import { EntityMap, Level, Tile, TileMap } from '../level'
-import { HUD, PlayerEntity } from '../'
+import { PlayerEntity } from '../'
 import { SpritesByEID } from '../sprites'
+import { drawHud } from '../hud'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
@@ -51,6 +52,6 @@ export const moveSystem: System = (world) => {
 }
 
 export const hudSystem: System = (world) => {
-  HUD.drawText(1, 1, `Health: ${Health.current[PlayerEntity].toString().padStart(3)}`)
+  drawHud()
   return world
 }

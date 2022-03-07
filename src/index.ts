@@ -16,19 +16,17 @@ import {
 } from './ecs/components'
 import { SpritesByEID } from './sprites'
 import { createLevel, EntityMap, OpenFloors, OpenWaters, TileMap } from './level'
-import { Display, RNG } from 'rot-js'
+import { RNG } from 'rot-js'
+import { drawHud, initHud } from './hud'
 
 export const TILE_SIZE = 16
 
 export const PlayerEntity = addEntity(World)
 export let PlayerSprite: Sprite
-export let HUD: Display
+export let CastTargetSprite: Sprite
 
 window.onload = async (): Promise<void> => {
-  HUD = new Display({ width: 20, height: 30, fontSize: 20, fontStyle: 'bold' })
-  document.body.appendChild(HUD.getContainer()!)
-  HUD.drawText(1, 1, 'Health:  10')
-
+  initHud()
   await initPixi()
 
   createLevel()
@@ -54,6 +52,12 @@ window.onload = async (): Promise<void> => {
     const fishStart = RNG.getItem(OpenWaters)!
     addFish(fishStart.x, fishStart.y)
   }
+
+  CastTargetSprite = new Sprite(Texture.from('target'))
+  PlayerSprite.addChild(CastTargetSprite)
+  CastTargetSprite.visible = false
+
+  drawHud()
 }
 
 function addFish(x: number, y: number) {
