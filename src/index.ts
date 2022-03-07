@@ -2,7 +2,7 @@ import './style.css'
 import { World } from './ecs'
 import { addComponent, addEntity } from 'bitecs'
 import { Sprite, Texture } from 'pixi.js'
-import { initPixi, PixiViewport } from './pixi'
+import { initPixi, OverlaySprites, PixiViewport, WorldSprites } from './pixi'
 import {
   ActionTimer,
   DisplayObject,
@@ -33,7 +33,7 @@ window.onload = async (): Promise<void> => {
 
   PlayerSprite = new Sprite(Texture.from('player'))
   SpritesByEID[PlayerEntity] = PlayerSprite
-  PixiViewport.addChild(PlayerSprite)
+  OverlaySprites.addChild(PlayerSprite)
   addComponent(World, Player, PlayerEntity)
   addComponent(World, DisplayObject, PlayerEntity)
   addComponent(World, GridPosition, PlayerEntity)
@@ -64,7 +64,7 @@ function addFish(x: number, y: number) {
   const fish = addEntity(World)
   const fishSprite = new Sprite(Texture.from('fish'))
   SpritesByEID[fish] = fishSprite
-  PixiViewport.addChild(fishSprite)
+  WorldSprites.addChild(fishSprite)
   addComponent(World, DisplayObject, fish)
   addComponent(World, GridPosition, fish)
   GridPosition.x[fish] = x

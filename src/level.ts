@@ -1,7 +1,7 @@
 import * as ROT from 'rot-js'
 import { Sprite, Texture } from 'pixi.js'
 import { TILE_SIZE } from './'
-import { PixiViewport } from './pixi'
+import { WorldSprites } from './pixi'
 import { getDiamondAround, getSquareAround, Vector2 } from './vector2'
 
 const MAP_WIDTH = 80
@@ -29,7 +29,7 @@ export function createLevel() {
     const wallSprite = new Sprite(wallTexture)
     wallSprite.x = x * TILE_SIZE
     wallSprite.y = y * TILE_SIZE
-    PixiViewport.addChild(wallSprite)
+    WorldSprites.addChild(wallSprite)
   }, 1)
   const water = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
   water.randomize(0.45)
@@ -45,7 +45,7 @@ export function createLevel() {
     const waterSprite = new Sprite(waterTexture)
     waterSprite.x = x * TILE_SIZE
     waterSprite.y = y * TILE_SIZE
-    PixiViewport.addChild(waterSprite)
+    WorldSprites.addChild(waterSprite)
   })
   for (let x = 2; x < MAP_WIDTH - 3; x++) {
     for (let y = 2; y < MAP_HEIGHT - 3; y++) {

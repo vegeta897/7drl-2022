@@ -1,4 +1,4 @@
-import { Application, Loader, Ticker } from 'pixi.js'
+import { Application, Container, Loader, Ticker } from 'pixi.js'
 import * as PIXI from 'pixi.js'
 import { Viewport } from 'pixi-viewport'
 import { runRender } from './ecs'
@@ -20,6 +20,11 @@ export const PixiViewport = new Viewport({
   screenHeight: gameHeight,
 })
 PixiViewport.setZoom(2)
+
+export const WorldSprites = new Container()
+export const OverlaySprites = new Container()
+PixiViewport.addChild(WorldSprites)
+PixiViewport.addChild(OverlaySprites)
 
 PixiApp.stage.addChild(PixiViewport)
 

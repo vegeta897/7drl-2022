@@ -1,9 +1,13 @@
-import { addComponent, System } from 'bitecs'
+import { addComponent, addEntity, System } from 'bitecs'
 import { onInput, World } from './'
 import { CastTargetSprite, PlayerEntity, TILE_SIZE } from '../'
-import { MoveAction } from './components'
+import { DisplayObject, GridPosition, MoveAction } from './components'
 import { addVector2, Down, getManhattanDistance, Left, Right, Up, Vector2, vectorsAreParallel } from '../vector2'
 import { drawHud } from '../hud'
+import { Sprite, Texture } from 'pixi.js'
+import { SpritesByEID } from '../sprites'
+import { WorldSprites } from '../pixi'
+import { EntityMap, Level, Tile, TileMap } from '../level'
 
 export const waitForInput = () => (WaitingForInput = true)
 export let WaitingForInput = true
@@ -37,7 +41,7 @@ export const inputSystem: System = (world) => {
       move = Right
       break
     case 'KeyC':
-      cast = !CastMode
+      cast = true
       break
     case 'Escape':
       cast = false
@@ -48,6 +52,8 @@ export const inputSystem: System = (world) => {
     case 'Enter':
       break
   }
+  const playerGrid = { x: GridPosition.x[PlayerEntity], y: GridPosition.y[PlayerEntity] }
+  // TODO: Refactor all this crap into a state machine or something
   if (cast && !CastMode) {
     CastMode = true
     CastVector.x = 0
@@ -55,9 +61,21 @@ export const inputSystem: System = (world) => {
     CastTargetSprite.x = 0
     CastTargetSprite.y = 0
     CastTargetSprite.visible = true
-  } else if (!cast && CastMode) {
+  } else if (!move && !wait && CastMode) {
     CastMode = false
     CastTargetSprite.visible = false
+    if (cast && getManhattanDistance(CastVector) > 0) {
+      const bait = addEntity(World)
+      const baitSprite = new Sprite(Texture.from('bait'))
+      SpritesByEID[bait] = baitSprite
+      WorldSprites.addChild(baitSprite)
+      addComponent(World, DisplayObject, bait)
+      addComponent(World, GridPosition, bait)
+      GridPosition.x[bait] = playerGrid.x + CastVector.x
+      GridPosition.y[bait] = playerGrid.y + CastVector.y
+      EntityMap.set(TileMap.keyFromXY(GridPosition.x[bait], GridPosition.y[bait]), bait)
+      WaitingForInput = false
+    }
   }
   if (move !== null) {
     if (CastMode) {
@@ -65,7 +83,10 @@ export const inputSystem: System = (world) => {
       for (const mod of [{ x: 0, y: 0 }, Up, Down, Left, Right]) {
         if (vectorsAreParallel(mod, move)) continue
         const moddedCastTo = addVector2(castTo, mod)
-        if (getManhattanDistance(moddedCastTo) <= 4) {
+        const moddedDistance = getManhattanDistance(moddedCastTo)
+        const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
+        const tile = Level.get(TileMap.keyFromXY(moddedAbsolute.x, moddedAbsolute.y))
+        if (moddedDistance <= 4 && tile !== Tile.Wall) {
           CastVector.x = moddedCastTo.x
           CastVector.y = moddedCastTo.y
           CastTargetSprite.x = CastVector.x * TILE_SIZE
