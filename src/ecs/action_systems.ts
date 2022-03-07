@@ -11,66 +11,69 @@ import {
   Stunned,
   Swimmer,
   Walker,
-  Wander,
 } from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity } from 'bitecs'
 import { EntityMap, Level, Tile, TileMap } from '../level'
 import { PlayerEntity } from '../'
 import { SpritesByEID } from '../sprites'
-import { drawHud } from '../hud'
+import { drawHud, Log, logAttack, logKill } from '../hud'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
   for (const eid of moveQuery(world)) {
-    const destX = GridPosition.x[eid] + MoveAction.x[eid]
-    const destY = GridPosition.y[eid] + MoveAction.y[eid]
+    const targetX = GridPosition.x[eid] + MoveAction.x[eid]
+    const targetY = GridPosition.y[eid] + MoveAction.y[eid]
     removeComponent(world, MoveAction, eid)
-    const destKey = TileMap.keyFromXY(destX, destY)
-    const entityAtDestination = EntityMap.get(destKey)
-    if (entityAtDestination !== undefined && entityAtDestination >= 0) {
-      const playerInvolved = [eid, entityAtDestination].includes(PlayerEntity)
-      const attackedHasHealth = hasComponent(world, Health, entityAtDestination)
+    const targetGridKey = TileMap.keyFromXY(targetX, targetY)
+    const targetEntity = EntityMap.get(targetGridKey)
+    if (targetEntity !== undefined && targetEntity >= 0) {
+      const playerInvolved = [eid, targetEntity].includes(PlayerEntity)
+      const attackedHasHealth = hasComponent(world, Health, targetEntity)
       if (playerInvolved && attackedHasHealth) {
         let damage = 1
-        if (hasComponent(world, Stunned, entityAtDestination)) {
+        if (hasComponent(world, Stunned, targetEntity)) {
           damage = 5
-          removeComponent(world, Stunned, entityAtDestination)
+          removeComponent(world, Stunned, targetEntity)
         }
-        const healthLeft = (Health.current[entityAtDestination] -= damage)
+        logAttack(eid, targetEntity, damage)
+        const healthLeft = (Health.current[targetEntity] -= damage)
         if (healthLeft <= 0) {
-          removeEntity(world, entityAtDestination)
-          EntityMap.delete(destKey)
-          SpritesByEID[entityAtDestination].destroy()
-          delete SpritesByEID[entityAtDestination]
+          if (eid === PlayerEntity) logKill(targetEntity)
+          removeEntity(world, targetEntity)
+          EntityMap.delete(targetGridKey)
+          SpritesByEID[targetEntity].destroy()
+          delete SpritesByEID[targetEntity]
         }
       }
-      if (hasComponent(world, Bait, entityAtDestination)) {
+      if (hasComponent(world, Bait, targetEntity)) {
+        if (eid === PlayerEntity) Log.push('You ate the bait')
         if (hasComponent(world, Health, eid)) {
           Health.current[eid] = Math.min(Health.max[eid], Health.current[eid] + 1)
         }
         if (hasComponent(world, Fish, eid)) {
           addComponent(world, Stunned, eid)
           Stunned.remaining[eid] = 6
+          Log.push('The fish is eating the bait')
         }
-        removeEntity(world, entityAtDestination)
-        EntityMap.delete(destKey)
-        SpritesByEID[entityAtDestination].destroy()
-        delete SpritesByEID[entityAtDestination]
+        removeEntity(world, targetEntity)
+        EntityMap.delete(targetGridKey)
+        SpritesByEID[targetEntity].destroy()
+        delete SpritesByEID[targetEntity]
       } else {
         removeComponent(world, Lunge, eid)
         continue
       }
     }
-    const tileType = Level.get(destKey) || 0
+    const tileType = Level.get(targetGridKey) || 0
     if (MoveAction.noclip[eid] === 0) {
       if (tileType === Tile.Wall) continue
       if (tileType === Tile.Water && !hasComponent(world, Swimmer, eid)) continue
       if (tileType === Tile.Floor && !hasComponent(world, Walker, eid)) continue
     }
     EntityMap.delete(TileMap.keyFromXY(GridPosition.x[eid], GridPosition.y[eid]))
-    GridPosition.x[eid] = destX
-    GridPosition.y[eid] = destY
-    EntityMap.set(destKey, eid)
+    GridPosition.x[eid] = targetX
+    GridPosition.y[eid] = targetY
+    EntityMap.set(targetGridKey, eid)
     if (hasComponent(world, Fish, eid)) {
       if (tileType === Tile.Floor) {
         addComponent(world, SeekWater, eid)

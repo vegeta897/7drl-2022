@@ -93,7 +93,7 @@ const lungers = defineQuery([GridPosition, Lunge, ActionTimer, Not(Stunned)])
 export const lungeSystem: System = (world) => {
   for (const eid of lungers(world)) {
     if (ActionTimer.timeLeft[eid] > 0) continue
-    ActionTimer.timeLeft[eid] = 20
+    ActionTimer.timeLeft[eid] = 10
     const dir = DirectionGrids[Lunge.direction[eid]]
     addComponent(world, Walker, eid)
     addComponent(world, MoveAction, eid)
