@@ -1,10 +1,22 @@
-import { addComponent, defineQuery, Not, removeComponent, System } from 'bitecs'
-import { ActionTimer, GridPosition, Lunge, MoveAction, SensePlayer, Stunned, Walker, Wander } from './components'
+import { addComponent, defineQuery, hasComponent, Not, removeComponent, System } from 'bitecs'
+import {
+  ActionTimer,
+  Bait,
+  GridPosition,
+  Lunge,
+  MoveAction,
+  Player,
+  Predator,
+  Stunned,
+  Walker,
+  Wander,
+} from './components'
 import { RNG } from 'rot-js'
 import {
   DirectionGrids,
   Down,
   getCardinalDirection,
+  getDiamondAround,
   getManhattanDistance,
   Left,
   Right,
@@ -14,7 +26,7 @@ import {
 import { runActions, runEnemies, World } from './'
 import { runAnimations } from './anim_systems'
 import { PlayerEntity } from '../'
-import { Level, Tile, TileMap } from '../level'
+import { EntityMap, Level, Tile, TileMap } from '../level'
 
 const TURN_TIME = 60
 let timer = 0
@@ -50,18 +62,24 @@ export async function runTimer() {
   timer = 0
 }
 
-const playerSensers = defineQuery([GridPosition, ActionTimer, SensePlayer, Not(Lunge), Not(Stunned)])
-export const sensePlayerSystem: System = (world) => {
-  const playerGrid = { x: GridPosition.x[PlayerEntity], y: GridPosition.y[PlayerEntity] }
-  for (const eid of playerSensers(world)) {
+const predators = defineQuery([GridPosition, ActionTimer, Predator, Not(Lunge), Not(Stunned)])
+export const predatorSystem: System = (world) => {
+  for (const eid of predators(world)) {
     const myGrid = { x: GridPosition.x[eid], y: GridPosition.y[eid] }
     if (Level.get(TileMap.keyFromXY(myGrid.x, myGrid.y)) !== Tile.Water) continue
-    if (!vectorsAreInline(myGrid, playerGrid)) continue
-    const distance = getManhattanDistance(myGrid, playerGrid)
-    if (distance <= 1 || distance > SensePlayer.range[eid]) continue
-    addComponent(world, Lunge, eid)
-    Lunge.power[eid] = distance
-    Lunge.direction[eid] = getCardinalDirection(myGrid, playerGrid)
+    const senseArea = getDiamondAround(myGrid, Predator.range[eid])
+    for (const grid of senseArea) {
+      if (!vectorsAreInline(myGrid, grid)) continue
+      const distance = getManhattanDistance(myGrid, grid)
+      if (distance <= 1 || distance > Predator.range[eid]) continue
+      const entityAtGrid = EntityMap.get(TileMap.keyFromXY(grid.x, grid.y))
+      if (entityAtGrid === undefined) continue
+      if (!hasComponent(world, Player, entityAtGrid) && !hasComponent(world, Bait, entityAtGrid)) continue
+      addComponent(world, Lunge, eid)
+      Lunge.power[eid] = distance
+      Lunge.direction[eid] = getCardinalDirection(myGrid, grid)
+      break
+    }
   }
   return world
 }

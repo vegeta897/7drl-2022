@@ -41,7 +41,8 @@ export const moveSystem: System = (world) => {
           SpritesByEID[entityAtDestination].destroy()
           delete SpritesByEID[entityAtDestination]
         }
-      } else if (hasComponent(world, Bait, entityAtDestination)) {
+      }
+      if (hasComponent(world, Bait, entityAtDestination)) {
         if (hasComponent(world, Health, eid)) {
           Health.current[eid] = Math.min(Health.max[eid], Health.current[eid] + 1)
         }
@@ -53,9 +54,10 @@ export const moveSystem: System = (world) => {
         EntityMap.delete(destKey)
         SpritesByEID[entityAtDestination].destroy()
         delete SpritesByEID[entityAtDestination]
+      } else {
+        removeComponent(world, Lunge, eid)
+        continue
       }
-      removeComponent(world, Lunge, eid)
-      continue
     }
     if (MoveAction.noclip[eid] === 0) {
       const tileType = Level.get(destKey) || 0

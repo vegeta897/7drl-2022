@@ -10,7 +10,7 @@ import {
   GridPosition,
   Health,
   Player,
-  SensePlayer,
+  Predator,
   Swimmer,
   Walker,
   Wander,
@@ -77,8 +77,8 @@ function addFish(x: number, y: number) {
   addComponent(World, ActionTimer, fish)
   ActionTimer.timeLeft[fish] = 0
   addComponent(World, Swimmer, fish)
-  addComponent(World, SensePlayer, fish)
-  SensePlayer.range[fish] = 3
+  addComponent(World, Predator, fish)
+  Predator.range[fish] = 3
   addComponent(World, Health, fish)
   Health.max[fish] = 4
   Health.current[fish] = 4

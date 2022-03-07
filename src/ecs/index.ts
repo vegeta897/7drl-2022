@@ -10,14 +10,14 @@ import {
   Lunge,
   MoveAction,
   Player,
-  SensePlayer,
+  Predator,
   Stunned,
   Swimmer,
   Walker,
   Wander,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
-import { runTimer, wanderSystem, sensePlayerSystem, lungeSystem, stunnedSystem } from './enemy_systems'
+import { runTimer, wanderSystem, predatorSystem, lungeSystem, stunnedSystem } from './enemy_systems'
 import { moveSystem, hudSystem } from './action_systems'
 import { runAnimations } from './anim_systems'
 import { cameraSystem, spriteAddSystem } from './render_systems'
@@ -32,7 +32,7 @@ registerComponents(World, [
   ActionTimer,
   Swimmer,
   Wander,
-  SensePlayer,
+  Predator,
   Lunge,
   Walker,
   Health,
@@ -44,7 +44,7 @@ registerComponents(World, [
 
 const systemGroups = {
   input: inputSystem,
-  enemyTurn: pipe(sensePlayerSystem, lungeSystem, wanderSystem, stunnedSystem),
+  enemyTurn: pipe(predatorSystem, lungeSystem, wanderSystem, stunnedSystem),
   actions: pipe(moveSystem, hudSystem),
   render: pipe(spriteAddSystem, cameraSystem),
 }

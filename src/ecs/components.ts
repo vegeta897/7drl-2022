@@ -27,7 +27,7 @@ export const Health = defineComponent({ current: Types.ui16, max: Types.ui16 })
 export const Walker = defineComponent()
 export const Swimmer = defineComponent()
 export const Wander = defineComponent({ chance: Types.ui8, maxChance: Types.ui8 })
-export const SensePlayer = defineComponent({ range: Types.ui8 })
+export const Predator = defineComponent({ range: Types.ui8 })
 export const Lunge = defineComponent({ power: Types.ui8, direction: Types.ui8 })
 export const Stunned = defineComponent({ remaining: Types.ui16 })
 
