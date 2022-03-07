@@ -22,7 +22,8 @@ export const UpRight = { x: 1, y: -1 }
 export const DownLeft = { x: -1, y: 1 }
 export const DownRight = { x: 1, y: 1 }
 
-export const DirectionGrids = [Up, Down, Left, Right]
+export const DirectionGrids = [Up, Down, Left, Right] as const
+export const DirectionNames = ['up', 'down', 'left', 'right'] as const
 
 export const getCardinalDirection = (from: Vector2, to: Vector2): Direction => {
   const { x: xDiff, y: yDiff } = diffVector2(from, to)

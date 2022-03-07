@@ -2,7 +2,18 @@ import { addComponent, addEntity, System } from 'bitecs'
 import { onInput, World } from './'
 import { CastTargetSprite, PlayerEntity, TILE_SIZE } from '../'
 import { Bait, DisplayObject, GridPosition, MoveAction } from './components'
-import { addVector2, Down, getDistance, GridZero, Left, Right, Up, Vector2, vectorsAreParallel } from '../vector2'
+import {
+  addVector2,
+  DirectionGrids,
+  DirectionNames,
+  Down,
+  getDistance,
+  GridZero,
+  Left,
+  Right,
+  Up,
+  vectorsAreParallel,
+} from '../vector2'
 import { drawHud } from '../hud'
 import { Sprite, Texture } from 'pixi.js'
 import { SpritesByEID } from '../sprites'
@@ -12,74 +23,60 @@ import { EntityMap, Level, Tile, TileMap } from '../level'
 export const waitForInput = () => (WaitingForInput = true)
 export let WaitingForInput = true
 
-export let CastMode = false
+// TODO: Should a button pressed during animation be queued?
+
+type PlayerStates = 'idle' | 'casting' | 'angling'
+export let PlayerState: PlayerStates = 'idle'
+
 export const CastVector = { x: 0, y: 0 }
 
 export const inputSystem: System = (world) => {
-  let move: Vector2 | null = null
-  let cast = CastMode
-  let wait = false
-  switch (currentKey) {
-    case 'KeyW':
-    case 'KeyK':
-    case 'ArrowUp':
-      move = Up
-      break
-    case 'KeyS':
-    case 'KeyJ':
-    case 'ArrowDown':
-      move = Down
-      break
-    case 'KeyA':
-    case 'KeyH':
-    case 'ArrowLeft':
-      move = Left
-      break
-    case 'KeyD':
-    case 'KeyL':
-    case 'ArrowRight':
-      move = Right
-      break
-    case 'KeyC':
-      cast = true
-      break
-    case 'Escape':
-      cast = false
-      break
-    case 'Space':
-      wait = true
-      break
-    case 'Enter':
-      break
-  }
+  const button = getButton()
+  if (button === null) return world
+  const previousState = PlayerState
   const playerGrid = { x: GridPosition.x[PlayerEntity], y: GridPosition.y[PlayerEntity] }
-  // TODO: Refactor all this crap into a state machine or something
-  if (cast && !CastMode) {
-    CastMode = true
-    CastVector.x = 0
-    CastVector.y = 0
-    CastTargetSprite.x = 0
-    CastTargetSprite.y = 0
-    CastTargetSprite.visible = true
-  } else if (!move && !wait && CastMode) {
-    CastMode = false
-    CastTargetSprite.visible = false
-    if (cast && getDistance(CastVector) > 0) {
-      const bait = addEntity(World)
-      const baitSprite = new Sprite(Texture.from('bait'))
-      SpritesByEID[bait] = baitSprite
-      WorldSprites.addChild(baitSprite)
-      addComponent(World, DisplayObject, bait)
-      addComponent(World, GridPosition, bait)
-      addComponent(World, Bait, bait)
-      GridPosition.x[bait] = playerGrid.x + CastVector.x
-      GridPosition.y[bait] = playerGrid.y + CastVector.y
-      EntityMap.set(TileMap.keyFromXY(GridPosition.x[bait], GridPosition.y[bait]), bait)
-      WaitingForInput = false
+  if (button === 'cast') {
+    if (previousState === 'idle') {
+      CastVector.x = 0
+      CastVector.y = 0
+      CastTargetSprite.x = 0
+      CastTargetSprite.y = 0
+      CastTargetSprite.visible = true
+      PlayerState = 'casting'
     }
-  }
-  if (move !== null) {
-    if (CastMode) {
+    if (previousState === 'casting') {
+      PlayerState = 'idle'
+      CastTargetSprite.visible = false
+      if (getDistance(CastVector) > 0) {
+        const bait = addEntity(World)
+        const baitSprite = new Sprite(Texture.from('bait'))
+        SpritesByEID[bait] = baitSprite
+        WorldSprites.addChild(baitSprite)
+        addComponent(World, DisplayObject, bait)
+        addComponent(World, GridPosition, bait)
+        addComponent(World, Bait, bait)
+        GridPosition.x[bait] = playerGrid.x + CastVector.x
+        GridPosition.y[bait] = playerGrid.y + CastVector.y
+        EntityMap.set(TileMap.keyFromXY(GridPosition.x[bait], GridPosition.y[bait]), bait)
+        WaitingForInput = false
+        PlayerState = 'angling'
+      }
+    }
+    if (previousState === 'angling') {
+      // TODO: Cut line
+      // Should cutting line take a turn?
+      PlayerState = 'idle'
+    }
+  } else if (button === 'wait') {
+    WaitingForInput = false
+  } else if (button === 'confirm') {
+    // TODO: Confirm bait placement
+  } else if (button === 'exit') {
+    PlayerState = 'idle'
+    CastTargetSprite.visible = false
+  } else {
+    const move = DirectionGrids[DirectionNames.indexOf(button)]
+    if (previousState === 'casting') {
       const castTo = addVector2(CastVector, move)
       for (const mod of [GridZero, Up, Down, Left, Right]) {
         if (vectorsAreParallel(mod, move)) continue
@@ -104,8 +101,6 @@ export const inputSystem: System = (world) => {
       MoveAction.noclip[PlayerEntity] = noclip || boost ? 1 : 0
       WaitingForInput = false
     }
-  } else if (wait) {
-    WaitingForInput = false
   }
   drawHud()
   return world
@@ -129,6 +124,37 @@ window.addEventListener('keyup', (e) => {
   Keys.delete(e.code)
   currentKey = null
 })
+
+type Button = typeof DirectionNames[number] | 'wait' | 'cast' | 'exit' | 'confirm' | null
+function getButton(): Button {
+  switch (currentKey) {
+    case 'KeyW':
+    case 'KeyK':
+    case 'ArrowUp':
+      return 'up'
+    case 'KeyS':
+    case 'KeyJ':
+    case 'ArrowDown':
+      return 'down'
+    case 'KeyA':
+    case 'KeyH':
+    case 'ArrowLeft':
+      return 'left'
+    case 'KeyD':
+    case 'KeyL':
+    case 'ArrowRight':
+      return 'right'
+    case 'KeyC':
+      return 'cast'
+    case 'Escape':
+      return 'exit'
+    case 'Space':
+      return 'wait'
+    case 'Enter':
+      return 'confirm'
+  }
+  return null
+}
 
 type GameKey = typeof gameKeys[number]
 

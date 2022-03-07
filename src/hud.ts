@@ -1,7 +1,7 @@
 import { Display } from 'rot-js'
 import { Fish, Health, Player } from './ecs/components'
 import { PlayerEntity } from './index'
-import { CastMode } from './ecs/input_systems'
+import { PlayerState } from './ecs/input_systems'
 import { hasComponent } from 'bitecs'
 import { World } from './ecs'
 
@@ -35,7 +35,8 @@ const lowestY = 30
 export function drawHud() {
   HUD.clear()
   HUD.drawText(3, 1, `Health: ${Health.current[PlayerEntity].toString().padStart(3)}`)
-  if (CastMode) HUD.drawText(3, 3, 'CASTING ⟆\n\nC to confirm\nEsc to cancel')
+  if (PlayerState === 'casting') HUD.drawText(3, 3, 'CASTING ⟆\n\nC to confirm\nEsc to cancel')
+  if (PlayerState === 'angling') HUD.drawText(3, 3, 'ANGLING ⟆\n\nC to cut line')
   if (Log.length > 0) {
     HUD.drawText(1, 8, '=========== LOG ===========')
     let y = 9
