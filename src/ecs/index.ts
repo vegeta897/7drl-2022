@@ -18,9 +18,10 @@ import {
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { wanderSystem, predatorSystem, lungeSystem, stunnedSystem, seekWaterSystem } from './enemy_systems'
-import { moveSystem, hudSystem } from './action_systems'
+import { moveSystem } from './action_systems'
 import { runAnimations } from './anim_systems'
 import { cameraSystem, spriteAddSystem } from './render_systems'
+import { drawHud } from '../hud'
 
 export const World = createWorld()
 
@@ -45,7 +46,7 @@ registerComponents(World, [
 const systemGroups = {
   input: inputSystem,
   enemyTurn: pipe(predatorSystem, lungeSystem, wanderSystem, stunnedSystem, seekWaterSystem),
-  actions: pipe(moveSystem, hudSystem),
+  actions: moveSystem,
   render: pipe(spriteAddSystem, cameraSystem),
 }
 
@@ -54,9 +55,11 @@ export async function onInput() {
   if (WaitingForInput) return
   runActions() // Execute player actions
   await runAnimations(World) // Animate player actions
+  drawHud()
   runEnemies() // Plan enemy actions
   runActions() // Run enemy actions
   await runAnimations(World) // Animate enemy actions
+  drawHud()
   waitForInput()
 }
 

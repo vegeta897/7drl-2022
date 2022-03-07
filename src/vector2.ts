@@ -32,13 +32,14 @@ export const getCardinalDirection = (from: Vector2, to: Vector2): Direction => {
   if (yDiff < 0 && Math.abs(yDiff) > Math.abs(xDiff)) return Direction.Up
   return Direction.Down
 }
-export const vectorsAreInline = (a: Vector2, b: Vector2): boolean => a.x === b.x || a.y === b.y
 
+export const vectorsAreInline = (a: Vector2, b: Vector2): boolean => a.x === b.x || a.y === b.y
 export const vectorsAreParallel = (a: Vector2, b: Vector2): boolean => {
   if ((a.x === 0 && a.y === 0) || (b.x === 0 && b.y === 0)) return false
   if ((a.x !== 0 && a.y !== 0) || (b.x !== 0 && b.y !== 0)) return false
   return (a.x === 0) === (b.x === 0)
 }
+export const vectorsAreEqual = (a: Vector2, b: Vector2): boolean => a.x === b.x && a.y === b.y
 
 export const addVector2 = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x + b.x, y: a.y + b.y })
 export const diffVector2 = (a: Vector2, b: Vector2): Vector2 => ({ x: b.x - a.x, y: b.y - a.y })
@@ -50,11 +51,9 @@ export const getUnitVector2 = (v: Vector2): Vector2 => DirectionGrids[getCardina
 export const get4Neighbors = (grid: Vector2): Vector2[] => {
   return [Up, Down, Left, Right].map((d) => addVector2(grid, d))
 }
-
 export const get8Neighbors = (grid: Vector2): Vector2[] => {
   return [Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight].map((d) => addVector2(grid, d))
 }
-
 export const getSquareAround = (grid: Vector2, radius: number): Vector2[] => {
   const inSquare = []
   for (let dx = -radius; dx <= radius; dx++) {
@@ -64,15 +63,12 @@ export const getSquareAround = (grid: Vector2, radius: number): Vector2[] => {
   }
   return inSquare
 }
-
 export const getDiamondAround = (grid: Vector2, radius: number): Vector2[] => {
   return getSquareAround(grid, radius).filter((g) => getDistance(grid, g) <= radius)
 }
-
 export const getCross = (grid: Vector2, radius: number): Vector2[] => {
   return getSquareAround(grid, radius).filter((g) => g.x === grid.x || g.y === grid.y)
 }
-
 export const getStraightLine = (from: Vector2, to: Vector2, includeEndpoints = true): Vector2[] => {
   if (!vectorsAreInline(from, to)) throw `Can't get straight line between ${from.x}:${from.y} and ${to.x}:${to.y}`
   const line = []

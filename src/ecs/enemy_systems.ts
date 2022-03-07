@@ -60,7 +60,6 @@ export const lungeSystem: System = (world) => {
     const move = scaleVector2(DirectionGrids[Lunge.direction[eid]], Lunge.power[eid])
     addComponent(world, Walker, eid)
     addComponent(world, MoveAction, eid)
-    console.log(Lunge.power[eid], move.x, move.y)
     MoveAction.x[eid] = move.x
     MoveAction.y[eid] = move.y
     MoveAction.noclip[eid] = 0

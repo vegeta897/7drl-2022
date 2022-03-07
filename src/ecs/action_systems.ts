@@ -15,8 +15,8 @@ import { defineQuery, System, addComponent, removeComponent, hasComponent, remov
 import { EntityMap, Level, Tile, TileMap } from '../level'
 import { PlayerEntity } from '../'
 import { SpritesByEID } from '../sprites'
-import { drawHud, Log, logAttack, logKill } from '../hud'
-import { addVector2, getDistance, getUnitVector2, Vector2 } from '../vector2'
+import { Log, logAttack, logKill } from '../hud'
+import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
@@ -25,8 +25,8 @@ export const moveSystem: System = (world) => {
     removeComponent(world, MoveAction, eid)
     const distance = getDistance(move)
     const unitMove = getUnitVector2(move)
-    if (distance > 1) console.log(move.x, move.y, unitMove.x, unitMove.y, distance)
-    let currentGrid = { x: GridPosition.x[eid], y: GridPosition.y[eid] }
+    const startGrid = { x: GridPosition.x[eid], y: GridPosition.y[eid] }
+    let currentGrid = startGrid
     let targetGrid: Vector2
     let targetGridKey: string
     let targetTileType: Tile
@@ -79,6 +79,7 @@ export const moveSystem: System = (world) => {
       }
       currentGrid = targetGrid
     }
+    if (vectorsAreEqual(startGrid, currentGrid)) continue
     EntityMap.delete(TileMap.keyFromXY(GridPosition.x[eid], GridPosition.y[eid]))
     GridPosition.x[eid] = currentGrid.x
     GridPosition.y[eid] = currentGrid.y
@@ -101,10 +102,5 @@ export const moveSystem: System = (world) => {
     AnimateMovement.elapsed[eid] = 0
     AnimateMovement.length[eid] = 100
   }
-  return world
-}
-
-export const hudSystem: System = (world) => {
-  drawHud()
   return world
 }
