@@ -7,29 +7,35 @@ import {
   MoveAction,
   Player,
   Predator,
+  SeekWater,
   Stunned,
   Walker,
   Wander,
 } from './components'
 import { RNG } from 'rot-js'
 import {
+  diffVector2,
   DirectionGrids,
   Down,
   getCardinalDirection,
+  getCross,
   getDiamondAround,
-  getManhattanDistance,
+  getDistance,
   Left,
   Right,
+  sortByDistance,
   Up,
-  vectorsAreInline,
 } from '../vector2'
 import { runActions, runEnemies, World } from './'
 import { runAnimations } from './anim_systems'
-import { PlayerEntity } from '../'
-import { EntityMap, Level, Tile, TileMap } from '../level'
+import { EntityMap, findPath, Level, Tile, TileMap } from '../level'
 
 const TURN_TIME = 60
 let timer = 0
+
+// TODO: If this timing crap proves too complex, just go back to normal uniform turns and perform multiple movements/actions within one system run
+
+// TODO: Or replace ActionTimer with ActionPoints, enemy spends them
 
 const timerQuery = defineQuery([ActionTimer])
 
@@ -62,21 +68,20 @@ export async function runTimer() {
   timer = 0
 }
 
-const predators = defineQuery([GridPosition, ActionTimer, Predator, Not(Lunge), Not(Stunned)])
+const predators = defineQuery([GridPosition, ActionTimer, Predator, Not(Lunge), Not(Stunned), Not(SeekWater)])
 export const predatorSystem: System = (world) => {
   for (const eid of predators(world)) {
     const myGrid = { x: GridPosition.x[eid], y: GridPosition.y[eid] }
     if (Level.get(TileMap.keyFromXY(myGrid.x, myGrid.y)) !== Tile.Water) continue
-    const senseArea = getDiamondAround(myGrid, Predator.range[eid])
+    const senseArea = getCross(myGrid, Predator.range[eid])
     for (const grid of senseArea) {
-      if (!vectorsAreInline(myGrid, grid)) continue
-      const distance = getManhattanDistance(myGrid, grid)
+      const distance = getDistance(myGrid, grid)
       if (distance <= 1 || distance > Predator.range[eid]) continue
       const entityAtGrid = EntityMap.get(TileMap.keyFromXY(grid.x, grid.y))
       if (entityAtGrid === undefined) continue
       if (!hasComponent(world, Player, entityAtGrid) && !hasComponent(world, Bait, entityAtGrid)) continue
       addComponent(world, Lunge, eid)
-      Lunge.power[eid] = distance
+      Lunge.power[eid] = distance + 1
       Lunge.direction[eid] = getCardinalDirection(myGrid, grid)
       break
     }
@@ -95,18 +100,12 @@ export const lungeSystem: System = (world) => {
     MoveAction.x[eid] = dir.x
     MoveAction.y[eid] = dir.y
     MoveAction.noclip[eid] = 0
-    Lunge.power[eid]--
-    if (Lunge.power[eid] === 0) {
-      removeComponent(world, Lunge, eid)
-      addComponent(world, Wander, eid)
-      Wander.maxChance[eid] = 10
-      Wander.chance[eid] = 0
-    }
+    if (--Lunge.power[eid] === 0) removeComponent(world, Lunge, eid)
   }
   return world
 }
 
-const wanderers = defineQuery([Wander, GridPosition, ActionTimer, Not(Lunge), Not(Stunned)])
+const wanderers = defineQuery([Wander, GridPosition, ActionTimer, Not(Lunge), Not(Stunned), Not(SeekWater)])
 export const wanderSystem: System = (world) => {
   for (const eid of wanderers(world)) {
     if (ActionTimer.timeLeft[eid] > 0) continue
@@ -130,6 +129,29 @@ export const stunnedSystem: System = (world) => {
   for (const eid of stunned(world)) {
     ActionTimer.timeLeft[eid] = 60
     if (--Stunned.remaining[eid] === 0) removeComponent(world, Stunned, eid)
+  }
+  return world
+}
+
+const waterSeekers = defineQuery([SeekWater, Not(Lunge), Not(Stunned)])
+export const seekWaterSystem: System = (world) => {
+  for (const eid of waterSeekers(world)) {
+    if (ActionTimer.timeLeft[eid] > 0) continue
+    ActionTimer.timeLeft[eid] = 60
+    const myGrid = { x: GridPosition.x[eid], y: GridPosition.y[eid] }
+    const nearestTiles = sortByDistance(myGrid, getDiamondAround(myGrid, SeekWater.distance[eid]))
+    for (const tile of nearestTiles) {
+      if (Level.get(TileMap.keyFromXY(tile.x, tile.y)) !== Tile.Water) continue
+      const towardWater = findPath(myGrid, tile, eid)[0]
+      if (towardWater) {
+        const move = diffVector2(myGrid, towardWater)
+        addComponent(world, MoveAction, eid)
+        MoveAction.x[eid] = move.x
+        MoveAction.y[eid] = move.y
+        MoveAction.noclip[eid] = 0
+        break
+      }
+    }
   }
   return world
 }

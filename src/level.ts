@@ -3,6 +3,7 @@ import { Sprite, Texture } from 'pixi.js'
 import { TILE_SIZE } from './'
 import { WorldSprites } from './pixi'
 import { getDiamondAround, getSquareAround, Vector2 } from './vector2'
+import Dijkstra from 'rot-js/lib/path/dijkstra'
 
 const MAP_WIDTH = 80
 const MAP_HEIGHT = 80
@@ -77,6 +78,21 @@ export type TileData = {
   tint?: number
   ignoreFOV?: boolean
   revealed: number
+}
+
+export function findPath(from: Vector2, to: Vector2, selfEntity: number, distance = 1): Vector2[] {
+  const map = new Dijkstra(
+    to.x,
+    to.y,
+    (x, y) => {
+      if (x === from.x && y === from.y) return true
+      return Level.get(x + ':' + y) !== Tile.Wall && !EntityMap.has(x + ':' + y)
+    },
+    { topology: 4 }
+  )
+  const path: Vector2[] = []
+  map.compute(from.x, from.y, (x, y) => (x !== from.x || y !== from.y) && path.length < distance && path.push({ x, y }))
+  return path
 }
 
 export class TileMap {

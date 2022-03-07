@@ -10,6 +10,8 @@ export enum Direction {
   Right,
 }
 
+export const GridZero = { x: 0, y: 0 }
+
 export const Up = { x: 0, y: -1 }
 export const Down = { x: 0, y: 1 }
 export const Left = { x: -1, y: 0 }
@@ -61,9 +63,15 @@ export const getSquareAround = (grid: Vector2, radius: number): Vector2[] => {
   return inSquare
 }
 
-export const getManhattanDistance = (a: Vector2, b: Vector2 = { x: 0, y: 0 }): number =>
-  Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+export const getDistance = (a: Vector2, b: Vector2 = GridZero): number => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
 export const getDiamondAround = (grid: Vector2, radius: number): Vector2[] => {
-  return getSquareAround(grid, radius).filter((g) => getManhattanDistance(grid, g) <= radius)
+  return getSquareAround(grid, radius).filter((g) => getDistance(grid, g) <= radius)
 }
+
+export const getCross = (grid: Vector2, radius: number): Vector2[] => {
+  return getSquareAround(grid, radius).filter((g) => g.x === grid.x || g.y === grid.y)
+}
+
+export const sortByDistance = (origin: Vector2, grids: Vector2[], nearestFirst = true) =>
+  [...grids].sort((a, b) => getDistance(origin, nearestFirst ? a : b) - getDistance(origin, nearestFirst ? b : a))

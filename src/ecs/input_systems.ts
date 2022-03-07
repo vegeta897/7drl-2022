@@ -2,7 +2,7 @@ import { addComponent, addEntity, System } from 'bitecs'
 import { onInput, World } from './'
 import { CastTargetSprite, PlayerEntity, TILE_SIZE } from '../'
 import { Bait, DisplayObject, GridPosition, MoveAction } from './components'
-import { addVector2, Down, getManhattanDistance, Left, Right, Up, Vector2, vectorsAreParallel } from '../vector2'
+import { addVector2, Down, getDistance, GridZero, Left, Right, Up, Vector2, vectorsAreParallel } from '../vector2'
 import { drawHud } from '../hud'
 import { Sprite, Texture } from 'pixi.js'
 import { SpritesByEID } from '../sprites'
@@ -64,7 +64,7 @@ export const inputSystem: System = (world) => {
   } else if (!move && !wait && CastMode) {
     CastMode = false
     CastTargetSprite.visible = false
-    if (cast && getManhattanDistance(CastVector) > 0) {
+    if (cast && getDistance(CastVector) > 0) {
       const bait = addEntity(World)
       const baitSprite = new Sprite(Texture.from('bait'))
       SpritesByEID[bait] = baitSprite
@@ -81,10 +81,10 @@ export const inputSystem: System = (world) => {
   if (move !== null) {
     if (CastMode) {
       const castTo = addVector2(CastVector, move)
-      for (const mod of [{ x: 0, y: 0 }, Up, Down, Left, Right]) {
+      for (const mod of [GridZero, Up, Down, Left, Right]) {
         if (vectorsAreParallel(mod, move)) continue
         const moddedCastTo = addVector2(castTo, mod)
-        const moddedDistance = getManhattanDistance(moddedCastTo)
+        const moddedDistance = getDistance(moddedCastTo)
         const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
         const tile = Level.get(TileMap.keyFromXY(moddedAbsolute.x, moddedAbsolute.y))
         if (moddedDistance <= 4 && tile !== Tile.Wall) {

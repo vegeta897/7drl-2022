@@ -16,7 +16,7 @@ import {
   Wander,
 } from './ecs/components'
 import { SpritesByEID } from './sprites'
-import { createLevel, EntityMap, OpenFloors, OpenWaters, TileMap } from './level'
+import { createLevel, EntityMap, findPath, OpenFloors, OpenWaters, TileMap } from './level'
 import { RNG } from 'rot-js'
 import { drawHud, initHud } from './hud'
 
@@ -78,7 +78,7 @@ function addFish(x: number, y: number) {
   ActionTimer.timeLeft[fish] = 0
   addComponent(World, Swimmer, fish)
   addComponent(World, Predator, fish)
-  Predator.range[fish] = 3
+  Predator.range[fish] = 4
   addComponent(World, Health, fish)
   Health.max[fish] = 4
   Health.current[fish] = 4

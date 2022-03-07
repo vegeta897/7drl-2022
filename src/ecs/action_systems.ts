@@ -7,9 +7,11 @@ import {
   Health,
   Lunge,
   MoveAction,
+  SeekWater,
   Stunned,
   Swimmer,
   Walker,
+  Wander,
 } from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity } from 'bitecs'
 import { EntityMap, Level, Tile, TileMap } from '../level'
@@ -59,8 +61,8 @@ export const moveSystem: System = (world) => {
         continue
       }
     }
+    const tileType = Level.get(destKey) || 0
     if (MoveAction.noclip[eid] === 0) {
-      const tileType = Level.get(destKey) || 0
       if (tileType === Tile.Wall) continue
       if (tileType === Tile.Water && !hasComponent(world, Swimmer, eid)) continue
       if (tileType === Tile.Floor && !hasComponent(world, Walker, eid)) continue
@@ -69,6 +71,15 @@ export const moveSystem: System = (world) => {
     GridPosition.x[eid] = destX
     GridPosition.y[eid] = destY
     EntityMap.set(destKey, eid)
+    if (hasComponent(world, Fish, eid)) {
+      if (tileType === Tile.Floor) {
+        addComponent(world, SeekWater, eid)
+        SeekWater.distance[eid] = 6
+      } else if (tileType === Tile.Water) {
+        removeComponent(world, Walker, eid)
+        removeComponent(world, SeekWater, eid)
+      }
+    }
     // TODO: Don't animate if enemy doesn't have Visible tag
     addComponent(world, AnimateMovement, eid)
     AnimateMovement.x[eid] = MoveAction.x[eid]
