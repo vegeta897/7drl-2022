@@ -1,5 +1,16 @@
 // Do player or enemy actions
-import { AnimateMovement, GridPosition, Health, Lunge, MoveAction, Swimmer, Walker } from './components'
+import {
+  AnimateMovement,
+  Bait,
+  Fish,
+  GridPosition,
+  Health,
+  Lunge,
+  MoveAction,
+  Stunned,
+  Swimmer,
+  Walker,
+} from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity } from 'bitecs'
 import { EntityMap, Level, Tile, TileMap } from '../level'
 import { PlayerEntity } from '../'
@@ -18,15 +29,30 @@ export const moveSystem: System = (world) => {
       const playerInvolved = [eid, entityAtDestination].includes(PlayerEntity)
       const attackedHasHealth = hasComponent(world, Health, entityAtDestination)
       if (playerInvolved && attackedHasHealth) {
-        console.log(eid, 'attacks', entityAtDestination)
-        const healthLeft = --Health.current[entityAtDestination]
-        console.log(entityAtDestination, 'health left:', healthLeft)
+        let damage = 1
+        if (hasComponent(world, Stunned, entityAtDestination)) {
+          damage = 5
+          removeComponent(world, Stunned, entityAtDestination)
+        }
+        const healthLeft = (Health.current[entityAtDestination] -= damage)
         if (healthLeft <= 0) {
           removeEntity(world, entityAtDestination)
           EntityMap.delete(destKey)
           SpritesByEID[entityAtDestination].destroy()
           delete SpritesByEID[entityAtDestination]
         }
+      } else if (hasComponent(world, Bait, entityAtDestination)) {
+        if (hasComponent(world, Health, eid)) {
+          Health.current[eid] = Math.min(Health.max[eid], Health.current[eid] + 1)
+        }
+        if (hasComponent(world, Fish, eid)) {
+          addComponent(world, Stunned, eid)
+          Stunned.remaining[eid] = 6
+        }
+        removeEntity(world, entityAtDestination)
+        EntityMap.delete(destKey)
+        SpritesByEID[entityAtDestination].destroy()
+        delete SpritesByEID[entityAtDestination]
       }
       removeComponent(world, Lunge, eid)
       continue

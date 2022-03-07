@@ -6,6 +6,7 @@ import { initPixi, OverlaySprites, PixiViewport, WorldSprites } from './pixi'
 import {
   ActionTimer,
   DisplayObject,
+  Fish,
   GridPosition,
   Health,
   Player,
@@ -81,4 +82,5 @@ function addFish(x: number, y: number) {
   addComponent(World, Health, fish)
   Health.max[fish] = 4
   Health.current[fish] = 4
+  addComponent(World, Fish, fish)
 }

@@ -2,19 +2,22 @@ import { createWorld, pipe, registerComponents } from 'bitecs'
 import {
   ActionTimer,
   AnimateMovement,
+  Bait,
   DisplayObject,
+  Fish,
   GridPosition,
   Health,
   Lunge,
   MoveAction,
   Player,
   SensePlayer,
+  Stunned,
   Swimmer,
   Walker,
   Wander,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
-import { runTimer, wanderSystem, sensePlayerSystem, lungeSystem } from './enemy_systems'
+import { runTimer, wanderSystem, sensePlayerSystem, lungeSystem, stunnedSystem } from './enemy_systems'
 import { moveSystem, hudSystem } from './action_systems'
 import { runAnimations } from './anim_systems'
 import { cameraSystem, spriteAddSystem } from './render_systems'
@@ -34,11 +37,14 @@ registerComponents(World, [
   Walker,
   Health,
   Player,
+  Bait,
+  Fish,
+  Stunned,
 ])
 
 const systemGroups = {
   input: inputSystem,
-  enemyTurn: pipe(sensePlayerSystem, lungeSystem, wanderSystem),
+  enemyTurn: pipe(sensePlayerSystem, lungeSystem, wanderSystem, stunnedSystem),
   actions: pipe(moveSystem, hudSystem),
   render: pipe(spriteAddSystem, cameraSystem),
 }

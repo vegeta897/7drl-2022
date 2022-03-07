@@ -1,7 +1,7 @@
 import { addComponent, addEntity, System } from 'bitecs'
 import { onInput, World } from './'
 import { CastTargetSprite, PlayerEntity, TILE_SIZE } from '../'
-import { DisplayObject, GridPosition, MoveAction } from './components'
+import { Bait, DisplayObject, GridPosition, MoveAction } from './components'
 import { addVector2, Down, getManhattanDistance, Left, Right, Up, Vector2, vectorsAreParallel } from '../vector2'
 import { drawHud } from '../hud'
 import { Sprite, Texture } from 'pixi.js'
@@ -71,6 +71,7 @@ export const inputSystem: System = (world) => {
       WorldSprites.addChild(baitSprite)
       addComponent(World, DisplayObject, bait)
       addComponent(World, GridPosition, bait)
+      addComponent(World, Bait, bait)
       GridPosition.x[bait] = playerGrid.x + CastVector.x
       GridPosition.y[bait] = playerGrid.y + CastVector.y
       EntityMap.set(TileMap.keyFromXY(GridPosition.x[bait], GridPosition.y[bait]), bait)

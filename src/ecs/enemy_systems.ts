@@ -1,5 +1,5 @@
 import { addComponent, defineQuery, Not, removeComponent, System } from 'bitecs'
-import { ActionTimer, GridPosition, Lunge, MoveAction, SensePlayer, Walker, Wander } from './components'
+import { ActionTimer, GridPosition, Lunge, MoveAction, SensePlayer, Stunned, Walker, Wander } from './components'
 import { RNG } from 'rot-js'
 import {
   DirectionGrids,
@@ -50,7 +50,7 @@ export async function runTimer() {
   timer = 0
 }
 
-const playerSensers = defineQuery([GridPosition, ActionTimer, SensePlayer, Not(Lunge)])
+const playerSensers = defineQuery([GridPosition, ActionTimer, SensePlayer, Not(Lunge), Not(Stunned)])
 export const sensePlayerSystem: System = (world) => {
   const playerGrid = { x: GridPosition.x[PlayerEntity], y: GridPosition.y[PlayerEntity] }
   for (const eid of playerSensers(world)) {
@@ -62,16 +62,14 @@ export const sensePlayerSystem: System = (world) => {
     addComponent(world, Lunge, eid)
     Lunge.power[eid] = distance
     Lunge.direction[eid] = getCardinalDirection(myGrid, playerGrid)
-    console.log('sensed player! direction', Lunge.direction[eid])
   }
   return world
 }
 
-const lungers = defineQuery([GridPosition, Lunge, ActionTimer])
+const lungers = defineQuery([GridPosition, Lunge, ActionTimer, Not(Stunned)])
 export const lungeSystem: System = (world) => {
   for (const eid of lungers(world)) {
     if (ActionTimer.timeLeft[eid] > 0) continue
-    console.log('executing lunge with power', Lunge.power[eid])
     ActionTimer.timeLeft[eid] = 20
     const dir = DirectionGrids[Lunge.direction[eid]]
     addComponent(world, Walker, eid)
@@ -90,7 +88,7 @@ export const lungeSystem: System = (world) => {
   return world
 }
 
-const wanderers = defineQuery([Wander, GridPosition, ActionTimer, Not(Lunge)])
+const wanderers = defineQuery([Wander, GridPosition, ActionTimer, Not(Lunge), Not(Stunned)])
 export const wanderSystem: System = (world) => {
   for (const eid of wanderers(world)) {
     if (ActionTimer.timeLeft[eid] > 0) continue
@@ -105,6 +103,15 @@ export const wanderSystem: System = (world) => {
     MoveAction.x[eid] = dir.x
     MoveAction.y[eid] = dir.y
     MoveAction.noclip[eid] = 0
+  }
+  return world
+}
+
+const stunned = defineQuery([Stunned])
+export const stunnedSystem: System = (world) => {
+  for (const eid of stunned(world)) {
+    ActionTimer.timeLeft[eid] = 60
+    if (--Stunned.remaining[eid] === 0) removeComponent(world, Stunned, eid)
   }
   return world
 }

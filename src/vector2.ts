@@ -36,8 +36,6 @@ export const vectorsAreParallel = (a: Vector2, b: Vector2): boolean => {
   if ((a.x !== 0 && a.y !== 0) || (b.x !== 0 && b.y !== 0)) return false
   return (a.x === 0) === (b.x === 0)
 }
-console.log(vectorsAreParallel({ x: 0, y: 1 }, { x: 0, y: -1 }), true)
-console.log(vectorsAreParallel({ x: 1, y: 0 }, { x: -1, y: 0 }), true)
 
 export const addVector2 = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x + b.x, y: a.y + b.y })
 export const diffVector2 = (a: Vector2, b: Vector2): Vector2 => ({ x: b.x - a.x, y: b.y - a.y })
