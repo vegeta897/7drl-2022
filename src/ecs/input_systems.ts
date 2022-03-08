@@ -1,7 +1,7 @@
 import { addComponent, addEntity, removeEntity, System } from 'bitecs'
 import { onInput, World } from './'
 import { CastTargetSprite, PlayerEntity, TILE_SIZE } from '../'
-import { Bait, DisplayObject, GridPosition, MoveAction } from './components'
+import { Bait, changeEntGrid, DisplayObject, getEntGrid, GridPosition, MoveAction, setEntGrid } from './components'
 import {
   addVector2,
   DirectionGrids,
@@ -18,7 +18,7 @@ import { drawHud, Log } from '../hud'
 import { Sprite, Texture } from 'pixi.js'
 import { SpritesByEID } from '../sprites'
 import { WorldSprites } from '../pixi'
-import { EntityMap, Level, Tile, TileMap } from '../level'
+import { Level, Tile } from '../level'
 
 export const waitForInput = () => (WaitingForInput = true)
 export let WaitingForInput = true
@@ -35,7 +35,7 @@ export const inputSystem: System = (world) => {
   const button = getButton()
   if (button === null) return world
   const previousState = PlayerState
-  const playerGrid = { x: GridPosition.x[PlayerEntity], y: GridPosition.y[PlayerEntity] }
+  const playerGrid = getEntGrid(PlayerEntity)
   if (button === 'cast') {
     if (previousState === 'idle') {
       CastVector.x = 0
@@ -53,12 +53,10 @@ export const inputSystem: System = (world) => {
         const baitSprite = new Sprite(Texture.from('bait'))
         SpritesByEID[baitEntity] = baitSprite
         WorldSprites.addChild(baitSprite)
+        addComponent(World, Bait, baitEntity)
         addComponent(World, DisplayObject, baitEntity)
         addComponent(World, GridPosition, baitEntity)
-        addComponent(World, Bait, baitEntity)
-        GridPosition.x[baitEntity] = playerGrid.x + CastVector.x
-        GridPosition.y[baitEntity] = playerGrid.y + CastVector.y
-        EntityMap.set(TileMap.keyFromXY(GridPosition.x[baitEntity], GridPosition.y[baitEntity]), baitEntity)
+        setEntGrid(baitEntity, addVector2(playerGrid, CastVector))
         WaitingForInput = false
         PlayerState = 'angling'
       }
@@ -83,10 +81,7 @@ export const inputSystem: System = (world) => {
       for (const mod of [GridZero, Up, Down, Left, Right]) {
         if (vectorsAreParallel(mod, move)) continue
         const moddedCastTo = addVector2(castTo, mod)
-        const moddedDistance = getDistance(moddedCastTo)
-        const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
-        const tile = Level.get(TileMap.keyFromXY(moddedAbsolute.x, moddedAbsolute.y))
-        if (moddedDistance <= 4 && tile !== Tile.Wall) {
+        if (getDistance(moddedCastTo) <= 4 && Level.get(addVector2(playerGrid, moddedCastTo)) !== Tile.Wall) {
           CastVector.x = moddedCastTo.x
           CastVector.y = moddedCastTo.y
           CastTargetSprite.x = CastVector.x * TILE_SIZE
@@ -102,11 +97,9 @@ export const inputSystem: System = (world) => {
         const moddedCastTo = addVector2(angleTo, mod)
         const moddedDistance = getDistance(moddedCastTo)
         const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
-        const tile = Level.get(TileMap.keyFromXY(moddedAbsolute.x, moddedAbsolute.y))
-        if (moddedDistance <= maxAngleDistance && tile !== Tile.Wall) {
+        if (moddedDistance <= maxAngleDistance && Level.get(moddedAbsolute) !== Tile.Wall) {
           CastVector.x = moddedCastTo.x
           CastVector.y = moddedCastTo.y
-          EntityMap.delete(TileMap.keyFromXY(GridPosition.x[baitEntity!], GridPosition.y[baitEntity!]))
           if (moddedDistance === 0) {
             removeEntity(World, baitEntity!)
             SpritesByEID[baitEntity!].destroy()
@@ -115,9 +108,7 @@ export const inputSystem: System = (world) => {
             PlayerState = 'idle'
             Log.unshift('You reeled in the bait')
           } else {
-            GridPosition.x[baitEntity!] = playerGrid.x + CastVector.x
-            GridPosition.y[baitEntity!] = playerGrid.y + CastVector.y
-            EntityMap.set(TileMap.keyFromXY(GridPosition.x[baitEntity!], GridPosition.y[baitEntity!]), baitEntity!)
+            changeEntGrid(baitEntity!, addVector2(playerGrid, CastVector))
           }
           WaitingForInput = false
           break

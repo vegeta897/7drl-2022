@@ -2,7 +2,10 @@
 import {
   AnimateMovement,
   Bait,
+  changeEntGrid,
+  deleteEntGrid,
   Fish,
+  getEntGrid,
   GridPosition,
   Health,
   MoveAction,
@@ -12,7 +15,7 @@ import {
   Walker,
 } from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity } from 'bitecs'
-import { EntityMap, Level, Tile, TileMap } from '../level'
+import { EntityMap, Level, Tile } from '../level'
 import { PlayerEntity } from '../'
 import { SpritesByEID } from '../sprites'
 import { Log, logAttack, logKill } from '../hud'
@@ -25,16 +28,12 @@ export const moveSystem: System = (world) => {
     removeComponent(world, MoveAction, eid)
     const distance = getDistance(move)
     const unitMove = getUnitVector2(move)
-    const startGrid = { x: GridPosition.x[eid], y: GridPosition.y[eid] }
+    const startGrid = getEntGrid(eid)
     let currentGrid = startGrid
     let targetGrid: Vector2
-    let targetGridKey: string
-    let targetTileType: Tile
     for (let i = 0; i < distance; i++) {
       targetGrid = addVector2(currentGrid, unitMove)
-      targetGridKey = TileMap.keyFromXY(targetGrid.x, targetGrid.y)
-      targetTileType = Level.get(targetGridKey!) || 0
-      const targetEntity = EntityMap.get(targetGridKey)
+      const targetEntity = EntityMap.get(targetGrid)
       if (targetEntity !== undefined) {
         const playerInvolved = [eid, targetEntity].includes(PlayerEntity)
         const attackedHasHealth = hasComponent(world, Health, targetEntity)
@@ -48,8 +47,8 @@ export const moveSystem: System = (world) => {
           const healthLeft = (Health.current[targetEntity] -= damage)
           if (healthLeft <= 0) {
             if (eid === PlayerEntity) logKill(targetEntity)
+            deleteEntGrid(targetEntity)
             removeEntity(world, targetEntity)
-            EntityMap.delete(targetGridKey)
             SpritesByEID[targetEntity].destroy()
             delete SpritesByEID[targetEntity]
           }
@@ -64,14 +63,15 @@ export const moveSystem: System = (world) => {
             Stunned.remaining[eid] = 6
             Log.unshift('The fish is eating the bait')
           }
+          deleteEntGrid(targetEntity)
           removeEntity(world, targetEntity)
-          EntityMap.delete(targetGridKey)
           SpritesByEID[targetEntity].destroy()
           delete SpritesByEID[targetEntity]
         } else {
           break
         }
       }
+      const targetTileType = Level.get(targetGrid)
       if (MoveAction.noclip[eid] === 0) {
         if (targetTileType === Tile.Wall) break
         if (targetTileType === Tile.Water && !hasComponent(world, Swimmer, eid)) break
@@ -80,12 +80,8 @@ export const moveSystem: System = (world) => {
       currentGrid = targetGrid
     }
     if (vectorsAreEqual(startGrid, currentGrid)) continue
-    EntityMap.delete(TileMap.keyFromXY(GridPosition.x[eid], GridPosition.y[eid]))
-    GridPosition.x[eid] = currentGrid.x
-    GridPosition.y[eid] = currentGrid.y
-    const currentGridKey = TileMap.keyFromXY(currentGrid.x, currentGrid.y)
-    EntityMap.set(currentGridKey, eid)
-    const currentTileType = Level.get(currentGridKey) || 0
+    changeEntGrid(eid, currentGrid)
+    const currentTileType = Level.get(currentGrid) || 0
     if (hasComponent(world, Fish, eid)) {
       if (currentTileType === Tile.Floor) {
         addComponent(world, SeekWater, eid)

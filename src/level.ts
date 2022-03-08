@@ -4,12 +4,13 @@ import { TILE_SIZE } from './'
 import { WorldSprites } from './pixi'
 import { getDiamondAround, getSquareAround, Vector2 } from './vector2'
 import Dijkstra from 'rot-js/lib/path/dijkstra'
+import { GridMap } from './map'
 
 const MAP_WIDTH = 80
 const MAP_HEIGHT = 80
 
-export let Level: Map<string, Tile>
-export let EntityMap: Map<string, number>
+export let Level: GridMap<Tile, Tile>
+export let EntityMap: GridMap<number>
 
 export let OpenFloors: Vector2[] = []
 export let OpenWaters: Vector2[] = []
@@ -20,13 +21,13 @@ export function createLevel() {
   for (let i = 0; i < 2; i++) {
     walls.create()
   }
-  Level = new Map()
-  EntityMap = new Map()
+  Level = new GridMap(Tile.Floor)
+  EntityMap = new GridMap()
   const wallTexture = Texture.from('wall')
   walls.connect((x, y, value) => {
     const isBoundary = x === 0 || x === MAP_WIDTH - 1 || y === 0 || y === MAP_HEIGHT - 1
     if (!isBoundary && value === 1) return
-    Level.set(TileMap.keyFromXY(x, y), Tile.Wall)
+    Level.set({ x, y }, Tile.Wall)
     const wallSprite = new Sprite(wallTexture)
     wallSprite.x = x * TILE_SIZE
     wallSprite.y = y * TILE_SIZE
@@ -40,9 +41,8 @@ export function createLevel() {
   }
   water.create((x, y, value) => {
     if (value === 0) return
-    const gridKey = TileMap.keyFromXY(x, y)
-    if (Level.has(gridKey)) return
-    Level.set(gridKey, Tile.Water)
+    if (Level.has({ x, y })) return
+    Level.set({ x, y }, Tile.Water)
     const waterSprite = new Sprite(waterTexture)
     waterSprite.x = x * TILE_SIZE
     waterSprite.y = y * TILE_SIZE
@@ -51,11 +51,11 @@ export function createLevel() {
   for (let x = 2; x < MAP_WIDTH - 3; x++) {
     for (let y = 2; y < MAP_HEIGHT - 3; y++) {
       const diamond2 = getDiamondAround({ x, y }, 2)
-      if (diamond2.every((g) => !Level.get(TileMap.keyFromXY(g.x, g.y)))) {
+      if (diamond2.every((g) => !Level.get(g))) {
         OpenFloors.push({ x, y })
       }
       const square3x3 = getSquareAround({ x, y }, 1)
-      if (square3x3.every((g) => Level.get(TileMap.keyFromXY(g.x, g.y)) === Tile.Water)) {
+      if (square3x3.every((g) => Level.get(g) === Tile.Water)) {
         OpenWaters.push({ x, y })
       }
     }
@@ -86,30 +86,11 @@ export function findPath(from: Vector2, to: Vector2, selfEntity: number, distanc
     to.y,
     (x, y) => {
       if (x === from.x && y === from.y) return true
-      return Level.get(x + ':' + y) !== Tile.Wall && !EntityMap.has(x + ':' + y)
+      return Level.get({ x, y }) !== Tile.Wall && !EntityMap.has({ x, y })
     },
     { topology: 4 }
   )
   const path: Vector2[] = []
   map.compute(from.x, from.y, (x, y) => (x !== from.x || y !== from.y) && path.length < distance && path.push({ x, y }))
   return path
-}
-
-export class TileMap {
-  data: Map<string, TileData> = new Map()
-  has(x: number, y: number): boolean {
-    return this.data.has(TileMap.keyFromXY(x, y))
-  }
-  get(x: number, y: number): TileData | undefined {
-    return this.data.get(TileMap.keyFromXY(x, y))
-  }
-  set(x: number, y: number, tile: TileData): void {
-    this.data.set(TileMap.keyFromXY(x, y), tile)
-  }
-  addTile(tile: TileData): void {
-    this.data.set(TileMap.keyFromXY(tile.x, tile.y), tile)
-  }
-  static keyFromXY(x: number, y: number) {
-    return x + ':' + y
-  }
 }

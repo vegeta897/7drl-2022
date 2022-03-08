@@ -3,11 +3,24 @@ import { World } from './ecs'
 import { addComponent, addEntity } from 'bitecs'
 import { Sprite, Texture } from 'pixi.js'
 import { initPixi, OverlaySprites, PixiViewport, WorldSprites } from './pixi'
-import { DisplayObject, Fish, GridPosition, Health, Player, Predator, Swimmer, Walker, Wander } from './ecs/components'
+import {
+  DisplayObject,
+  Fish,
+  GridPosition,
+  Health,
+  Player,
+  Predator,
+  setEntGrid,
+  Swimmer,
+  Walker,
+  Wander,
+} from './ecs/components'
 import { SpritesByEID } from './sprites'
-import { createLevel, EntityMap, OpenFloors, OpenWaters, TileMap } from './level'
+import { createLevel, EntityMap, OpenFloors, OpenWaters } from './level'
 import { RNG } from 'rot-js'
 import { drawHud, initHud } from './hud'
+import { GridMap } from './map'
+import { Vector2 } from './vector2'
 
 export const TILE_SIZE = 16
 
@@ -27,10 +40,7 @@ window.onload = async (): Promise<void> => {
   addComponent(World, Player, PlayerEntity)
   addComponent(World, DisplayObject, PlayerEntity)
   addComponent(World, GridPosition, PlayerEntity)
-  const playerStart = RNG.getItem(OpenFloors)!
-  GridPosition.x[PlayerEntity] = playerStart.x
-  GridPosition.y[PlayerEntity] = playerStart.y
-  EntityMap.set(TileMap.keyFromXY(playerStart.x, playerStart.y), PlayerEntity)
+  setEntGrid(PlayerEntity, RNG.getItem(OpenFloors)!)
   addComponent(World, Walker, PlayerEntity)
   addComponent(World, Health, PlayerEntity)
   Health.max[PlayerEntity] = 10
@@ -40,7 +50,7 @@ window.onload = async (): Promise<void> => {
 
   for (let i = 0; i < OpenWaters.length / 4; i++) {
     const fishStart = RNG.getItem(OpenWaters)!
-    addFish(fishStart.x, fishStart.y)
+    addFish(fishStart)
   }
 
   CastTargetSprite = new Sprite(Texture.from('target'))
@@ -50,16 +60,14 @@ window.onload = async (): Promise<void> => {
   drawHud()
 }
 
-function addFish(x: number, y: number) {
+function addFish(grid: Vector2) {
   const fish = addEntity(World)
   const fishSprite = new Sprite(Texture.from('fish'))
   SpritesByEID[fish] = fishSprite
   WorldSprites.addChild(fishSprite)
   addComponent(World, DisplayObject, fish)
   addComponent(World, GridPosition, fish)
-  GridPosition.x[fish] = x
-  GridPosition.y[fish] = y
-  EntityMap.set(TileMap.keyFromXY(x, y), fish)
+  setEntGrid(fish, grid)
   addComponent(World, Wander, fish)
   Wander.maxChance[fish] = 10
   Wander.chance[fish] = RNG.getUniformInt(0, 10)

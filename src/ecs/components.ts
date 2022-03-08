@@ -1,4 +1,6 @@
 import { ComponentType, defineComponent, Types } from 'bitecs'
+import { Vector2 } from '../vector2'
+import { EntityMap } from '../level'
 
 export const Player = defineComponent()
 
@@ -24,48 +26,32 @@ export const Walker = defineComponent()
 export const Swimmer = defineComponent()
 export const Wander = defineComponent({ chance: Types.ui8, maxChance: Types.ui8 })
 export const Predator = defineComponent({ range: Types.ui8 })
-export const Lunge = defineComponent({ power: Types.ui8, direction: Types.ui8 })
 export const Stunned = defineComponent({ remaining: Types.ui16 })
 export const SeekWater = defineComponent({ distance: Types.ui8 })
 
 export const Fish = defineComponent()
 export const Bait = defineComponent()
 
-class GridProxy {
-  private store: ComponentType<typeof GridC>
-  eid: number
-  constructor(store: ComponentType<typeof GridC>, eid: number) {
-    this.eid = eid
-    this.store = store
-  }
-  get x() {
-    return this.store.x[this.eid]
-  }
-  set x(val) {
-    this.store.x[this.eid] = val
-  }
-  get y() {
-    return this.store.y[this.eid]
-  }
-  set y(val) {
-    this.store.y[this.eid] = val
-  }
+export const vector2FromC = (component: ComponentType<typeof GridC>, eid: number) => ({
+  x: component.x[eid],
+  y: component.y[eid],
+})
+
+export function getEntGrid(eid: number) {
+  return vector2FromC(GridPosition, eid)
 }
 
-export class GridPositionProxy extends GridProxy {
-  constructor(eid: number) {
-    super(GridPosition, eid)
-  }
+export function changeEntGrid(eid: number, grid: Vector2) {
+  EntityMap.delete(getEntGrid(eid))
+  setEntGrid(eid, grid)
 }
 
-export class MoveActionProxy extends GridProxy {
-  constructor(eid: number) {
-    super(GridPosition, eid)
-  }
+export function setEntGrid(eid: number, grid: Vector2) {
+  GridPosition.x[eid] = grid.x
+  GridPosition.y[eid] = grid.y
+  EntityMap.set(grid, eid)
 }
 
-export class AnimateMovementProxy extends GridProxy {
-  constructor(eid: number) {
-    super(GridPosition, eid)
-  }
+export function deleteEntGrid(eid: number) {
+  EntityMap.delete(getEntGrid(eid))
 }
