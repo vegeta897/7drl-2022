@@ -1,5 +1,5 @@
 import { addComponent, defineQuery, hasComponent, Not, removeComponent, System } from 'bitecs'
-import { Bait, getEntGrid, GridPosition, MoveAction, Predator, SeekWater, Stunned, Walker, Wander } from './components'
+import { Bait, getEntGrid, GridPosition, MoveAction, Predator, SeekWater, Stunned, CanWalk, Wander } from './components'
 import { RNG } from 'rot-js'
 import {
   diffVector2,
@@ -36,7 +36,7 @@ export const predatorSystem: System = (world) => {
       MoveAction.x[eid] = move.x
       MoveAction.y[eid] = move.y
       MoveAction.noclip[eid] = 0
-      addComponent(world, Walker, eid)
+      addComponent(world, CanWalk, eid)
       Log.unshift('The fish lunges out of the water!')
       break
     }

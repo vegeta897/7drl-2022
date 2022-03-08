@@ -11,8 +11,8 @@ import {
   MoveAction,
   SeekWater,
   Stunned,
-  Swimmer,
-  Walker,
+  CanSwim,
+  CanWalk,
 } from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity, entityExists } from 'bitecs'
 import { EntityMap, Level } from '../level'
@@ -73,8 +73,8 @@ export const moveSystem: System = (world) => {
       const targetTile = Level.get(targetGrid)
       if (MoveAction.noclip[eid] === 0) {
         if (targetTile.solid) break
-        if (targetTile.type === Tile.Water && !hasComponent(world, Swimmer, eid)) break
-        if (targetTile.type === Tile.Floor && !hasComponent(world, Walker, eid)) break
+        if (targetTile.type === Tile.Water && !hasComponent(world, CanSwim, eid)) break
+        if (targetTile.type === Tile.Floor && !hasComponent(world, CanWalk, eid)) break
       }
       currentGrid = targetGrid
     }
@@ -93,7 +93,7 @@ export const moveSystem: System = (world) => {
         addComponent(world, SeekWater, eid)
         SeekWater.distance[eid] = 6
       } else if (currentTile.type === Tile.Water) {
-        removeComponent(world, Walker, eid)
+        removeComponent(world, CanWalk, eid)
         removeComponent(world, SeekWater, eid)
       }
     }

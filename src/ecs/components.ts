@@ -22,8 +22,8 @@ export const AnimateMovement = defineComponent({
 })
 
 export const Health = defineComponent({ current: Types.ui16, max: Types.ui16 })
-export const Walker = defineComponent()
-export const Swimmer = defineComponent()
+export const CanWalk = defineComponent()
+export const CanSwim = defineComponent()
 export const Wander = defineComponent({ chance: Types.ui8, maxChance: Types.ui8 })
 export const Predator = defineComponent({ range: Types.ui8 })
 export const Stunned = defineComponent({ remaining: Types.ui16 })

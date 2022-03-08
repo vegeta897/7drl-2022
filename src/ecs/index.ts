@@ -10,8 +10,8 @@ import {
   Predator,
   SeekWater,
   Stunned,
-  Swimmer,
-  Walker,
+  CanSwim,
+  CanWalk,
   Wander,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
@@ -29,10 +29,10 @@ registerComponents(World, [
   GridPosition,
   MoveAction,
   AnimateMovement,
-  Swimmer,
+  CanSwim,
   Wander,
   Predator,
-  Walker,
+  CanWalk,
   Health,
   Fish,
   Stunned,

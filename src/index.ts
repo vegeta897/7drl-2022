@@ -10,8 +10,8 @@ import {
   Health,
   Predator,
   setEntGrid,
-  Swimmer,
-  Walker,
+  CanSwim,
+  CanWalk,
   Wander,
 } from './ecs/components'
 import { getTexture, resetSprites, SpritesByEID } from './sprites'
@@ -44,8 +44,8 @@ export function startGame() {
   addComponent(World, DisplayObject, PlayerEntity)
   addComponent(World, GridPosition, PlayerEntity)
   setEntGrid(PlayerEntity, RNG.getItem(OpenFloors)!)
-  addComponent(World, Walker, PlayerEntity)
-  addComponent(World, Swimmer, PlayerEntity)
+  addComponent(World, CanWalk, PlayerEntity)
+  addComponent(World, CanSwim, PlayerEntity)
   addComponent(World, Health, PlayerEntity)
   Health.max[PlayerEntity] = PLAYER_HEALTH
   Health.current[PlayerEntity] = PLAYER_HEALTH
@@ -91,7 +91,7 @@ function addFish(grid: Vector2) {
   addComponent(World, Wander, fish)
   Wander.maxChance[fish] = 10
   Wander.chance[fish] = RNG.getUniformInt(0, 10)
-  addComponent(World, Swimmer, fish)
+  addComponent(World, CanSwim, fish)
   addComponent(World, Predator, fish)
   Predator.range[fish] = 4
   addComponent(World, Health, fish)
