@@ -20,14 +20,13 @@ import { RNG } from 'rot-js'
 import { drawHud, initHud, resetHud } from './hud'
 import { Vector2 } from './vector2'
 import { resetFOV } from './fov'
-import { resetCasting } from './casting'
+import { initCasting, resetCasting } from './casting'
 import { setPlayerState } from './ecs/input_systems'
 
 export const TILE_SIZE = 16
 
 export let PlayerEntity: number
 export let PlayerSprite: Sprite
-export let CastTargetSprite: Sprite
 
 type GameStates = 'Playing' | 'Losing' | 'Lost' | 'Won'
 export let GameState: GameStates
@@ -51,15 +50,12 @@ export function startGame() {
   Health.current[PlayerEntity] = PLAYER_HEALTH
 
   PixiViewport.moveCenter(PlayerSprite)
+  initCasting()
 
   for (let i = 0; i < OpenWaters.length / 4; i++) {
     const fishStart = RNG.getItem(OpenWaters)!
     addFish(fishStart)
   }
-
-  CastTargetSprite = new Sprite(Texture.from('target'))
-  PlayerSprite.addChild(CastTargetSprite)
-  CastTargetSprite.visible = false
 
   GameState = 'Playing'
   drawHud()

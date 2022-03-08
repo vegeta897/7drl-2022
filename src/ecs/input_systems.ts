@@ -1,10 +1,10 @@
 import { addComponent, System } from 'bitecs'
 import { LoopState, onInput, World } from './'
-import { CastTargetSprite, GameState, PlayerEntity, resetGame } from '../'
+import { GameState, PlayerEntity, resetGame } from '../'
 import { MoveAction } from './components'
 import { DirectionGrids, DirectionNames } from '../vector2'
 import { drawHud } from '../hud'
-import { angleBait, beginCast, confirmCast, cutLine, moveCastTarget } from '../casting'
+import { angleBait, beginCast, cancelCast, confirmCast, cutLine, moveCastTarget } from '../casting'
 
 export const waitForInput = () => {
   WaitingForInput = true
@@ -37,7 +37,8 @@ export const inputSystem: System = (world) => {
       break
     case 'exit':
       PlayerState = 'Idle'
-      CastTargetSprite.visible = false
+      if (previousState === 'Casting') cancelCast()
+      if (previousState === 'Angling') cutLine()
       break
     default:
       const move = DirectionGrids[DirectionNames.indexOf(button)]

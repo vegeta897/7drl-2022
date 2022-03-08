@@ -21,7 +21,8 @@ import { runAnimations } from './anim_systems'
 import { cameraSystem, fadeSystem, fovSystem, spriteAddSystem, spriteRemoveSystem } from './render_systems'
 import { drawHud } from '../hud'
 
-export const World = createWorld()
+// @ts-ignore
+export const World = createWorld(1000)
 
 registerComponents(World, [
   DisplayObject,

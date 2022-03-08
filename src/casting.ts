@@ -1,7 +1,7 @@
-import { CastTargetSprite, PlayerEntity, TILE_SIZE } from './'
+import { PlayerEntity, PlayerSprite, TILE_SIZE } from './'
 import { addVector2, Down, getDistance, GridZero, Left, Right, Up, Vector2, vectorsAreParallel } from './vector2'
 import { World } from './ecs'
-import { Sprite, Texture } from 'pixi.js'
+import { Graphics, Sprite, Texture } from 'pixi.js'
 import { SpritesByEID } from './sprites'
 import { WorldSprites } from './pixi'
 import {
@@ -20,15 +20,25 @@ import { Log } from './hud'
 import { Tile } from './map'
 
 export const CastVector = { x: 0, y: 0 }
+let castTargetSprite: Sprite
+let fishingLineGraphics: Graphics
 
 export let BaitEntity: number | null = null
+
+export function initCasting() {
+  castTargetSprite = new Sprite(Texture.from('target'))
+  PlayerSprite.addChild(castTargetSprite)
+  castTargetSprite.visible = false
+  fishingLineGraphics = new Graphics()
+  PlayerSprite.addChild(fishingLineGraphics)
+}
 
 export function beginCast() {
   CastVector.x = 0
   CastVector.y = 0
-  CastTargetSprite.x = 0
-  CastTargetSprite.y = 0
-  CastTargetSprite.visible = true
+  castTargetSprite.x = 0
+  castTargetSprite.y = 0
+  castTargetSprite.visible = true
   setPlayerState('Casting')
 }
 
@@ -41,8 +51,8 @@ export function moveCastTarget(move: Vector2) {
     if (getDistance(moddedCastTo) <= 4 && Level.get(addVector2(playerGrid, moddedCastTo)).type !== Tile.Wall) {
       CastVector.x = moddedCastTo.x
       CastVector.y = moddedCastTo.y
-      CastTargetSprite.x = CastVector.x * TILE_SIZE
-      CastTargetSprite.y = CastVector.y * TILE_SIZE
+      castTargetSprite.x = CastVector.x * TILE_SIZE
+      castTargetSprite.y = CastVector.y * TILE_SIZE
       break
     }
   }
@@ -50,7 +60,7 @@ export function moveCastTarget(move: Vector2) {
 
 export function confirmCast() {
   setPlayerState('Idle')
-  CastTargetSprite.visible = false
+  castTargetSprite.visible = false
   if (getDistance(CastVector) > 0) {
     BaitEntity = addEntity(World)
     const baitSprite = new Sprite(Texture.from('bait'))
@@ -62,7 +72,12 @@ export function confirmCast() {
     setEntGrid(BaitEntity, addVector2(getEntGrid(PlayerEntity), CastVector))
     processInput()
     setPlayerState('Angling')
+    drawFishingLine()
   }
+}
+
+export function cancelCast() {
+  castTargetSprite.visible = false
 }
 
 export function angleBait(move: Vector2) {
@@ -87,7 +102,9 @@ export function angleBait(move: Vector2) {
           BaitEntity = null
           setPlayerState('Idle')
           Log.unshift('You reeled in the bait')
+          fishingLineGraphics.clear()
         } else {
+          drawFishingLine()
           changeEntGrid(BaitEntity!, addVector2(playerGrid, CastVector))
         }
         processInput()
@@ -97,9 +114,27 @@ export function angleBait(move: Vector2) {
   }
 }
 
+export function drawFishingLine() {
+  fishingLineGraphics.cacheAsBitmap = false
+  fishingLineGraphics.clear()
+  fishingLineGraphics.lineStyle(1, 0xb3b9d1)
+  fishingLineGraphics.moveTo(13, 0)
+  fishingLineGraphics.bezierCurveTo(
+    13 + (CastVector.x / 3) * TILE_SIZE,
+    TILE_SIZE / 2 + Math.max(0, CastVector.y / 2 + 1) * TILE_SIZE,
+    TILE_SIZE / 2 + CastVector.x * TILE_SIZE,
+    (CastVector.y + 0.5) * TILE_SIZE,
+    (CastVector.x + 0.5) * TILE_SIZE,
+    (CastVector.y + 0.5) * TILE_SIZE
+  )
+  fishingLineGraphics.cacheAsBitmap = true
+}
+
 export function cutLine() {
   // Should cutting line take a turn?
   BaitEntity = null
+  fishingLineGraphics.cacheAsBitmap = false
+  fishingLineGraphics.clear()
   setPlayerState('Idle')
 }
 
@@ -107,4 +142,7 @@ export function resetCasting() {
   CastVector.x = 0
   CastVector.y = 0
   BaitEntity = null
+  castTargetSprite.destroy()
+  fishingLineGraphics.cacheAsBitmap = false
+  fishingLineGraphics.destroy()
 }
