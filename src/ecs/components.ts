@@ -2,7 +2,7 @@ import { ComponentType, defineComponent, Types } from 'bitecs'
 import { Vector2 } from '../vector2'
 import { EntityMap } from '../level'
 import { PlayerEntity } from '../index'
-import { triggerFOVUpdate } from '../fov'
+import { triggerEntityUpdate, triggerTileUpdate } from '../fov'
 
 export const DisplayObject = defineComponent()
 
@@ -51,7 +51,8 @@ export function setEntGrid(eid: number, grid: Vector2) {
   GridPosition.y[eid] = grid.y
   GridPosition.dirty[eid] = 1
   EntityMap.set(grid, eid)
-  if (eid === PlayerEntity) triggerFOVUpdate()
+  if (eid === PlayerEntity) triggerTileUpdate()
+  else triggerEntityUpdate()
 }
 
 export function deleteEntGrid(eid: number) {

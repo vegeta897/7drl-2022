@@ -60,6 +60,7 @@ window.onload = async (): Promise<void> => {
 function addFish(grid: Vector2) {
   const fish = addEntity(World)
   const fishSprite = new Sprite(Texture.from('fish'))
+  fishSprite.alpha = 0
   SpritesByEID[fish] = fishSprite
   WorldSprites.addChild(fishSprite)
   addComponent(World, DisplayObject, fish)

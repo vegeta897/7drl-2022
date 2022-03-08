@@ -9,7 +9,7 @@ export let HUD: Display
 export let Log: string[]
 
 export function initHud() {
-  HUD = new Display({ width: 30, height: 30, fontSize: 20, fontStyle: 'bold', bg: '#01162c' })
+  HUD = new Display({ width: 30, height: 30, fontSize: 20, fontStyle: 'bold', bg: '#102b3b' })
   document.body.appendChild(HUD.getContainer()!)
   Log = []
 }

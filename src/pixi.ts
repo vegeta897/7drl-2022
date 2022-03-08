@@ -10,7 +10,7 @@ const gameWidth = 640
 const gameHeight = 640
 
 export const PixiApp = new Application({
-  backgroundColor: 0x012345,
+  backgroundColor: 0x0b1a2a,
   width: gameWidth,
   height: gameHeight,
 })
