@@ -14,9 +14,9 @@ import {
   Swimmer,
   Walker,
 } from './components'
-import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity } from 'bitecs'
+import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity, entityExists } from 'bitecs'
 import { EntityMap, Level } from '../level'
-import { PlayerEntity } from '../'
+import { PlayerEntity, setGameState } from '../'
 import { Log, logAttack, logKill } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
@@ -95,6 +95,13 @@ export const moveSystem: System = (world) => {
     AnimateMovement.y[eid] = MoveAction.y[eid]
     AnimateMovement.elapsed[eid] = 0
     AnimateMovement.length[eid] = 120
+  }
+  return world
+}
+
+export const gameSystem: System = (world) => {
+  if (!entityExists(world, PlayerEntity)) {
+    setGameState('Losing')
   }
   return world
 }

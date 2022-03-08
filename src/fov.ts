@@ -89,3 +89,7 @@ export function tweenVisibility(delta: number) {
   })
   tweeningFOV = tweeningSprites.size > 0
 }
+
+export function resetFOV() {
+  prevVisibilityMap = new GridMap()
+}

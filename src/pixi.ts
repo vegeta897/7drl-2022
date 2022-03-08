@@ -21,20 +21,27 @@ export const PixiViewport = new Viewport({
 })
 PixiViewport.setZoom(2)
 
-export const WorldSprites = new Container()
-export const OverlaySprites = new Container()
-PixiViewport.addChild(WorldSprites)
-PixiViewport.addChild(OverlaySprites)
+export let WorldSprites: Container
+export let OverlaySprites: Container
 
 PixiApp.stage.addChild(PixiViewport)
 
 export async function initPixi() {
   await loadGameAssets()
-
+  resetPixi()
   document.body.appendChild(PixiApp.view)
   Ticker.shared.add(() => {
     runRender()
   })
+}
+
+export function resetPixi() {
+  WorldSprites?.destroy({ children: true })
+  OverlaySprites?.destroy({ children: true })
+  WorldSprites = new Container()
+  OverlaySprites = new Container()
+  PixiViewport.addChild(WorldSprites)
+  PixiViewport.addChild(OverlaySprites)
 }
 
 async function loadGameAssets(): Promise<void> {

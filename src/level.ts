@@ -13,8 +13,8 @@ const MAP_HEIGHT = 80
 export let Level: TileMap
 export let EntityMap: GridMap<number>
 
-export let OpenFloors: Vector2[] = []
-export let OpenWaters: Vector2[] = []
+export let OpenFloors: Vector2[]
+export let OpenWaters: Vector2[]
 
 export function createLevel() {
   EntityMap = new GridMap()
@@ -53,6 +53,8 @@ export function createLevel() {
         return waterTexture
     }
   }
+  OpenFloors = []
+  OpenWaters = []
   for (let x = 0; x < MAP_WIDTH; x++) {
     for (let y = 0; y < MAP_HEIGHT; y++) {
       const tile = Level.get({ x, y })

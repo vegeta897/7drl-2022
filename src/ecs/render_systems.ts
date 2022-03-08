@@ -1,11 +1,13 @@
 import { defineQuery, enterQuery, exitQuery, System } from 'bitecs'
-import { PlayerSprite, TILE_SIZE } from '../'
-import { PixiViewport } from '../pixi'
+import { GameState, PlayerSprite, setGameState, TILE_SIZE } from '../'
+import { PixiViewport, WorldSprites } from '../pixi'
 import { Util } from 'rot-js'
 import { DisplayObject, GridPosition } from './components'
 import { SpritesByEID } from '../sprites'
 import { tweenVisibility, updateVisibility } from '../fov'
 import { Ticker } from 'pixi.js'
+import { cubicOut } from '@gamestdio/easing'
+import { drawHud } from '../hud'
 
 const PADDING = 1.25 / 3 // Portion of screen to pad
 const PAD_X = Math.floor(PixiViewport.screenWidthInWorldPixels / 2 - PixiViewport.screenWidthInWorldPixels * PADDING)
@@ -48,6 +50,20 @@ export const cameraSystem: System = (world) => {
       x: Util.clamp(PixiViewport.center.x, centerX - PAD_X, centerX + PAD_X),
       y: Util.clamp(PixiViewport.center.y, centerY - PAD_Y, centerY + PAD_Y),
     })
+  }
+  return world
+}
+
+let fadeProgress = 0
+export const fadeSystem: System = (world) => {
+  if (GameState === 'Losing') {
+    fadeProgress = Math.min(1, fadeProgress + Ticker.shared.deltaMS / 5000)
+    WorldSprites.alpha = cubicOut(1 - fadeProgress)
+    if (fadeProgress === 1) {
+      fadeProgress = 0
+      setGameState('Lost')
+      drawHud()
+    }
   }
   return world
 }

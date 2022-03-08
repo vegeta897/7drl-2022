@@ -29,7 +29,7 @@ export function beginCast() {
   CastTargetSprite.x = 0
   CastTargetSprite.y = 0
   CastTargetSprite.visible = true
-  setPlayerState('casting')
+  setPlayerState('Casting')
 }
 
 export function moveCastTarget(move: Vector2) {
@@ -49,7 +49,7 @@ export function moveCastTarget(move: Vector2) {
 }
 
 export function confirmCast() {
-  setPlayerState('idle')
+  setPlayerState('Idle')
   CastTargetSprite.visible = false
   if (getDistance(CastVector) > 0) {
     BaitEntity = addEntity(World)
@@ -61,7 +61,7 @@ export function confirmCast() {
     addComponent(World, GridPosition, BaitEntity)
     setEntGrid(BaitEntity, addVector2(getEntGrid(PlayerEntity), CastVector))
     processInput()
-    setPlayerState('angling')
+    setPlayerState('Angling')
   }
 }
 
@@ -69,7 +69,7 @@ export function angleBait(move: Vector2) {
   const playerGrid = getEntGrid(PlayerEntity)
   if (!entityExists(World, BaitEntity!)) {
     BaitEntity = null
-    setPlayerState('idle')
+    setPlayerState('Idle')
   } else {
     const angleTo = addVector2(CastVector, move)
     const maxAngleDistance = getDistance(CastVector)
@@ -85,7 +85,7 @@ export function angleBait(move: Vector2) {
           deleteEntGrid(BaitEntity!)
           removeEntity(World, BaitEntity!)
           BaitEntity = null
-          setPlayerState('idle')
+          setPlayerState('Idle')
           Log.unshift('You reeled in the bait')
         } else {
           changeEntGrid(BaitEntity!, addVector2(playerGrid, CastVector))
@@ -100,5 +100,11 @@ export function angleBait(move: Vector2) {
 export function cutLine() {
   // Should cutting line take a turn?
   BaitEntity = null
-  setPlayerState('idle')
+  setPlayerState('Idle')
+}
+
+export function resetCasting() {
+  CastVector.x = 0
+  CastVector.y = 0
+  BaitEntity = null
 }

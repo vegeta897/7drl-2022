@@ -1,6 +1,6 @@
 import { addComponent, System } from 'bitecs'
-import { GameState, onInput, World } from './'
-import { CastTargetSprite, PlayerEntity } from '../'
+import { LoopState, onInput, World } from './'
+import { CastTargetSprite, GameState, PlayerEntity, resetGame } from '../'
 import { MoveAction } from './components'
 import { DirectionGrids, DirectionNames } from '../vector2'
 import { drawHud } from '../hud'
@@ -13,35 +13,37 @@ export const waitForInput = () => {
 export const processInput = () => (WaitingForInput = false)
 export let WaitingForInput = true
 
-type PlayerStates = 'idle' | 'casting' | 'angling'
-export let PlayerState: PlayerStates = 'idle'
+type PlayerStates = 'Idle' | 'Casting' | 'Angling'
+export let PlayerState: PlayerStates = 'Idle'
 export const setPlayerState = (state: PlayerStates) => (PlayerState = state)
 
 export const inputSystem: System = (world) => {
   buttonQueued = false
   if (!button) return world
+  if (GameState !== 'Playing' && button !== 'confirm') return world
   const previousState = PlayerState
   switch (button) {
     case 'cast':
-      if (previousState === 'idle') beginCast()
-      if (previousState === 'casting') confirmCast()
-      if (previousState === 'angling') cutLine()
+      if (previousState === 'Idle') beginCast()
+      if (previousState === 'Casting') confirmCast()
+      if (previousState === 'Angling') cutLine()
       break
     case 'wait':
       WaitingForInput = false
       break
     case 'confirm':
-      if (previousState === 'casting') confirmCast()
+      if (previousState === 'Casting') confirmCast()
+      if (GameState === 'Lost') resetGame()
       break
     case 'exit':
-      PlayerState = 'idle'
+      PlayerState = 'Idle'
       CastTargetSprite.visible = false
       break
     default:
       const move = DirectionGrids[DirectionNames.indexOf(button)]
-      if (previousState === 'casting') {
+      if (previousState === 'Casting') {
         moveCastTarget(move)
-      } else if (previousState === 'angling') {
+      } else if (previousState === 'Angling') {
         angleBait(move)
       } else {
         const boost = Keys.has('ControlLeft') || Keys.has('ControlRight')
@@ -71,7 +73,7 @@ window.addEventListener('keydown', async (e) => {
   button = getButton(e.code)
   if (button) {
     if (WaitingForInput) await onInput()
-    else if (GameState === 'AnimateEnemies') buttonQueued = true
+    else if (LoopState === 'AnimateEnemies') buttonQueued = true
   }
 })
 window.addEventListener('keyup', (e) => {

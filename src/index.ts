@@ -1,8 +1,8 @@
 import './style.css'
 import { World } from './ecs'
-import { addComponent, addEntity } from 'bitecs'
+import { addComponent, addEntity, resetWorld } from 'bitecs'
 import { Sprite, Texture } from 'pixi.js'
-import { initPixi, OverlaySprites, PixiViewport, WorldSprites } from './pixi'
+import { initPixi, OverlaySprites, PixiViewport, resetPixi, WorldSprites } from './pixi'
 import {
   DisplayObject,
   Fish,
@@ -14,24 +14,31 @@ import {
   Walker,
   Wander,
 } from './ecs/components'
-import { SpritesByEID } from './sprites'
+import { resetSprites, SpritesByEID } from './sprites'
 import { createLevel, OpenFloors, OpenWaters } from './level'
 import { RNG } from 'rot-js'
-import { drawHud, initHud } from './hud'
+import { drawHud, initHud, resetHud } from './hud'
 import { Vector2 } from './vector2'
+import { resetFOV } from './fov'
+import { resetCasting } from './casting'
+import { setPlayerState } from './ecs/input_systems'
 
 export const TILE_SIZE = 16
 
-export const PlayerEntity = addEntity(World)
+export let PlayerEntity: number
 export let PlayerSprite: Sprite
 export let CastTargetSprite: Sprite
 
-window.onload = async (): Promise<void> => {
-  initHud()
-  await initPixi()
+type GameStates = 'Playing' | 'Losing' | 'Lost' | 'Won'
+export let GameState: GameStates
+export const setGameState = (state: GameStates) => (GameState = state)
 
+const PLAYER_HEALTH = 10
+
+export function startGame() {
   createLevel()
 
+  PlayerEntity = addEntity(World)
   PlayerSprite = new Sprite(Texture.from('player'))
   SpritesByEID[PlayerEntity] = PlayerSprite
   OverlaySprites.addChild(PlayerSprite)
@@ -40,8 +47,8 @@ window.onload = async (): Promise<void> => {
   setEntGrid(PlayerEntity, RNG.getItem(OpenFloors)!)
   addComponent(World, Walker, PlayerEntity)
   addComponent(World, Health, PlayerEntity)
-  Health.max[PlayerEntity] = 10
-  Health.current[PlayerEntity] = 10
+  Health.max[PlayerEntity] = PLAYER_HEALTH
+  Health.current[PlayerEntity] = PLAYER_HEALTH
 
   PixiViewport.moveCenter(PlayerSprite)
 
@@ -54,7 +61,25 @@ window.onload = async (): Promise<void> => {
   PlayerSprite.addChild(CastTargetSprite)
   CastTargetSprite.visible = false
 
+  GameState = 'Playing'
   drawHud()
+}
+
+export function resetGame() {
+  resetHud()
+  resetPixi()
+  resetSprites()
+  resetWorld(World)
+  resetFOV()
+  resetCasting()
+  setPlayerState('Idle')
+  startGame()
+}
+
+window.onload = async (): Promise<void> => {
+  initHud()
+  await initPixi()
+  startGame()
 }
 
 function addFish(grid: Vector2) {
