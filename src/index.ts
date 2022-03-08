@@ -13,6 +13,7 @@ import {
   CanSwim,
   CanWalk,
   Wander,
+  OnTileType,
 } from './ecs/components'
 import { getTexture, resetSprites, SpritesByEID } from './sprites'
 import { createLevel, DEBUG_VISIBILITY, OpenFloors, OpenWaters } from './level'
@@ -42,6 +43,7 @@ export function startGame() {
   SpritesByEID[PlayerEntity] = PlayerSprite
   OverlaySprites.addChild(PlayerSprite)
   addComponent(World, DisplayObject, PlayerEntity)
+  addComponent(World, OnTileType, PlayerEntity)
   addComponent(World, GridPosition, PlayerEntity)
   setEntGrid(PlayerEntity, RNG.getItem(OpenFloors)!)
   addComponent(World, CanWalk, PlayerEntity)
@@ -81,11 +83,12 @@ window.onload = async (): Promise<void> => {
 
 function addFish(grid: Vector2) {
   const fish = addEntity(World)
-  const fishSprite = new Sprite(getTexture('fish'))
+  const fishSprite = new Sprite(getTexture('fishSwim'))
   if (!DEBUG_VISIBILITY) fishSprite.alpha = 0
   SpritesByEID[fish] = fishSprite
   WorldSprites.addChild(fishSprite)
   addComponent(World, DisplayObject, fish)
+  addComponent(World, OnTileType, fish)
   addComponent(World, GridPosition, fish)
   setEntGrid(fish, grid)
   addComponent(World, Wander, fish)

@@ -1,8 +1,9 @@
-import { ComponentType, defineComponent, Types } from 'bitecs'
+import { ComponentType, defineComponent, hasComponent, Types } from 'bitecs'
 import { Vector2 } from '../vector2'
-import { EntityMap } from '../level'
-import { PlayerEntity } from '../index'
+import { EntityMap, Level } from '../level'
+import { PlayerEntity } from '../'
 import { triggerEntityUpdate, triggerTileUpdate } from '../fov'
+import { World } from './'
 
 export const DisplayObject = defineComponent()
 
@@ -29,6 +30,8 @@ export const Predator = defineComponent({ range: Types.ui8 })
 export const Stunned = defineComponent({ remaining: Types.ui16 })
 export const SeekWater = defineComponent({ distance: Types.ui8 })
 
+export const OnTileType = defineComponent({ current: Types.ui8, previous: Types.ui8 })
+
 export const Fish = defineComponent()
 export const Bait = defineComponent()
 
@@ -51,6 +54,10 @@ export function setEntGrid(eid: number, grid: Vector2) {
   GridPosition.y[eid] = grid.y
   GridPosition.dirty[eid] = 1
   EntityMap.set(grid, eid)
+  if (hasComponent(World, OnTileType, eid)) {
+    OnTileType.previous[eid] = OnTileType.current[eid]
+    OnTileType.current[eid] = Level.get(grid).type
+  }
   if (eid === PlayerEntity) triggerTileUpdate()
   else triggerEntityUpdate()
 }

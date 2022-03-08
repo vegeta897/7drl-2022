@@ -13,6 +13,7 @@ import {
   Stunned,
   CanSwim,
   CanWalk,
+  OnTileType,
 } from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity, entityExists } from 'bitecs'
 import { EntityMap, Level } from '../level'
@@ -21,7 +22,7 @@ import { Log, logAttack, logKill } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
 import { Tile } from '../map'
-import { getTexture } from '../sprites'
+import { getTexture, SpritesByEID } from '../sprites'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
@@ -37,6 +38,10 @@ export const moveSystem: System = (world) => {
       targetGrid = addVector2(currentGrid, unitMove)
       const targetEntity = EntityMap.get(targetGrid)
       if (targetEntity !== undefined) {
+        if (eid === PlayerEntity && OnTileType.current[eid] === Tile.Water) {
+          Log.unshift(`You can't attack while swimming!`)
+          break
+        }
         const playerInvolved = [eid, targetEntity].includes(PlayerEntity)
         const attackedHasHealth = hasComponent(world, Health, targetEntity)
         if (playerInvolved && attackedHasHealth) {
@@ -80,29 +85,42 @@ export const moveSystem: System = (world) => {
     }
     if (vectorsAreEqual(startGrid, currentGrid)) continue
     changeEntGrid(eid, currentGrid)
-    const currentTile = Level.get(currentGrid)
-    if (eid === PlayerEntity) {
-      if (Level.get(startGrid).type !== Tile.Water && currentTile.type === Tile.Water) {
-        PlayerSprite.texture = getTexture('playerSwim')
-      }
-      if (Level.get(startGrid).type === Tile.Water && currentTile.type !== Tile.Water) {
-        PlayerSprite.texture = getTexture('player')
-      }
-    } else if (hasComponent(world, Fish, eid)) {
-      if (currentTile.type === Tile.Floor) {
-        addComponent(world, SeekWater, eid)
-        SeekWater.distance[eid] = 6
-      } else if (currentTile.type === Tile.Water) {
-        removeComponent(world, CanWalk, eid)
-        removeComponent(world, SeekWater, eid)
-      }
-    }
     // TODO: Don't animate if enemy doesn't have Visible tag
     addComponent(world, AnimateMovement, eid)
     AnimateMovement.x[eid] = MoveAction.x[eid]
     AnimateMovement.y[eid] = MoveAction.y[eid]
     AnimateMovement.elapsed[eid] = 0
     AnimateMovement.length[eid] = 120
+  }
+  return world
+}
+
+export const playerSystem: System = (world) => {
+  const prevTileType = OnTileType.previous[PlayerEntity]
+  const currentTileType = OnTileType.current[PlayerEntity]
+  if (GridPosition.dirty[PlayerEntity] > 0 && prevTileType !== currentTileType) {
+    if (currentTileType === Tile.Floor) PlayerSprite.texture = getTexture('player')
+    else if (currentTileType === Tile.Water) PlayerSprite.texture = getTexture('playerSwim')
+  }
+  return world
+}
+
+const theFish = defineQuery([Fish, GridPosition])
+export const fishSystem: System = (world) => {
+  for (const eid of theFish(world)) {
+    if (GridPosition.dirty[eid] === 0) continue
+    const prevTileType = OnTileType.previous[eid]
+    const currentTileType = OnTileType.current[eid]
+    if (prevTileType === currentTileType) continue
+    if (currentTileType === Tile.Floor) {
+      SpritesByEID[eid].texture = getTexture('fish')
+      addComponent(world, SeekWater, eid)
+      SeekWater.distance[eid] = 6
+    } else if (currentTileType === Tile.Water) {
+      SpritesByEID[eid].texture = getTexture('fishSwim')
+      removeComponent(world, CanWalk, eid)
+      removeComponent(world, SeekWater, eid)
+    }
   }
   return world
 }
