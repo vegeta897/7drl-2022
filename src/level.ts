@@ -13,6 +13,8 @@ const MAP_HEIGHT = 80
 export let Level: TileMap
 export let EntityMap: GridMap<number>
 
+// TODO: Entity map doesn't allow more than one entity on a tile, so the bait is overwriting entities when you're angling
+
 export let OpenFloors: Vector2[]
 export let OpenWaters: Vector2[]
 

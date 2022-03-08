@@ -15,7 +15,7 @@ import {
 } from './ecs/components'
 import { processInput, setPlayerState } from './ecs/input_systems'
 import { addComponent, addEntity, entityExists, removeEntity } from 'bitecs'
-import { Level } from './level'
+import { EntityMap, Level } from './level'
 import { Log } from './hud'
 import { Tile } from './map'
 
@@ -93,23 +93,24 @@ export function angleBait(move: Vector2) {
       const moddedCastTo = addVector2(angleTo, mod)
       const moddedDistance = getDistance(moddedCastTo)
       const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
-      if (moddedDistance <= maxAngleDistance && Level.get(moddedAbsolute).type !== Tile.Wall) {
+      if (Level.get(moddedAbsolute).type === Tile.Wall) continue
+      if (moddedDistance > maxAngleDistance) continue
+      if (moddedDistance === 0) {
+        deleteEntGrid(BaitEntity!)
+        removeEntity(World, BaitEntity!)
+        BaitEntity = null
+        setPlayerState('Idle')
+        Log.unshift('You reeled in the bait')
+        fishingLineGraphics.clear()
+      } else {
+        if (EntityMap.get(moddedAbsolute)) continue
         CastVector.x = moddedCastTo.x
         CastVector.y = moddedCastTo.y
-        if (moddedDistance === 0) {
-          deleteEntGrid(BaitEntity!)
-          removeEntity(World, BaitEntity!)
-          BaitEntity = null
-          setPlayerState('Idle')
-          Log.unshift('You reeled in the bait')
-          fishingLineGraphics.clear()
-        } else {
-          drawFishingLine()
-          changeEntGrid(BaitEntity!, addVector2(playerGrid, CastVector))
-        }
-        processInput()
-        break
+        drawFishingLine()
+        changeEntGrid(BaitEntity!, addVector2(playerGrid, CastVector))
       }
+      processInput()
+      break
     }
   }
 }

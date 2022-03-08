@@ -22,7 +22,7 @@ import { cameraSystem, fadeSystem, fovSystem, spriteAddSystem, spriteRemoveSyste
 import { drawHud } from '../hud'
 
 // @ts-ignore
-export const World = createWorld(1000)
+export const World = createWorld(5000)
 
 registerComponents(World, [
   DisplayObject,
