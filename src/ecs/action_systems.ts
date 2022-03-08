@@ -15,11 +15,12 @@ import {
   Walker,
 } from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity } from 'bitecs'
-import { EntityMap, Level, Tile } from '../level'
+import { EntityMap, Level } from '../level'
 import { PlayerEntity } from '../'
 import { Log, logAttack, logKill } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
+import { Tile } from '../map'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
@@ -68,22 +69,22 @@ export const moveSystem: System = (world) => {
           break
         }
       }
-      const targetTileType = Level.get(targetGrid)
+      const targetTile = Level.get(targetGrid)
       if (MoveAction.noclip[eid] === 0) {
-        if (targetTileType === Tile.Wall) break
-        if (targetTileType === Tile.Water && !hasComponent(world, Swimmer, eid)) break
-        if (targetTileType === Tile.Floor && !hasComponent(world, Walker, eid)) break
+        if (targetTile.solid) break
+        if (targetTile.type === Tile.Water && !hasComponent(world, Swimmer, eid)) break
+        if (targetTile.type === Tile.Floor && !hasComponent(world, Walker, eid)) break
       }
       currentGrid = targetGrid
     }
     if (vectorsAreEqual(startGrid, currentGrid)) continue
     changeEntGrid(eid, currentGrid)
-    const currentTileType = Level.get(currentGrid) || 0
+    const currentTile = Level.get(currentGrid)
     if (hasComponent(world, Fish, eid)) {
-      if (currentTileType === Tile.Floor) {
+      if (currentTile.type === Tile.Floor) {
         addComponent(world, SeekWater, eid)
         SeekWater.distance[eid] = 6
-      } else if (currentTileType === Tile.Water) {
+      } else if (currentTile.type === Tile.Water) {
         removeComponent(world, Walker, eid)
         removeComponent(world, SeekWater, eid)
       }

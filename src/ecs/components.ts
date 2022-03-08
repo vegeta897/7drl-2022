@@ -1,6 +1,8 @@
 import { ComponentType, defineComponent, Types } from 'bitecs'
 import { Vector2 } from '../vector2'
 import { EntityMap } from '../level'
+import { PlayerEntity } from '../index'
+import { triggerFOVUpdate } from '../fov'
 
 export const DisplayObject = defineComponent()
 
@@ -9,7 +11,7 @@ const GridC = {
   y: Types.i32,
 }
 
-export const GridPosition = defineComponent({ ...GridC })
+export const GridPosition = defineComponent({ ...GridC, dirty: Types.ui8 })
 
 export const MoveAction = defineComponent({ ...GridC, noclip: Types.ui8 })
 
@@ -47,7 +49,9 @@ export function changeEntGrid(eid: number, grid: Vector2) {
 export function setEntGrid(eid: number, grid: Vector2) {
   GridPosition.x[eid] = grid.x
   GridPosition.y[eid] = grid.y
+  GridPosition.dirty[eid] = 1
   EntityMap.set(grid, eid)
+  if (eid === PlayerEntity) triggerFOVUpdate()
 }
 
 export function deleteEntGrid(eid: number) {

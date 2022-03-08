@@ -13,15 +13,16 @@ import {
   sortByDistance,
   Up,
 } from '../vector2'
-import { EntityMap, findPath, Level, Tile } from '../level'
+import { EntityMap, findPath, Level } from '../level'
 import { Log } from '../hud'
 import { PlayerEntity } from '../'
+import { Tile } from '../map'
 
 const predators = defineQuery([GridPosition, Predator, Not(Stunned), Not(SeekWater)])
 export const predatorSystem: System = (world) => {
   for (const eid of predators(world)) {
     const myGrid = getEntGrid(eid)
-    if (Level.get(myGrid) !== Tile.Water) continue
+    if (Level.get(myGrid).type !== Tile.Water) continue
     const senseArea = getCross(myGrid, Predator.range[eid])
     for (const grid of senseArea) {
       const distance = getDistance(myGrid, grid)
@@ -29,7 +30,7 @@ export const predatorSystem: System = (world) => {
       const entityAtGrid = EntityMap.get(grid)
       if (entityAtGrid === undefined) continue
       if (entityAtGrid !== PlayerEntity && !hasComponent(world, Bait, entityAtGrid)) continue
-      if (getStraightLine(myGrid, grid, false).some((t) => Level.get(t) === Tile.Wall)) continue
+      if (getStraightLine(myGrid, grid, false).some((t) => Level.get(t).type === Tile.Wall)) continue
       const move = diffVector2(myGrid, grid)
       addComponent(world, MoveAction, eid)
       MoveAction.x[eid] = move.x
@@ -74,7 +75,7 @@ export const seekWaterSystem: System = (world) => {
     const myGrid = getEntGrid(eid)
     const nearestTiles = sortByDistance(myGrid, getDiamondAround(myGrid, SeekWater.distance[eid]))
     for (const tile of nearestTiles) {
-      if (Level.get(tile) !== Tile.Water) continue
+      if (Level.get(tile).type !== Tile.Water) continue
       const towardWater = findPath(myGrid, tile, eid)[0]
       if (towardWater) {
         const move = diffVector2(myGrid, towardWater)

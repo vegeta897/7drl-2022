@@ -32,7 +32,6 @@ export async function initPixi() {
   await loadGameAssets()
 
   document.body.appendChild(PixiApp.view)
-
   Ticker.shared.add(() => {
     runRender()
   })

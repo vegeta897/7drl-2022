@@ -4,6 +4,8 @@ import { PixiViewport } from '../pixi'
 import { Util } from 'rot-js'
 import { DisplayObject, GridPosition } from './components'
 import { SpritesByEID } from '../sprites'
+import { tweenVisibility, updateVisibility } from '../fov'
+import { Ticker } from 'pixi.js'
 
 const PADDING = 1.25 / 3 // Portion of screen to pad
 const PAD_X = Math.floor(PixiViewport.screenWidthInWorldPixels / 2 - PixiViewport.screenWidthInWorldPixels * PADDING)
@@ -26,6 +28,12 @@ export const spriteRemoveSystem: System = (world) => {
     SpritesByEID[eid].destroy()
     delete SpritesByEID[eid]
   }
+  return world
+}
+
+export const fovSystem: System = (world) => {
+  updateVisibility()
+  tweenVisibility(Ticker.shared.deltaMS)
   return world
 }
 

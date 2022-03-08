@@ -15,8 +15,9 @@ import {
 } from './ecs/components'
 import { processInput, setPlayerState } from './ecs/input_systems'
 import { addComponent, addEntity, entityExists, removeEntity } from 'bitecs'
-import { Level, Tile } from './level'
+import { Level } from './level'
 import { Log } from './hud'
+import { Tile } from './map'
 
 export const CastVector = { x: 0, y: 0 }
 
@@ -37,7 +38,7 @@ export function moveCastTarget(move: Vector2) {
   for (const mod of [GridZero, Up, Down, Left, Right]) {
     if (vectorsAreParallel(mod, move)) continue
     const moddedCastTo = addVector2(castTo, mod)
-    if (getDistance(moddedCastTo) <= 4 && Level.get(addVector2(playerGrid, moddedCastTo)) !== Tile.Wall) {
+    if (getDistance(moddedCastTo) <= 4 && Level.get(addVector2(playerGrid, moddedCastTo)).type !== Tile.Wall) {
       CastVector.x = moddedCastTo.x
       CastVector.y = moddedCastTo.y
       CastTargetSprite.x = CastVector.x * TILE_SIZE
@@ -77,7 +78,7 @@ export function angleBait(move: Vector2) {
       const moddedCastTo = addVector2(angleTo, mod)
       const moddedDistance = getDistance(moddedCastTo)
       const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
-      if (moddedDistance <= maxAngleDistance && Level.get(moddedAbsolute) !== Tile.Wall) {
+      if (moddedDistance <= maxAngleDistance && Level.get(moddedAbsolute).type !== Tile.Wall) {
         CastVector.x = moddedCastTo.x
         CastVector.y = moddedCastTo.y
         if (moddedDistance === 0) {

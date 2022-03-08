@@ -1,25 +1,24 @@
 import { AnimateMovement, DisplayObject, GridPosition } from './components'
-import { Changed, defineQuery, IWorld, Not, removeComponent, System } from 'bitecs'
+import { defineQuery, IWorld, Not, removeComponent, System } from 'bitecs'
 import { SpritesByEID } from '../sprites'
 import { TILE_SIZE } from '../'
 import { cubicOut } from '@gamestdio/easing'
 import { promisedFrame } from '../pixi'
+import { Ticker } from 'pixi.js'
 
 export async function runAnimations(world: IWorld) {
-  let last = performance.now()
+  nonAnimatedSystem(world)
   let done = false
   while (!done) {
-    const now = await promisedFrame()
-    done = animateMovement(world, now - last)
-    last = now
+    await promisedFrame()
+    done = animateMovement(world, Ticker.shared.deltaMS)
   }
-  nonAnimatedSystem(world)
 }
 
 const animated = defineQuery([GridPosition, DisplayObject, AnimateMovement])
 const animateMovement = (world: IWorld, delta: number): boolean => {
   const toAnimate = animated(world)
-  if (toAnimate.length === 0) return true
+  let finishedAnimations = 0
   for (const eid of toAnimate) {
     const elapsed = (AnimateMovement.elapsed[eid] += delta)
     const animLength = AnimateMovement.length[eid]
@@ -27,16 +26,19 @@ const animateMovement = (world: IWorld, delta: number): boolean => {
     SpritesByEID[eid].x = (GridPosition.x[eid] - AnimateMovement.x[eid] * inverseProgress) * TILE_SIZE
     SpritesByEID[eid].y = (GridPosition.y[eid] - AnimateMovement.y[eid] * inverseProgress) * TILE_SIZE
     if (inverseProgress === 0) {
+      finishedAnimations++
       removeComponent(world, AnimateMovement, eid)
+      GridPosition.dirty[eid] = 0
     }
   }
-  return false
+  return finishedAnimations === toAnimate.length
 }
 
-// If perf is bad with Changed, use a dirty flag
-const nonAnimated = defineQuery([Changed(GridPosition), DisplayObject, Not(AnimateMovement)])
+const nonAnimated = defineQuery([GridPosition, DisplayObject, Not(AnimateMovement)])
 export const nonAnimatedSystem: System = (world) => {
   for (const eid of nonAnimated(world)) {
+    if (GridPosition.dirty[eid] === 0) continue
+    GridPosition.dirty[eid] = 0
     SpritesByEID[eid].x = GridPosition.x[eid] * TILE_SIZE
     SpritesByEID[eid].y = GridPosition.y[eid] * TILE_SIZE
   }
