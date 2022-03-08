@@ -1,3 +1,3 @@
-import { DisplayObject } from 'pixi.js'
+import { Sprite } from 'pixi.js'
 
-export const SpritesByEID: DisplayObject[] = []
+export const SpritesByEID: Sprite[] = []
