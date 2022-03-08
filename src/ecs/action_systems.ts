@@ -19,6 +19,7 @@ import { EntityMap, Level, Tile } from '../level'
 import { PlayerEntity } from '../'
 import { Log, logAttack, logKill } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
+import { cutLine } from '../casting'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
@@ -58,6 +59,7 @@ export const moveSystem: System = (world) => {
           if (hasComponent(world, Fish, eid)) {
             addComponent(world, Stunned, eid)
             Stunned.remaining[eid] = 6
+            cutLine()
             Log.unshift('The fish is eating the bait')
           }
           deleteEntGrid(targetEntity)

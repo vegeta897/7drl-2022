@@ -1,5 +1,5 @@
-import { addComponent, defineQuery, Not, removeComponent, System } from 'bitecs'
-import { getEntGrid, GridPosition, MoveAction, Predator, SeekWater, Stunned, Walker, Wander } from './components'
+import { addComponent, defineQuery, hasComponent, Not, removeComponent, System } from 'bitecs'
+import { Bait, getEntGrid, GridPosition, MoveAction, Predator, SeekWater, Stunned, Walker, Wander } from './components'
 import { RNG } from 'rot-js'
 import {
   diffVector2,
@@ -15,8 +15,7 @@ import {
 } from '../vector2'
 import { EntityMap, findPath, Level, Tile } from '../level'
 import { Log } from '../hud'
-import { PlayerEntity } from '../index'
-import { BaitEntity } from './input_systems'
+import { PlayerEntity } from '../'
 
 const predators = defineQuery([GridPosition, Predator, Not(Stunned), Not(SeekWater)])
 export const predatorSystem: System = (world) => {
@@ -29,7 +28,7 @@ export const predatorSystem: System = (world) => {
       if (distance <= 1 || distance > Predator.range[eid]) continue
       const entityAtGrid = EntityMap.get(grid)
       if (entityAtGrid === undefined) continue
-      if (![PlayerEntity, BaitEntity].includes(entityAtGrid)) continue
+      if (entityAtGrid !== PlayerEntity && hasComponent(world, Bait, entityAtGrid)) continue
       if (getStraightLine(myGrid, grid, false).some((t) => Level.get(t) === Tile.Wall)) continue
       const move = diffVector2(myGrid, grid)
       addComponent(world, MoveAction, eid)
