@@ -2,8 +2,6 @@ import { ComponentType, defineComponent, Types } from 'bitecs'
 import { Vector2 } from '../vector2'
 import { EntityMap } from '../level'
 
-export const Player = defineComponent()
-
 export const DisplayObject = defineComponent()
 
 const GridC = {
@@ -30,7 +28,6 @@ export const Stunned = defineComponent({ remaining: Types.ui16 })
 export const SeekWater = defineComponent({ distance: Types.ui8 })
 
 export const Fish = defineComponent()
-export const Bait = defineComponent()
 
 export const vector2FromC = (component: ComponentType<typeof GridC>, eid: number) => ({
   x: component.x[eid],

@@ -1,5 +1,5 @@
 import { Display } from 'rot-js'
-import { Fish, Health, Player } from './ecs/components'
+import { Fish, Health } from './ecs/components'
 import { PlayerEntity } from './index'
 import { PlayerState } from './ecs/input_systems'
 import { hasComponent } from 'bitecs'
@@ -16,7 +16,7 @@ export function initHud() {
 
 function getEntityName(entity: number, _capitalize = false) {
   let name = 'unknown'
-  if (hasComponent(World, Player, entity)) name = 'you'
+  if (entity === PlayerEntity) name = 'you'
   if (hasComponent(World, Fish, entity)) name = 'the fish'
   return _capitalize ? capitalize(name) : name
 }

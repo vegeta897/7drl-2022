@@ -8,7 +8,6 @@ import {
   Fish,
   GridPosition,
   Health,
-  Player,
   Predator,
   setEntGrid,
   Swimmer,
@@ -16,10 +15,9 @@ import {
   Wander,
 } from './ecs/components'
 import { SpritesByEID } from './sprites'
-import { createLevel, EntityMap, OpenFloors, OpenWaters } from './level'
+import { createLevel, OpenFloors, OpenWaters } from './level'
 import { RNG } from 'rot-js'
 import { drawHud, initHud } from './hud'
-import { GridMap } from './map'
 import { Vector2 } from './vector2'
 
 export const TILE_SIZE = 16
@@ -37,7 +35,6 @@ window.onload = async (): Promise<void> => {
   PlayerSprite = new Sprite(Texture.from('player'))
   SpritesByEID[PlayerEntity] = PlayerSprite
   OverlaySprites.addChild(PlayerSprite)
-  addComponent(World, Player, PlayerEntity)
   addComponent(World, DisplayObject, PlayerEntity)
   addComponent(World, GridPosition, PlayerEntity)
   setEntGrid(PlayerEntity, RNG.getItem(OpenFloors)!)

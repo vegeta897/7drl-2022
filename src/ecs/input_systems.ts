@@ -1,7 +1,7 @@
-import { addComponent, addEntity, removeEntity, System } from 'bitecs'
+import { addComponent, addEntity, entityExists, removeEntity, System } from 'bitecs'
 import { onInput, World } from './'
 import { CastTargetSprite, PlayerEntity, TILE_SIZE } from '../'
-import { Bait, changeEntGrid, DisplayObject, getEntGrid, GridPosition, MoveAction, setEntGrid } from './components'
+import { changeEntGrid, DisplayObject, getEntGrid, GridPosition, MoveAction, setEntGrid } from './components'
 import {
   addVector2,
   DirectionGrids,
@@ -29,11 +29,10 @@ type PlayerStates = 'idle' | 'casting' | 'angling'
 export let PlayerState: PlayerStates = 'idle'
 
 export const CastVector = { x: 0, y: 0 }
-let baitEntity: number | null = null
+export let BaitEntity: number | null = null
 
 export const inputSystem: System = (world) => {
-  const button = getButton()
-  if (button === null) return world
+  if (!button) return world
   const previousState = PlayerState
   const playerGrid = getEntGrid(PlayerEntity)
   if (button === 'cast') {
@@ -49,14 +48,13 @@ export const inputSystem: System = (world) => {
       PlayerState = 'idle'
       CastTargetSprite.visible = false
       if (getDistance(CastVector) > 0) {
-        baitEntity = addEntity(World)
+        BaitEntity = addEntity(World)
         const baitSprite = new Sprite(Texture.from('bait'))
-        SpritesByEID[baitEntity] = baitSprite
+        SpritesByEID[BaitEntity] = baitSprite
         WorldSprites.addChild(baitSprite)
-        addComponent(World, Bait, baitEntity)
-        addComponent(World, DisplayObject, baitEntity)
-        addComponent(World, GridPosition, baitEntity)
-        setEntGrid(baitEntity, addVector2(playerGrid, CastVector))
+        addComponent(World, DisplayObject, BaitEntity)
+        addComponent(World, GridPosition, BaitEntity)
+        setEntGrid(BaitEntity, addVector2(playerGrid, CastVector))
         WaitingForInput = false
         PlayerState = 'angling'
       }
@@ -64,7 +62,7 @@ export const inputSystem: System = (world) => {
     if (previousState === 'angling') {
       // TODO: Cut line
       // Should cutting line take a turn?
-      baitEntity = null
+      BaitEntity = null
       PlayerState = 'idle'
     }
   } else if (button === 'wait') {
@@ -90,28 +88,33 @@ export const inputSystem: System = (world) => {
         }
       }
     } else if (previousState === 'angling') {
-      const angleTo = addVector2(CastVector, move)
-      const maxAngleDistance = getDistance(CastVector)
-      for (const mod of [GridZero, Up, Down, Left, Right]) {
-        if (vectorsAreParallel(mod, move)) continue
-        const moddedCastTo = addVector2(angleTo, mod)
-        const moddedDistance = getDistance(moddedCastTo)
-        const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
-        if (moddedDistance <= maxAngleDistance && Level.get(moddedAbsolute) !== Tile.Wall) {
-          CastVector.x = moddedCastTo.x
-          CastVector.y = moddedCastTo.y
-          if (moddedDistance === 0) {
-            removeEntity(World, baitEntity!)
-            SpritesByEID[baitEntity!].destroy()
-            delete SpritesByEID[baitEntity!]
-            baitEntity = null
-            PlayerState = 'idle'
-            Log.unshift('You reeled in the bait')
-          } else {
-            changeEntGrid(baitEntity!, addVector2(playerGrid, CastVector))
+      if (!entityExists(World, BaitEntity!)) {
+        BaitEntity = null
+        PlayerState = 'idle'
+      } else {
+        const angleTo = addVector2(CastVector, move)
+        const maxAngleDistance = getDistance(CastVector)
+        for (const mod of [GridZero, Up, Down, Left, Right]) {
+          if (vectorsAreParallel(mod, move)) continue
+          const moddedCastTo = addVector2(angleTo, mod)
+          const moddedDistance = getDistance(moddedCastTo)
+          const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
+          if (moddedDistance <= maxAngleDistance && Level.get(moddedAbsolute) !== Tile.Wall) {
+            CastVector.x = moddedCastTo.x
+            CastVector.y = moddedCastTo.y
+            if (moddedDistance === 0) {
+              removeEntity(World, BaitEntity!)
+              SpritesByEID[BaitEntity!].destroy()
+              delete SpritesByEID[BaitEntity!]
+              BaitEntity = null
+              PlayerState = 'idle'
+              Log.unshift('You reeled in the bait')
+            } else {
+              changeEntGrid(BaitEntity!, addVector2(playerGrid, CastVector))
+            }
+            WaitingForInput = false
+            break
           }
-          WaitingForInput = false
-          break
         }
       }
     } else {
@@ -129,7 +132,7 @@ export const inputSystem: System = (world) => {
 }
 
 const Keys: Set<GameKey> = new Set()
-let currentKey: null | GameKey = null
+let button: Button
 
 const isGameKey = (key: string): key is GameKey => gameKeys.includes(key as GameKey)
 
@@ -138,18 +141,17 @@ window.addEventListener('keydown', async (e) => {
   if (!isGameKey(e.code)) return
   e.preventDefault()
   Keys.add(e.code)
-  currentKey = e.code
-  if (WaitingForInput) await onInput()
+  button = getButton(e.code)
+  if (button && WaitingForInput) await onInput()
 })
 window.addEventListener('keyup', (e) => {
   if (!isGameKey(e.code)) return
   Keys.delete(e.code)
-  currentKey = null
 })
 
 type Button = typeof DirectionNames[number] | 'wait' | 'cast' | 'exit' | 'confirm' | null
-function getButton(): Button {
-  switch (currentKey) {
+function getButton(keyCode: GameKey): Button {
+  switch (keyCode) {
     case 'KeyW':
     case 'KeyK':
     case 'ArrowUp':

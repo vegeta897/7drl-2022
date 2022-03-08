@@ -1,13 +1,11 @@
 import { createWorld, pipe, registerComponents } from 'bitecs'
 import {
   AnimateMovement,
-  Bait,
   DisplayObject,
   Fish,
   GridPosition,
   Health,
   MoveAction,
-  Player,
   Predator,
   SeekWater,
   Stunned,
@@ -34,8 +32,6 @@ registerComponents(World, [
   Predator,
   Walker,
   Health,
-  Player,
-  Bait,
   Fish,
   Stunned,
   SeekWater,
