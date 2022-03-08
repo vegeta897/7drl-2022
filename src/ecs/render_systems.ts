@@ -1,4 +1,4 @@
-import { defineQuery, enterQuery, System } from 'bitecs'
+import { defineQuery, enterQuery, exitQuery, System } from 'bitecs'
 import { PlayerSprite, TILE_SIZE } from '../'
 import { PixiViewport } from '../pixi'
 import { Util } from 'rot-js'
@@ -11,11 +11,20 @@ const PAD_Y = Math.floor(PixiViewport.screenHeightInWorldPixels / 2 - PixiViewpo
 
 const spriteQuery = defineQuery([DisplayObject, GridPosition])
 const enteredSpriteQuery = enterQuery(spriteQuery)
+const exitedSpriteQuery = exitQuery(spriteQuery)
 
 export const spriteAddSystem: System = (world) => {
   for (const eid of enteredSpriteQuery(world)) {
     SpritesByEID[eid].x = GridPosition.x[eid] * TILE_SIZE
     SpritesByEID[eid].y = GridPosition.y[eid] * TILE_SIZE
+  }
+  return world
+}
+
+export const spriteRemoveSystem: System = (world) => {
+  for (const eid of exitedSpriteQuery(world)) {
+    SpritesByEID[eid].destroy()
+    delete SpritesByEID[eid]
   }
   return world
 }

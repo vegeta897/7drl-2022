@@ -1,6 +1,7 @@
 // Do player or enemy actions
 import {
   AnimateMovement,
+  Bait,
   changeEntGrid,
   deleteEntGrid,
   Fish,
@@ -16,10 +17,8 @@ import {
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity } from 'bitecs'
 import { EntityMap, Level, Tile } from '../level'
 import { PlayerEntity } from '../'
-import { SpritesByEID } from '../sprites'
 import { Log, logAttack, logKill } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
-import { BaitEntity } from './input_systems'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
@@ -49,11 +48,9 @@ export const moveSystem: System = (world) => {
             if (eid === PlayerEntity) logKill(targetEntity)
             deleteEntGrid(targetEntity)
             removeEntity(world, targetEntity)
-            SpritesByEID[targetEntity].destroy()
-            delete SpritesByEID[targetEntity]
           }
         }
-        if (targetEntity === BaitEntity) {
+        if (hasComponent(world, Bait, targetEntity)) {
           if (eid === PlayerEntity) Log.unshift('You ate the bait')
           if (hasComponent(world, Health, eid)) {
             Health.current[eid] = Math.min(Health.max[eid], Health.current[eid] + 1)
@@ -65,8 +62,6 @@ export const moveSystem: System = (world) => {
           }
           deleteEntGrid(targetEntity)
           removeEntity(world, targetEntity)
-          SpritesByEID[targetEntity].destroy()
-          delete SpritesByEID[targetEntity]
         } else {
           break
         }

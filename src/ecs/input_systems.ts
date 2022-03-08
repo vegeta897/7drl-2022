@@ -1,7 +1,16 @@
 import { addComponent, addEntity, entityExists, removeEntity, System } from 'bitecs'
 import { onInput, World } from './'
 import { CastTargetSprite, PlayerEntity, TILE_SIZE } from '../'
-import { changeEntGrid, DisplayObject, getEntGrid, GridPosition, MoveAction, setEntGrid } from './components'
+import {
+  Bait,
+  changeEntGrid,
+  deleteEntGrid,
+  DisplayObject,
+  getEntGrid,
+  GridPosition,
+  MoveAction,
+  setEntGrid,
+} from './components'
 import {
   addVector2,
   DirectionGrids,
@@ -31,10 +40,26 @@ export let PlayerState: PlayerStates = 'idle'
 export const CastVector = { x: 0, y: 0 }
 export let BaitEntity: number | null = null
 
+function confirmCast() {
+  PlayerState = 'idle'
+  CastTargetSprite.visible = false
+  if (getDistance(CastVector) > 0) {
+    BaitEntity = addEntity(World)
+    const baitSprite = new Sprite(Texture.from('bait'))
+    SpritesByEID[BaitEntity] = baitSprite
+    WorldSprites.addChild(baitSprite)
+    addComponent(World, Bait, BaitEntity)
+    addComponent(World, DisplayObject, BaitEntity)
+    addComponent(World, GridPosition, BaitEntity)
+    setEntGrid(BaitEntity, addVector2(getEntGrid(PlayerEntity), CastVector))
+    WaitingForInput = false
+    PlayerState = 'angling'
+  }
+}
+
 export const inputSystem: System = (world) => {
   if (!button) return world
   const previousState = PlayerState
-  const playerGrid = getEntGrid(PlayerEntity)
   if (button === 'cast') {
     if (previousState === 'idle') {
       CastVector.x = 0
@@ -44,23 +69,8 @@ export const inputSystem: System = (world) => {
       CastTargetSprite.visible = true
       PlayerState = 'casting'
     }
-    if (previousState === 'casting') {
-      PlayerState = 'idle'
-      CastTargetSprite.visible = false
-      if (getDistance(CastVector) > 0) {
-        BaitEntity = addEntity(World)
-        const baitSprite = new Sprite(Texture.from('bait'))
-        SpritesByEID[BaitEntity] = baitSprite
-        WorldSprites.addChild(baitSprite)
-        addComponent(World, DisplayObject, BaitEntity)
-        addComponent(World, GridPosition, BaitEntity)
-        setEntGrid(BaitEntity, addVector2(playerGrid, CastVector))
-        WaitingForInput = false
-        PlayerState = 'angling'
-      }
-    }
+    if (previousState === 'casting') confirmCast()
     if (previousState === 'angling') {
-      // TODO: Cut line
       // Should cutting line take a turn?
       BaitEntity = null
       PlayerState = 'idle'
@@ -68,12 +78,13 @@ export const inputSystem: System = (world) => {
   } else if (button === 'wait') {
     WaitingForInput = false
   } else if (button === 'confirm') {
-    // TODO: Confirm bait placement
+    if (previousState === 'casting') confirmCast()
   } else if (button === 'exit') {
     PlayerState = 'idle'
     CastTargetSprite.visible = false
   } else {
     const move = DirectionGrids[DirectionNames.indexOf(button)]
+    const playerGrid = getEntGrid(PlayerEntity)
     if (previousState === 'casting') {
       const castTo = addVector2(CastVector, move)
       for (const mod of [GridZero, Up, Down, Left, Right]) {
@@ -103,9 +114,8 @@ export const inputSystem: System = (world) => {
             CastVector.x = moddedCastTo.x
             CastVector.y = moddedCastTo.y
             if (moddedDistance === 0) {
+              deleteEntGrid(BaitEntity!)
               removeEntity(World, BaitEntity!)
-              SpritesByEID[BaitEntity!].destroy()
-              delete SpritesByEID[BaitEntity!]
               BaitEntity = null
               PlayerState = 'idle'
               Log.unshift('You reeled in the bait')

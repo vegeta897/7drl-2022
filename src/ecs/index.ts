@@ -1,6 +1,7 @@
 import { createWorld, pipe, registerComponents } from 'bitecs'
 import {
   AnimateMovement,
+  Bait,
   DisplayObject,
   Fish,
   GridPosition,
@@ -17,7 +18,7 @@ import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { wanderSystem, predatorSystem, stunnedSystem, seekWaterSystem } from './enemy_systems'
 import { moveSystem } from './action_systems'
 import { runAnimations } from './anim_systems'
-import { cameraSystem, spriteAddSystem } from './render_systems'
+import { cameraSystem, spriteAddSystem, spriteRemoveSystem } from './render_systems'
 import { drawHud } from '../hud'
 
 export const World = createWorld()
@@ -35,13 +36,14 @@ registerComponents(World, [
   Fish,
   Stunned,
   SeekWater,
+  Bait,
 ])
 
 const systemGroups = {
   input: inputSystem,
   enemyTurn: pipe(predatorSystem, wanderSystem, stunnedSystem, seekWaterSystem),
   actions: moveSystem,
-  render: pipe(spriteAddSystem, cameraSystem),
+  render: pipe(spriteAddSystem, spriteRemoveSystem, cameraSystem),
 }
 
 export async function onInput() {
