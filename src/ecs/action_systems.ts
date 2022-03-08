@@ -94,7 +94,7 @@ export const moveSystem: System = (world) => {
     AnimateMovement.x[eid] = MoveAction.x[eid]
     AnimateMovement.y[eid] = MoveAction.y[eid]
     AnimateMovement.elapsed[eid] = 0
-    AnimateMovement.length[eid] = 100
+    AnimateMovement.length[eid] = 120
   }
   return world
 }

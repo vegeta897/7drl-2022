@@ -5,10 +5,11 @@ import { getEntGrid } from './ecs/components'
 import { PlayerEntity } from './index'
 import { sineOut } from '@gamestdio/easing'
 import { Sprite } from 'pixi.js'
+import { clamp } from 'rot-js/lib/util'
 
 const FOV_RADIUS = 12
 const FOG_VISIBILITY = 0.3 // Max visibility of previously seen tiles
-const TWEEN_TIME = 200 // Milliseconds
+const ALPHA_TWEEN_TIME = 200 // Milliseconds it takes to go from 0 to 1 alpha
 
 let needFOVUpdate = true
 export const triggerFOVUpdate = () => (needFOVUpdate = true)
@@ -60,8 +61,15 @@ const tweeningSprites: Map<Sprite, number> = new Map()
 
 export function tweenVisibility(delta: number) {
   if (!tweeningFOV) return
+  const alphaDelta = delta / ALPHA_TWEEN_TIME // Heh, greek letters
   tweeningSprites.forEach((targetAlpha, sprite) => {
-    sprite.alpha = targetAlpha
+    if (Math.abs(targetAlpha - sprite.alpha) <= alphaDelta) {
+      sprite.alpha = targetAlpha
+    } else {
+      const change = (targetAlpha > sprite.alpha ? 1 : -1) * alphaDelta
+      sprite.alpha = clamp(sprite.alpha + change, 0, 1)
+    }
+    if (sprite.alpha === targetAlpha) tweeningSprites.delete(sprite)
   })
-  tweeningFOV = false
+  tweeningFOV = tweeningSprites.size > 0
 }
