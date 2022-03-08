@@ -28,7 +28,7 @@ export const predatorSystem: System = (world) => {
       if (distance <= 1 || distance > Predator.range[eid]) continue
       const entityAtGrid = EntityMap.get(grid)
       if (entityAtGrid === undefined) continue
-      if (entityAtGrid !== PlayerEntity && hasComponent(world, Bait, entityAtGrid)) continue
+      if (entityAtGrid !== PlayerEntity && !hasComponent(world, Bait, entityAtGrid)) continue
       if (getStraightLine(myGrid, grid, false).some((t) => Level.get(t) === Tile.Wall)) continue
       const move = diffVector2(myGrid, grid)
       addComponent(world, MoveAction, eid)

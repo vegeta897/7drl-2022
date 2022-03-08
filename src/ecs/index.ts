@@ -46,16 +46,21 @@ const systemGroups = {
   render: pipe(spriteAddSystem, spriteRemoveSystem, cameraSystem),
 }
 
+export let GameState: 'Waiting' | 'AnimatePlayer' | 'AnimateEnemies' = 'Waiting'
+
 export async function onInput() {
   systemGroups.input(World)
   if (WaitingForInput) return
   runActions() // Execute player actions
+  GameState = 'AnimatePlayer'
   await runAnimations(World) // Animate player actions
   drawHud()
   runEnemies() // Plan enemy actions
   runActions() // Run enemy actions
+  GameState = 'AnimateEnemies'
   await runAnimations(World) // Animate enemy actions
   drawHud()
+  GameState = 'Waiting'
   waitForInput()
 }
 
