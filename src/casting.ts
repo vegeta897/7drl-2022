@@ -1,8 +1,8 @@
 import { PlayerEntity, PlayerSprite, TILE_SIZE } from './'
 import { addVector2, Down, getDistance, GridZero, Left, Right, Up, Vector2, vectorsAreParallel } from './vector2'
 import { World } from './ecs'
-import { Graphics, Sprite, Texture } from 'pixi.js'
-import { SpritesByEID } from './sprites'
+import { Graphics, Sprite } from 'pixi.js'
+import { getTexture, SpritesByEID } from './sprites'
 import { WorldSprites } from './pixi'
 import {
   Bait,
@@ -26,7 +26,7 @@ let fishingLineGraphics: Graphics
 export let BaitEntity: number | null = null
 
 export function initCasting() {
-  castTargetSprite = new Sprite(Texture.from('target'))
+  castTargetSprite = new Sprite(getTexture('target'))
   PlayerSprite.addChild(castTargetSprite)
   castTargetSprite.visible = false
   fishingLineGraphics = new Graphics()
@@ -63,7 +63,7 @@ export function confirmCast() {
   castTargetSprite.visible = false
   if (getDistance(CastVector) > 0) {
     BaitEntity = addEntity(World)
-    const baitSprite = new Sprite(Texture.from('bait'))
+    const baitSprite = new Sprite(getTexture('bait'))
     SpritesByEID[BaitEntity] = baitSprite
     WorldSprites.addChild(baitSprite)
     addComponent(World, Bait, BaitEntity)

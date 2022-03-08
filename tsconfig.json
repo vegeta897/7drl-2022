@@ -10,7 +10,8 @@
       "mini-signals": ["./node_modules/resource-loader/typings/mini-signals.d.ts"]
     },
     "skipLibCheck": false,
-    "lib": ["DOM", "ES2020"]
+    "lib": ["DOM", "ES2020"],
+    "resolveJsonModule": true
   },
   "include": ["./src/index.ts"]
 }

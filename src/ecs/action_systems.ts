@@ -16,11 +16,12 @@ import {
 } from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity, entityExists } from 'bitecs'
 import { EntityMap, Level } from '../level'
-import { PlayerEntity, setGameState } from '../'
+import { PlayerEntity, PlayerSprite, setGameState } from '../'
 import { Log, logAttack, logKill } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
 import { Tile } from '../map'
+import { getTexture } from '../sprites'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
@@ -80,7 +81,14 @@ export const moveSystem: System = (world) => {
     if (vectorsAreEqual(startGrid, currentGrid)) continue
     changeEntGrid(eid, currentGrid)
     const currentTile = Level.get(currentGrid)
-    if (hasComponent(world, Fish, eid)) {
+    if (eid === PlayerEntity) {
+      if (Level.get(startGrid).type !== Tile.Water && currentTile.type === Tile.Water) {
+        PlayerSprite.texture = getTexture('playerSwim')
+      }
+      if (Level.get(startGrid).type === Tile.Water && currentTile.type !== Tile.Water) {
+        PlayerSprite.texture = getTexture('player')
+      }
+    } else if (hasComponent(world, Fish, eid)) {
       if (currentTile.type === Tile.Floor) {
         addComponent(world, SeekWater, eid)
         SeekWater.distance[eid] = 6

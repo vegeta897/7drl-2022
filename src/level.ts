@@ -1,14 +1,16 @@
 import * as ROT from 'rot-js'
-import { Sprite, Texture } from 'pixi.js'
+import { Sprite } from 'pixi.js'
 import { TILE_SIZE } from './'
 import { WorldSprites } from './pixi'
 import { getDiamondAround, getSquareAround, Vector2 } from './vector2'
 import Dijkstra from 'rot-js/lib/path/dijkstra'
 import { GridMap, Tile, TileMap } from './map'
 import { RNG } from 'rot-js'
+import { getTexture } from './sprites'
 
-const MAP_WIDTH = 80
-const MAP_HEIGHT = 80
+export const DEBUG_VISIBILITY = true
+const MAP_WIDTH = 120
+const MAP_HEIGHT = 40
 
 export let Level: TileMap
 export let EntityMap: GridMap<number>
@@ -27,7 +29,9 @@ export function createLevel() {
     walls.create()
   }
   Level = new TileMap()
+  let c = 0
   walls.connect((x, y, value) => {
+    c++
     const isBoundary = x === 0 || x === MAP_WIDTH - 1 || y === 0 || y === MAP_HEIGHT - 1
     Level.createTile({ x, y }, !isBoundary && value === 1 ? Tile.Floor : Tile.Wall)
   }, 1)
@@ -42,9 +46,9 @@ export function createLevel() {
     Level.createTile({ x, y }, Tile.Water)
   })
 
-  const wallTexture = Texture.from('wall')
-  const floorTextures = ['floor1', 'floor2', 'floor3', 'floor4'].map((t) => Texture.from(t))
-  const waterTexture = Texture.from('water')
+  const wallTexture = getTexture('wall')
+  const floorTextures = ['floor1', 'floor2', 'floor3', 'floor4'].map((t) => getTexture(t))
+  const waterTexture = getTexture('water')
   const getTileTexture = (tile: Tile) => {
     switch (tile) {
       case Tile.Floor:
@@ -63,7 +67,7 @@ export function createLevel() {
       tile.sprite = new Sprite(getTileTexture(tile.type))
       tile.sprite.x = x * TILE_SIZE
       tile.sprite.y = y * TILE_SIZE
-      tile.sprite.alpha = 0
+      if (!DEBUG_VISIBILITY) tile.sprite.alpha = 0
       WorldSprites.addChild(tile.sprite)
       const diamond2 = getDiamondAround({ x, y }, 2)
       if (diamond2.every((g) => Level.get(g).type === Tile.Floor)) {

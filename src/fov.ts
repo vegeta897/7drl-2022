@@ -1,8 +1,8 @@
 import { GridMap } from './map'
 import { FOV } from 'rot-js'
-import { Level } from './level'
+import { DEBUG_VISIBILITY, Level } from './level'
 import { getEntGrid } from './ecs/components'
-import { PlayerEntity } from './index'
+import { PlayerEntity } from './'
 import { sineOut } from '@gamestdio/easing'
 import { Sprite } from 'pixi.js'
 import { clamp } from 'rot-js/lib/util'
@@ -22,6 +22,7 @@ type VisibilityMap = GridMap<[visibility: number, radius: number]>
 let prevVisibilityMap: VisibilityMap = new GridMap()
 
 export function updateVisibility() {
+  if (DEBUG_VISIBILITY) return
   if (!needTileUpdate && !needEntityUpdate) return
   const newVisibilityMap: VisibilityMap = needTileUpdate ? new GridMap() : prevVisibilityMap
   if (needTileUpdate) {

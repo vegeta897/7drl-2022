@@ -2,6 +2,7 @@ import { Application, Container, Loader, Ticker } from 'pixi.js'
 import * as PIXI from 'pixi.js'
 import { Viewport } from 'pixi-viewport'
 import { runRender } from './ecs'
+import { initSprites } from './sprites'
 
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST
 // PIXI.settings.ROUND_PIXELS = true
@@ -19,7 +20,7 @@ export const PixiViewport = new Viewport({
   screenWidth: gameWidth,
   screenHeight: gameHeight,
 })
-PixiViewport.setZoom(2)
+PixiViewport.setZoom(1)
 
 export let WorldSprites: Container
 export let OverlaySprites: Container
@@ -28,6 +29,7 @@ PixiApp.stage.addChild(PixiViewport)
 
 export async function initPixi() {
   await loadGameAssets()
+  initSprites() // Create Textures
   resetPixi()
   document.body.appendChild(PixiApp.view)
   Ticker.shared.add(() => {

@@ -1,7 +1,7 @@
 import './style.css'
 import { World } from './ecs'
 import { addComponent, addEntity, resetWorld } from 'bitecs'
-import { Sprite, Texture } from 'pixi.js'
+import { Sprite } from 'pixi.js'
 import { initPixi, OverlaySprites, PixiViewport, resetPixi, WorldSprites } from './pixi'
 import {
   DisplayObject,
@@ -14,8 +14,8 @@ import {
   Walker,
   Wander,
 } from './ecs/components'
-import { resetSprites, SpritesByEID } from './sprites'
-import { createLevel, OpenFloors, OpenWaters } from './level'
+import { getTexture, resetSprites, SpritesByEID } from './sprites'
+import { createLevel, DEBUG_VISIBILITY, OpenFloors, OpenWaters } from './level'
 import { RNG } from 'rot-js'
 import { drawHud, initHud, resetHud } from './hud'
 import { Vector2 } from './vector2'
@@ -38,13 +38,14 @@ export function startGame() {
   createLevel()
 
   PlayerEntity = addEntity(World)
-  PlayerSprite = new Sprite(Texture.from('player'))
+  PlayerSprite = new Sprite(getTexture('player'))
   SpritesByEID[PlayerEntity] = PlayerSprite
   OverlaySprites.addChild(PlayerSprite)
   addComponent(World, DisplayObject, PlayerEntity)
   addComponent(World, GridPosition, PlayerEntity)
   setEntGrid(PlayerEntity, RNG.getItem(OpenFloors)!)
   addComponent(World, Walker, PlayerEntity)
+  addComponent(World, Swimmer, PlayerEntity)
   addComponent(World, Health, PlayerEntity)
   Health.max[PlayerEntity] = PLAYER_HEALTH
   Health.current[PlayerEntity] = PLAYER_HEALTH
@@ -80,8 +81,8 @@ window.onload = async (): Promise<void> => {
 
 function addFish(grid: Vector2) {
   const fish = addEntity(World)
-  const fishSprite = new Sprite(Texture.from('fish'))
-  fishSprite.alpha = 0
+  const fishSprite = new Sprite(getTexture('fish'))
+  if (!DEBUG_VISIBILITY) fishSprite.alpha = 0
   SpritesByEID[fish] = fishSprite
   WorldSprites.addChild(fishSprite)
   addComponent(World, DisplayObject, fish)
