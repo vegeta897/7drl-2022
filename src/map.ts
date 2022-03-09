@@ -1,4 +1,4 @@
-import { get4Neighbors, Vector2 } from './vector2'
+import { get4Neighbors, get8Neighbors, Vector2 } from './vector2'
 import { Sprite } from 'pixi.js'
 
 export class GridMap<T> {
@@ -24,6 +24,7 @@ export enum Tile {
   Floor,
   Wall,
   Water,
+  Shallows,
 }
 
 const EmptyTile = {
@@ -40,6 +41,9 @@ export class TileMap extends GridMap<TileData> {
   get4Neighbors(grid: Vector2): TileData[] {
     return get4Neighbors(grid).map((g) => this.get(g))
   }
+  get8Neighbors(grid: Vector2): TileData[] {
+    return get8Neighbors(grid).map((g) => this.get(g))
+  }
   createTile(grid: Vector2, tileType: Tile): void {
     const tileData: TileData = { ...EmptyTile, ...grid, type: tileType }
     switch (tileType) {
@@ -49,6 +53,10 @@ export class TileMap extends GridMap<TileData> {
         break
       case Tile.Water:
         tileData.pondIndex = -1
+        break
+      case Tile.Shallows:
+        tileData.seeThrough = false
+        break
     }
     this.set(grid, tileData)
   }
@@ -65,4 +73,9 @@ export type TileData = {
   tint?: number
   ignoreFOV?: boolean
   revealed: number
+}
+
+export function isWet(tile: Tile): boolean {
+  if (tile === Tile.Water) return true
+  return tile === Tile.Shallows
 }

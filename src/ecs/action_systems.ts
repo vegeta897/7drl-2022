@@ -33,7 +33,7 @@ import { PlayerEntity, PlayerSprite, setGameState } from '../'
 import { Log, logAttack, logKill } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
-import { Tile } from '../map'
+import { isWet, Tile } from '../map'
 import { getTexture, SpritesByEID } from '../sprites'
 import { FOV_RADIUS, RecalcEntities, updateEntityVisibility, VisibilityMap } from '../fov'
 import { clamp } from 'rot-js/lib/util'
@@ -127,7 +127,7 @@ export const wetnessSystem: System = (world) => {
         }
       }
       if (eid === PlayerEntity && prevTileType !== currentTileType) PlayerSprite.texture = getTexture('player')
-    } else if (currentTileType === Tile.Water) {
+    } else if (isWet(currentTileType)) {
       if (prevTileType !== currentTileType) {
         if (eid === PlayerEntity) {
           if (!hasComponent(world, Wetness, eid)) Log.unshift('You are wet')
@@ -145,7 +145,7 @@ const theFish = defineQuery([Fish, OnTileType])
 export const fishSystem: System = (world) => {
   for (const eid of theFish(world)) {
     const currentTileType = OnTileType.current[eid]
-    const onWater = currentTileType === Tile.Water
+    const onWater = isWet(currentTileType)
     const currentSpotting = Spotting.current[eid]
     let spotChange
     const fovDistance = CalculateFOV.distance[eid]

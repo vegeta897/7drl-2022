@@ -2,9 +2,9 @@ import * as ROT from 'rot-js'
 import { Sprite } from 'pixi.js'
 import { TILE_SIZE } from './'
 import { EntitySprites, WorldSprites } from './pixi'
-import { getDiamondAround, Vector2 } from './vector2'
+import { get8Neighbors, getDiamondAround, getDistance, Vector2 } from './vector2'
 import AStar from 'rot-js/lib/path/astar'
-import { GridMap, Tile, TileData, TileMap } from './map'
+import { GridMap, isWet, Tile, TileData, TileMap } from './map'
 import { RNG } from 'rot-js'
 import { getTexture, SpritesByEID } from './sprites'
 import { addComponent, addEntity } from 'bitecs'
@@ -23,7 +23,7 @@ import {
   Wander,
 } from './ecs/components'
 
-export const DEBUG_VISIBILITY = true
+export const DEBUG_VISIBILITY = false
 export const MAP_WIDTH = 80
 export const MAP_HEIGHT = 80
 const seed = 0
@@ -48,7 +48,6 @@ export function createLevel() {
     OpenFloors = []
     const ponds = getPonds()
     fishSpawns = getFishSpawns(ponds)
-    console.log('spawned', fishSpawns.size)
   } while (fishSpawns.size < REQUIRED_FISH_COUNT)
   createMapSprites()
   EntityMap = new GridMap()
@@ -78,6 +77,23 @@ function generateMap() {
     if (Level.get({ x, y }).type === Tile.Wall) return
     Level.createTile({ x, y }, Tile.Water)
   })
+  Level.data.forEach((tile) => {
+    if (tile.type !== Tile.Water) return
+    let shallowAppeal = 0
+    Level.get8Neighbors(tile)
+      .map((n) => ({ ...n, d: getDistance(tile, n) }))
+      .forEach((n) => {
+        let tileAppeal = 0
+        if (n.type === Tile.Wall) tileAppeal = 0.5
+        if (n.type === Tile.Floor) tileAppeal = 1
+        if (n.type === Tile.Shallows) tileAppeal = 1
+        if (n.d > 1) tileAppeal /= 4
+        shallowAppeal += tileAppeal
+      })
+    if (shallowAppeal / 6 > RNG.getUniform()) {
+      Level.createTile(tile, Tile.Shallows)
+    }
+  })
 }
 
 function getPonds() {
@@ -88,7 +104,7 @@ function getPonds() {
       if (diamond2.every((g) => Level.get(g).type === Tile.Floor)) {
         OpenFloors.push(tile)
       }
-    } else if (tile.type === Tile.Water) {
+    } else if (isWet(tile.type)) {
       if (tile.pondIndex! >= 0) return
       const uncheckedNeighbors: Set<TileData> = new Set([tile])
       const pond: TileData[] = []
@@ -126,6 +142,7 @@ function createMapSprites() {
   const wallTexture = getTexture('wall')
   const floorTextures = ['floor1', 'floor2', 'floor3', 'floor4'].map((t) => getTexture(t))
   const waterTexture = getTexture('water')
+  const shallowTexture = getTexture('waterReeds')
   const getTileTexture = (tile: Tile) => {
     switch (tile) {
       case Tile.Floor:
@@ -134,6 +151,8 @@ function createMapSprites() {
         return wallTexture
       case Tile.Water:
         return waterTexture
+      case Tile.Shallows:
+        return shallowTexture
     }
   }
   Level.data.forEach((tile) => {

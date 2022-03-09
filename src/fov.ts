@@ -3,7 +3,7 @@ import { FOV } from 'rot-js'
 import { DEBUG_VISIBILITY, Level } from './level'
 import { CalculateFOV, getEntGrid, Spotting } from './ecs/components'
 import { PlayerEntity } from './'
-import { sineOut } from '@gamestdio/easing'
+import { cubicOut } from '@gamestdio/easing'
 import { Sprite } from 'pixi.js'
 import { clamp } from 'rot-js/lib/util'
 import { SpritesByEID } from './sprites'
@@ -21,7 +21,7 @@ type Visibility = [directness: number, radius: number]
 export let VisibilityMap: GridMap<Visibility> = new GridMap()
 export const RecalcEntities: Set<number> = new Set()
 
-const getEasedVisibility = ([d, r]: Visibility): number => d * sineOut((FOV_RADIUS - r) / FOV_RADIUS)
+const getEasedVisibility = ([d, r]: Visibility): number => d * cubicOut((FOV_RADIUS - r) / FOV_RADIUS)
 
 let fovEntities: Query // This file is loaded before component registration
 
@@ -29,8 +29,10 @@ export function updateVisibility() {
   if (DEBUG_VISIBILITY) return
   if (!needTileUpdate) return
   const newVisibilityMap: GridMap<Visibility> = new GridMap()
-  const fov = new FOV.PreciseShadowcasting((x, y) => Level.get({ x, y }).seeThrough)
   const playerGrid = getEntGrid(PlayerEntity)
+  const fov = new FOV.PreciseShadowcasting(
+    (x, y) => Level.get({ x, y }).seeThrough || (playerGrid.x === x && playerGrid.y === y)
+  )
   fov.compute(playerGrid.x, playerGrid.y, FOV_RADIUS, (x, y, radius, directness) => {
     const prevVisibility = VisibilityMap.get({ x, y })
     newVisibilityMap.set({ x, y }, [

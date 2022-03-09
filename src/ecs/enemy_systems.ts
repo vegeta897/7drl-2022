@@ -23,7 +23,7 @@ import {
 } from '../vector2'
 import { EntityMap, findPath, Level } from '../level'
 import { Log } from '../hud'
-import { Tile } from '../map'
+import { isWet, Tile } from '../map'
 import { PlayerEntity } from '../'
 import { RecalcEntities } from '../fov'
 
@@ -32,7 +32,7 @@ const scents = defineQuery([Scent])
 export const predatorSystem: System = (world) => {
   for (const eid of predators(world)) {
     const myGrid = getEntGrid(eid)
-    if (Level.get(myGrid).type !== Tile.Water) continue
+    if (!isWet(Level.get(myGrid).type)) continue
     for (const scentEnt of scents(world)) {
       const scentGrid = getEntGrid(scentEnt)
       const distance = getDistance(myGrid, scentGrid)
@@ -60,12 +60,7 @@ export const predatorSystem: System = (world) => {
         .map((g) => ({ ...g, d: getDistance(scentGrid, g) }))
         .sort((a, b) => a.d - b.d)
       for (const lingerGrid of lingerArea) {
-        const towardScent = findPath(
-          myGrid,
-          lingerGrid,
-          eid,
-          (g) => Level.get(g).type === Tile.Water && !EntityMap.get(g)
-        )[0]
+        const towardScent = findPath(myGrid, lingerGrid, eid, (g) => isWet(Level.get(g).type) && !EntityMap.get(g))[0]
         if (!towardScent) continue
         const lingerStrength = (1 + scentRange - lingerGrid.d) / scentRange
         const lingerDistanceFromMe = getDistance(myGrid, lingerGrid)
@@ -93,7 +88,7 @@ export const wanderSystem: System = (world) => {
     }
     Wander.chance[eid] = 0
     const myGrid = getEntGrid(eid)
-    const choices = Level.get4Neighbors(myGrid).filter((t) => t.type === Tile.Water)
+    const choices = Level.get4Neighbors(myGrid).filter((t) => isWet(t.type))
     if (choices.length === 0) continue
     const dir = diffVector2(myGrid, RNG.getItem(choices)!)
     addComponent(world, MoveAction, eid)
@@ -118,7 +113,7 @@ export const seekWaterSystem: System = (world) => {
     const myGrid = getEntGrid(eid)
     const nearestTiles = sortByDistance(
       myGrid,
-      getDiamondAround(myGrid, SeekWater.distance[eid]).filter((g) => Level.get(g).type === Tile.Water)
+      getDiamondAround(myGrid, SeekWater.distance[eid]).filter((g) => isWet(Level.get(g).type))
     )
     for (const tile of nearestTiles) {
       const towardWater = findPath(myGrid, tile, eid)[0]
