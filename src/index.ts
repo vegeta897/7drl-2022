@@ -7,7 +7,7 @@ import { DisplayObject, GridPosition, Health, setEntGrid, CanSwim, CanWalk, OnTi
 import { getTexture, resetSprites, SpritesByEID } from './sprites'
 import { createLevel, MAP_HEIGHT, MAP_WIDTH, OpenFloors } from './level'
 import { drawHud, initHud, resetHud } from './hud'
-import { resetFOV, updateVisibility } from './fov'
+import { initFOV, resetFOV, updateEntityVisibility, updateVisibility } from './fov'
 import { initCasting, resetCasting } from './casting'
 import { setPlayerState } from './ecs/input_systems'
 import { RNG } from 'rot-js'
@@ -47,6 +47,7 @@ export function startGame() {
   initCasting()
 
   updateVisibility()
+  updateEntityVisibility()
 
   GameState = 'Playing'
   drawHud()
@@ -66,5 +67,6 @@ export function resetGame() {
 window.onload = async (): Promise<void> => {
   initHud()
   await initPixi()
+  initFOV()
   startGame()
 }

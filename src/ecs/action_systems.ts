@@ -15,8 +15,8 @@ import {
   CanWalk,
   OnTileType,
   Wetness,
-  InFOV,
   Spotting,
+  CalculateFOV,
 } from './components'
 import {
   defineQuery,
@@ -35,7 +35,7 @@ import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } fro
 import { cutLine } from '../casting'
 import { Tile } from '../map'
 import { getTexture, SpritesByEID } from '../sprites'
-import { FOV_RADIUS, triggerEntityUpdate } from '../fov'
+import { FOV_RADIUS, RecalcEntities, updateEntityVisibility, VisibilityMap } from '../fov'
 import { clamp } from 'rot-js/lib/util'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
@@ -103,7 +103,7 @@ export const moveSystem: System = (world) => {
       OnTileType.previous[eid] = OnTileType.current[eid]
       OnTileType.current[eid] = Level.get(currentGrid).type
     }
-    if (SpritesByEID[eid].alpha === 0) continue
+    if (!VisibilityMap.has(currentGrid)) continue
     addComponent(world, AnimateMovement, eid)
     AnimateMovement.x[eid] = MoveAction.x[eid]
     AnimateMovement.y[eid] = MoveAction.y[eid]
@@ -146,15 +146,19 @@ export const fishSystem: System = (world) => {
   for (const eid of theFish(world)) {
     const currentTileType = OnTileType.current[eid]
     const onWater = currentTileType === Tile.Water
-    let spotChange = onWater ? -0.25 : 0
-    if (hasComponent(world, InFOV, eid) && Spotting.current[eid] < 2) {
-      const distance = getDistance(getEntGrid(PlayerEntity), getEntGrid(eid))
-      spotChange = (1 - distance / FOV_RADIUS) * Spotting.increaseBy[eid]
+    const currentSpotting = Spotting.current[eid]
+    let spotChange
+    const fovDistance = CalculateFOV.distance[eid]
+    if (fovDistance >= 0) {
+      spotChange = (1 - fovDistance / FOV_RADIUS) * Spotting.increaseBy[eid]
       if (!onWater) spotChange = 1
+    } else {
+      spotChange = onWater ? -0.25 : 0
     }
-    if (spotChange) {
-      Spotting.current[eid] = clamp(Spotting.current[eid] + spotChange, 0, 2)
-      triggerEntityUpdate()
+    const newSpotting = clamp(currentSpotting + spotChange, 0, 2)
+    if (newSpotting !== currentSpotting) {
+      Spotting.current[eid] = newSpotting
+      RecalcEntities.add(eid)
     }
     if (OnTileType.previous[eid] === currentTileType) continue
     if (currentTileType === Tile.Floor) {

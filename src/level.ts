@@ -10,6 +10,7 @@ import { getTexture, SpritesByEID } from './sprites'
 import { addComponent, addEntity } from 'bitecs'
 import { World } from './ecs'
 import {
+  CalculateFOV,
   CanSwim,
   DisplayObject,
   Fish,
@@ -25,6 +26,9 @@ import {
 export const DEBUG_VISIBILITY = false
 export const MAP_WIDTH = 80
 export const MAP_HEIGHT = 80
+const seed = 0
+if (seed) RNG.setSeed(seed)
+console.log('rng seed', RNG.getSeed())
 
 export let Level: TileMap
 export let EntityMap: GridMap<number>
@@ -138,6 +142,7 @@ function addFish(grid: Vector2) {
   Health.max[fish] = 4
   Health.current[fish] = 4
   addComponent(World, Fish, fish)
+  addComponent(World, CalculateFOV, fish)
   addComponent(World, Spotting, fish)
   Spotting.current[fish] = 0
   Spotting.increaseBy[fish] = 0.15

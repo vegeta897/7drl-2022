@@ -10,6 +10,7 @@ import {
   Wander,
   Scent,
   Wetness,
+  Spotting,
 } from './components'
 import { RNG } from 'rot-js'
 import {
@@ -20,10 +21,11 @@ import {
   sortByDistance,
   vectorsAreInline,
 } from '../vector2'
-import { findPath, Level } from '../level'
+import { EntityMap, findPath, Level } from '../level'
 import { Log } from '../hud'
 import { Tile } from '../map'
 import { PlayerEntity } from '../'
+import { RecalcEntities } from '../fov'
 
 const predators = defineQuery([GridPosition, Predator, Not(Stunned), Not(SeekWater)])
 const scents = defineQuery([Scent])
@@ -35,13 +37,16 @@ export const predatorSystem: System = (world) => {
       const scentGrid = getEntGrid(scentEnt)
       const distance = getDistance(myGrid, scentGrid)
       if (distance <= Predator.lungeRange[eid] && vectorsAreInline(myGrid, scentGrid)) {
-        if (getStraightLine(myGrid, scentGrid, false).some((t) => Level.get(t).type === Tile.Wall)) continue
+        if (getStraightLine(myGrid, scentGrid, false).some((t) => Level.get(t).type === Tile.Wall || EntityMap.get(t)))
+          continue
         const move = diffVector2(myGrid, scentGrid)
         addComponent(world, MoveAction, eid)
         MoveAction.x[eid] = move.x
         MoveAction.y[eid] = move.y
         MoveAction.noclip[eid] = 0
         addComponent(world, CanWalk, eid)
+        Spotting.current[eid] = 2
+        RecalcEntities.add(eid)
         if (distance > 1 && scentEnt === PlayerEntity) Log.unshift('The fish lunges at you!')
         break
       }

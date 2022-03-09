@@ -2,7 +2,7 @@ import { ComponentType, defineComponent, Types } from 'bitecs'
 import { Vector2 } from '../vector2'
 import { EntityMap } from '../level'
 import { PlayerEntity } from '../'
-import { triggerEntityUpdate, triggerTileUpdate } from '../fov'
+import { RecalcEntities, triggerTileUpdate, updateEntityVisibility } from '../fov'
 
 export const DisplayObject = defineComponent()
 
@@ -37,7 +37,7 @@ export const Scent = defineComponent({ range: Types.ui8 })
 export const Wetness = defineComponent({ factor: Types.f32 })
 export const Spotting = defineComponent({ current: Types.f32, increaseBy: Types.f32 })
 
-export const InFOV = defineComponent()
+export const CalculateFOV = defineComponent({ distance: Types.i8 })
 
 export const vector2FromC = (component: ComponentType<typeof GridC>, eid: number) => ({
   x: component.x[eid],
@@ -58,8 +58,13 @@ export function setEntGrid(eid: number, grid: Vector2) {
   GridPosition.y[eid] = grid.y
   GridPosition.dirty[eid] = 1
   EntityMap.set(grid, eid)
-  if (eid === PlayerEntity) triggerTileUpdate()
-  else triggerEntityUpdate()
+  if (eid === PlayerEntity) {
+    // Update all entity visibility
+    triggerTileUpdate()
+  } else {
+    // Update only this entity's visibility
+    RecalcEntities.add(eid)
+  }
 }
 
 export function deleteEntGrid(eid: number) {
