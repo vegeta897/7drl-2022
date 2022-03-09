@@ -26,7 +26,7 @@ export const Health = defineComponent({ current: Types.ui16, max: Types.ui16 })
 export const CanWalk = defineComponent()
 export const CanSwim = defineComponent()
 export const Wander = defineComponent({ chance: Types.ui8, maxChance: Types.ui8 })
-export const Predator = defineComponent({ range: Types.ui8 })
+export const Predator = defineComponent({ lungeRange: Types.ui8, senseRange: Types.ui8 })
 export const Stunned = defineComponent({ remaining: Types.ui16 })
 export const SeekWater = defineComponent({ distance: Types.ui8 })
 
@@ -34,6 +34,7 @@ export const OnTileType = defineComponent({ current: Types.ui8, previous: Types.
 
 export const Fish = defineComponent()
 export const Bait = defineComponent()
+export const Scent = defineComponent({ strength: Types.f32 })
 
 export const vector2FromC = (component: ComponentType<typeof GridC>, eid: number) => ({
   x: component.x[eid],

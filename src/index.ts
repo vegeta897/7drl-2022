@@ -2,14 +2,13 @@ import './style.css'
 import { World } from './ecs'
 import { addComponent, addEntity, resetWorld } from 'bitecs'
 import { Sprite } from 'pixi.js'
-import { initPixi, OverlaySprites, PixiViewport, resetPixi } from './pixi'
-import { DisplayObject, GridPosition, Health, setEntGrid, CanSwim, CanWalk, OnTileType } from './ecs/components'
+import { initPixi, OverlaySprites, resetPixi } from './pixi'
+import { DisplayObject, GridPosition, Health, setEntGrid, CanSwim, CanWalk, OnTileType, Scent } from './ecs/components'
 import { getTexture, resetSprites, SpritesByEID } from './sprites'
-import { createLevel, OpenFloors } from './level'
-import { RNG } from 'rot-js'
+import { createLevel } from './level'
 import { drawHud, initHud, resetHud } from './hud'
 import { resetFOV } from './fov'
-import { initCasting, resetCasting } from './casting'
+import { BaitEntity, initCasting, resetCasting } from './casting'
 import { setPlayerState } from './ecs/input_systems'
 
 export const TILE_SIZE = 16
@@ -35,15 +34,14 @@ export function startGame() {
   addComponent(World, GridPosition, PlayerEntity)
   const playerStart = { x: 40, y: 40 } /*RNG.getItem(OpenFloors)!*/
   setEntGrid(PlayerEntity, playerStart)
-  PlayerSprite.x = playerStart.x * TILE_SIZE
-  PlayerSprite.y = playerStart.y * TILE_SIZE
   addComponent(World, CanWalk, PlayerEntity)
   addComponent(World, CanSwim, PlayerEntity)
+  addComponent(World, Scent, PlayerEntity)
+  Scent.strength[PlayerEntity] = 1
   addComponent(World, Health, PlayerEntity)
   Health.max[PlayerEntity] = PLAYER_HEALTH
   Health.current[PlayerEntity] = PLAYER_HEALTH
 
-  PixiViewport.moveCenter(PlayerSprite)
   initCasting()
 
   GameState = 'Playing'

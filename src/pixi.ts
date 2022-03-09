@@ -48,6 +48,7 @@ export function resetPixi() {
   PixiViewport.addChild(WorldSprites)
   PixiViewport.addChild(EntitySprites)
   PixiViewport.addChild(OverlaySprites)
+  PixiViewport.alpha = 1
 }
 
 async function loadGameAssets(): Promise<void> {

@@ -14,6 +14,7 @@ import {
   CanSwim,
   CanWalk,
   OnTileType,
+  Scent,
 } from './components'
 import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity, entityExists } from 'bitecs'
 import { EntityMap, Level } from '../level'
@@ -98,9 +99,19 @@ export const moveSystem: System = (world) => {
 export const playerSystem: System = (world) => {
   const prevTileType = OnTileType.previous[PlayerEntity]
   const currentTileType = OnTileType.current[PlayerEntity]
-  if (GridPosition.dirty[PlayerEntity] > 0 && prevTileType !== currentTileType) {
-    if (currentTileType === Tile.Floor) PlayerSprite.texture = getTexture('player')
-    else if (currentTileType === Tile.Water) PlayerSprite.texture = getTexture('playerSwim')
+  if (currentTileType === Tile.Floor) {
+    const scentStrength = Scent.strength[PlayerEntity]
+    if (scentStrength > 1) {
+      Scent.strength[PlayerEntity] = Math.max(1, scentStrength * 0.9)
+      if (Scent.strength[PlayerEntity] === 1) Log.unshift('You are no longer wet')
+    }
+    if (prevTileType !== currentTileType) PlayerSprite.texture = getTexture('player')
+  } else if (currentTileType === Tile.Water) {
+    if (prevTileType !== currentTileType) {
+      if (Scent.strength[PlayerEntity] <= 1) Log.unshift('You are wet')
+      Scent.strength[PlayerEntity] = 2.5
+      PlayerSprite.texture = getTexture('playerSwim')
+    }
   }
   return world
 }

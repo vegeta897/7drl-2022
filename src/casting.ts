@@ -11,6 +11,7 @@ import {
   DisplayObject,
   getEntGrid,
   GridPosition,
+  Scent,
   setEntGrid,
 } from './ecs/components'
 import { processInput, setPlayerState } from './ecs/input_systems'
@@ -68,6 +69,8 @@ export function confirmCast() {
     WorldSprites.addChild(baitSprite)
     addComponent(World, Bait, BaitEntity)
     addComponent(World, DisplayObject, BaitEntity)
+    addComponent(World, Scent, BaitEntity)
+    Scent.strength[BaitEntity] = 2
     addComponent(World, GridPosition, BaitEntity)
     setEntGrid(BaitEntity, addVector2(getEntGrid(PlayerEntity), CastVector))
     processInput()

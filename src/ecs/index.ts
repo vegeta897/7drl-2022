@@ -14,6 +14,7 @@ import {
   CanWalk,
   Wander,
   OnTileType,
+  Scent,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { wanderSystem, predatorSystem, stunnedSystem, seekWaterSystem } from './enemy_systems'
@@ -28,7 +29,8 @@ export const World = createWorld(5000)
 const systemGroups = {
   input: inputSystem,
   enemyTurn: pipe(predatorSystem, wanderSystem, stunnedSystem, seekWaterSystem),
-  actions: pipe(moveSystem, playerSystem, fishSystem, gameSystem),
+  enemyActions: pipe(moveSystem, fishSystem, gameSystem),
+  playerActions: pipe(moveSystem, playerSystem, gameSystem),
   render: pipe(spriteAddSystem, spriteRemoveSystem, fovSystem, cameraSystem, fadeSystem),
 }
 
@@ -37,12 +39,12 @@ export let LoopState: 'Waiting' | 'AnimatePlayer' | 'AnimateEnemies' = 'Waiting'
 export async function onInput() {
   systemGroups.input(World)
   if (WaitingForInput) return
-  runActions() // Execute player actions
+  systemGroups.playerActions(World) // Execute player actions
   LoopState = 'AnimatePlayer'
   await runAnimations(World) // Animate player actions
   drawHud()
-  runEnemies() // Plan enemy actions
-  runActions() // Run enemy actions
+  systemGroups.enemyTurn(World) // Plan enemy actions
+  systemGroups.enemyActions(World) // Run enemy actions
   LoopState = 'AnimateEnemies'
   await runAnimations(World) // Animate enemy actions
   drawHud()
@@ -50,8 +52,6 @@ export async function onInput() {
   waitForInput()
 }
 
-export const runEnemies = () => systemGroups.enemyTurn(World)
-export const runActions = () => systemGroups.actions(World)
 export const runRender = () => systemGroups.render(World)
 
 registerComponents(World, [
@@ -69,4 +69,5 @@ registerComponents(World, [
   SeekWater,
   Bait,
   OnTileType,
+  Scent,
 ])

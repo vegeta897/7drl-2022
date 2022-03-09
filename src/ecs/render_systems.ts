@@ -1,5 +1,5 @@
 import { defineQuery, enterQuery, exitQuery, System } from 'bitecs'
-import { GameState, PlayerSprite, setGameState, TILE_SIZE } from '../'
+import { GameState, PlayerEntity, PlayerSprite, setGameState, TILE_SIZE } from '../'
 import { PixiViewport } from '../pixi'
 import { Util } from 'rot-js'
 import { DisplayObject, GridPosition } from './components'
@@ -21,6 +21,7 @@ export const spriteAddSystem: System = (world) => {
   for (const eid of enteredSpriteQuery(world)) {
     SpritesByEID[eid].x = GridPosition.x[eid] * TILE_SIZE
     SpritesByEID[eid].y = GridPosition.y[eid] * TILE_SIZE
+    if (eid === PlayerEntity) PixiViewport.moveCenter(PlayerSprite)
   }
   return world
 }
@@ -57,7 +58,7 @@ export const cameraSystem: System = (world) => {
 let fadeProgress = 0
 export const fadeSystem: System = (world) => {
   if (GameState === 'Losing') {
-    fadeProgress = Math.min(1, fadeProgress + Ticker.shared.deltaMS / 5000)
+    fadeProgress = Math.min(1, fadeProgress + Ticker.shared.deltaMS / 3500)
     PixiViewport.alpha = cubicOut(1 - fadeProgress)
     if (fadeProgress === 1) {
       fadeProgress = 0

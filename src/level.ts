@@ -30,6 +30,8 @@ export let EntityMap: GridMap<number>
 
 // TODO: Entity map doesn't allow more than one entity on a tile, this may cause issues!
 
+// TODO: Generate map boundaries with another cellular with high probability to form a big blob
+
 export let OpenFloors: Vector2[]
 let openWaters: Vector2[]
 let ponds: Vector2[][]
@@ -129,20 +131,27 @@ function addFish(grid: Vector2) {
   Wander.chance[fish] = RNG.getUniformInt(0, 10)
   addComponent(World, CanSwim, fish)
   addComponent(World, Predator, fish)
-  Predator.range[fish] = 4
+  Predator.lungeRange[fish] = 4
+  Predator.senseRange[fish] = 12
   addComponent(World, Health, fish)
   Health.max[fish] = 4
   Health.current[fish] = 4
   addComponent(World, Fish, fish)
 }
 
-export function findPath(from: Vector2, to: Vector2, selfEntity: number, distance = 1): Vector2[] {
+export function findPath(
+  from: Vector2,
+  to: Vector2,
+  selfEntity: number,
+  checkFn = (grid: Vector2) => !Level.get(grid).solid,
+  distance = 1
+): Vector2[] {
   const map = new Dijkstra(
     to.x,
     to.y,
     (x, y) => {
       if (x === from.x && y === from.y) return true
-      return !Level.get({ x, y }).solid && !EntityMap.has({ x, y })
+      return checkFn({ x, y })
     },
     { topology: 4 }
   )

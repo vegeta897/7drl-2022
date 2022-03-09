@@ -1,10 +1,19 @@
-import { addComponent, defineQuery, hasComponent, Not, removeComponent, System } from 'bitecs'
-import { Bait, getEntGrid, GridPosition, MoveAction, Predator, SeekWater, Stunned, CanWalk, Wander } from './components'
+import { addComponent, defineQuery, Not, removeComponent, System } from 'bitecs'
+import {
+  getEntGrid,
+  GridPosition,
+  MoveAction,
+  Predator,
+  SeekWater,
+  Stunned,
+  CanWalk,
+  Wander,
+  Scent,
+} from './components'
 import { RNG } from 'rot-js'
 import {
   diffVector2,
   Down,
-  getCross,
   getDiamondAround,
   getDistance,
   getStraightLine,
@@ -12,33 +21,45 @@ import {
   Right,
   sortByDistance,
   Up,
+  vectorsAreInline,
 } from '../vector2'
-import { EntityMap, findPath, Level } from '../level'
+import { findPath, Level } from '../level'
 import { Log } from '../hud'
-import { PlayerEntity } from '../'
 import { Tile } from '../map'
 
 const predators = defineQuery([GridPosition, Predator, Not(Stunned), Not(SeekWater)])
+const scents = defineQuery([Scent])
 export const predatorSystem: System = (world) => {
   for (const eid of predators(world)) {
     const myGrid = getEntGrid(eid)
     if (Level.get(myGrid).type !== Tile.Water) continue
-    const senseArea = getCross(myGrid, Predator.range[eid])
-    for (const grid of senseArea) {
-      const distance = getDistance(myGrid, grid)
-      if (distance <= 1 || distance > Predator.range[eid]) continue
-      const entityAtGrid = EntityMap.get(grid)
-      if (entityAtGrid === undefined) continue
-      if (entityAtGrid !== PlayerEntity && !hasComponent(world, Bait, entityAtGrid)) continue
-      if (getStraightLine(myGrid, grid, false).some((t) => Level.get(t).type === Tile.Wall)) continue
-      const move = diffVector2(myGrid, grid)
-      addComponent(world, MoveAction, eid)
-      MoveAction.x[eid] = move.x
-      MoveAction.y[eid] = move.y
-      MoveAction.noclip[eid] = 0
-      addComponent(world, CanWalk, eid)
-      Log.unshift('The fish lunges out of the water!')
-      break
+    for (const scentEnt of scents(world)) {
+      const scentGrid = getEntGrid(scentEnt)
+      const distance = getDistance(myGrid, scentGrid)
+      if (distance > Predator.senseRange[eid]) continue
+      if (distance <= Predator.lungeRange[eid] && vectorsAreInline(myGrid, scentGrid)) {
+        if (getStraightLine(myGrid, scentGrid, false).some((t) => Level.get(t).type === Tile.Wall)) continue
+        const move = diffVector2(myGrid, scentGrid)
+        addComponent(world, MoveAction, eid)
+        MoveAction.x[eid] = move.x
+        MoveAction.y[eid] = move.y
+        MoveAction.noclip[eid] = 0
+        addComponent(world, CanWalk, eid)
+        if (distance > 1) Log.unshift('The fish lunges at you!')
+        break
+      }
+      const nearness = (Predator.senseRange[eid] - distance) / Predator.senseRange[eid]
+      const attractChance = nearness * Scent.strength[scentEnt]
+      if (attractChance > RNG.getUniform()) {
+        const towardScent = findPath(myGrid, scentGrid, eid, (grid) => Level.get(grid).type === Tile.Water)[0]
+        if (!towardScent) continue
+        const move = diffVector2(myGrid, towardScent)
+        addComponent(world, MoveAction, eid)
+        MoveAction.x[eid] = move.x
+        MoveAction.y[eid] = move.y
+        MoveAction.noclip[eid] = 0
+        break
+      }
     }
   }
   return world
@@ -52,7 +73,10 @@ export const wanderSystem: System = (world) => {
       continue
     }
     Wander.chance[eid] = 0
-    const dir = RNG.getItem([Up, Down, Left, Right])!
+    const myGrid = getEntGrid(eid)
+    const choices = Level.get4Neighbors(myGrid).filter((t) => t.type === Tile.Water)
+    if (choices.length === 0) continue
+    const dir = diffVector2(myGrid, RNG.getItem(choices)!)
     addComponent(world, MoveAction, eid)
     MoveAction.x[eid] = dir.x
     MoveAction.y[eid] = dir.y
