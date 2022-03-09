@@ -15,10 +15,11 @@ import {
   Wander,
   OnTileType,
   Scent,
+  Wetness,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { wanderSystem, predatorSystem, stunnedSystem, seekWaterSystem } from './enemy_systems'
-import { fishSystem, gameSystem, moveSystem, playerSystem } from './action_systems'
+import { fishSystem, gameSystem, moveSystem, wetnessSystem } from './action_systems'
 import { runAnimations } from './anim_systems'
 import { cameraSystem, fadeSystem, fovSystem, spriteAddSystem, spriteRemoveSystem } from './render_systems'
 import { drawHud } from '../hud'
@@ -30,7 +31,7 @@ const systemGroups = {
   input: inputSystem,
   enemyTurn: pipe(predatorSystem, wanderSystem, stunnedSystem, seekWaterSystem),
   enemyActions: pipe(moveSystem, fishSystem, gameSystem),
-  playerActions: pipe(moveSystem, playerSystem, gameSystem),
+  playerActions: pipe(moveSystem, wetnessSystem, gameSystem),
   render: pipe(spriteAddSystem, spriteRemoveSystem, fovSystem, cameraSystem, fadeSystem),
 }
 
@@ -70,4 +71,5 @@ registerComponents(World, [
   Bait,
   OnTileType,
   Scent,
+  Wetness,
 ])

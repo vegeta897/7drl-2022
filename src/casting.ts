@@ -11,6 +11,7 @@ import {
   DisplayObject,
   getEntGrid,
   GridPosition,
+  OnTileType,
   Scent,
   setEntGrid,
 } from './ecs/components'
@@ -70,9 +71,12 @@ export function confirmCast() {
     addComponent(World, Bait, BaitEntity)
     addComponent(World, DisplayObject, BaitEntity)
     addComponent(World, Scent, BaitEntity)
-    Scent.strength[BaitEntity] = 2
+    Scent.range[BaitEntity] = 5
     addComponent(World, GridPosition, BaitEntity)
-    setEntGrid(BaitEntity, addVector2(getEntGrid(PlayerEntity), CastVector))
+    const baitGrid = addVector2(getEntGrid(PlayerEntity), CastVector)
+    setEntGrid(BaitEntity, baitGrid)
+    addComponent(World, OnTileType, BaitEntity)
+    OnTileType.current[BaitEntity] = Level.get(baitGrid).type
     processInput()
     setPlayerState('Angling')
     drawFishingLine()
@@ -110,7 +114,10 @@ export function angleBait(move: Vector2) {
         CastVector.x = moddedCastTo.x
         CastVector.y = moddedCastTo.y
         drawFishingLine()
-        changeEntGrid(BaitEntity!, addVector2(playerGrid, CastVector))
+        const moveTo = addVector2(playerGrid, CastVector)
+        changeEntGrid(BaitEntity!, moveTo)
+        OnTileType.previous[BaitEntity!] = OnTileType.current[BaitEntity!]
+        OnTileType.current[BaitEntity!] = Level.get(moveTo).type
       }
       processInput()
       break

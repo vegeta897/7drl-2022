@@ -14,9 +14,18 @@ import {
   CanSwim,
   CanWalk,
   OnTileType,
-  Scent,
+  Wetness,
 } from './components'
-import { defineQuery, System, addComponent, removeComponent, hasComponent, removeEntity, entityExists } from 'bitecs'
+import {
+  defineQuery,
+  System,
+  addComponent,
+  removeComponent,
+  hasComponent,
+  removeEntity,
+  entityExists,
+  Not,
+} from 'bitecs'
 import { EntityMap, Level } from '../level'
 import { PlayerEntity, PlayerSprite, setGameState } from '../'
 import { Log, logAttack, logKill } from '../hud'
@@ -86,6 +95,10 @@ export const moveSystem: System = (world) => {
     }
     if (vectorsAreEqual(startGrid, currentGrid)) continue
     changeEntGrid(eid, currentGrid)
+    if (hasComponent(world, OnTileType, eid)) {
+      OnTileType.previous[eid] = OnTileType.current[eid]
+      OnTileType.current[eid] = Level.get(currentGrid).type
+    }
     // TODO: Don't animate if enemy doesn't have Visible tag
     addComponent(world, AnimateMovement, eid)
     AnimateMovement.x[eid] = MoveAction.x[eid]
@@ -96,33 +109,39 @@ export const moveSystem: System = (world) => {
   return world
 }
 
-export const playerSystem: System = (world) => {
-  const prevTileType = OnTileType.previous[PlayerEntity]
-  const currentTileType = OnTileType.current[PlayerEntity]
-  if (currentTileType === Tile.Floor) {
-    const scentStrength = Scent.strength[PlayerEntity]
-    if (scentStrength > 1) {
-      Scent.strength[PlayerEntity] = Math.max(1, scentStrength * 0.9)
-      if (Scent.strength[PlayerEntity] === 1) Log.unshift('You are no longer wet')
-    }
-    if (prevTileType !== currentTileType) PlayerSprite.texture = getTexture('player')
-  } else if (currentTileType === Tile.Water) {
-    if (prevTileType !== currentTileType) {
-      if (Scent.strength[PlayerEntity] <= 1) Log.unshift('You are wet')
-      Scent.strength[PlayerEntity] = 2.5
-      PlayerSprite.texture = getTexture('playerSwim')
+const onTileTypeQuery = defineQuery([OnTileType, Not(Fish)])
+export const wetnessSystem: System = (world) => {
+  for (const eid of onTileTypeQuery(world)) {
+    const prevTileType = OnTileType.previous[eid]
+    const currentTileType = OnTileType.current[eid]
+    if (currentTileType === Tile.Floor) {
+      if (hasComponent(world, Wetness, eid)) {
+        Wetness.factor[eid] -= 0.1
+        if (Wetness.factor[eid] <= 0) {
+          removeComponent(world, Wetness, eid)
+          if (eid === PlayerEntity) Log.unshift('You are no longer wet')
+        }
+      }
+      if (eid === PlayerEntity && prevTileType !== currentTileType) PlayerSprite.texture = getTexture('player')
+    } else if (currentTileType === Tile.Water) {
+      if (prevTileType !== currentTileType) {
+        if (eid === PlayerEntity) {
+          if (!hasComponent(world, Wetness, eid)) Log.unshift('You are wet')
+          PlayerSprite.texture = getTexture('playerSwim')
+        }
+        addComponent(world, Wetness, eid)
+        Wetness.factor[eid] = 1
+      }
     }
   }
   return world
 }
 
-const theFish = defineQuery([Fish, GridPosition])
+const theFish = defineQuery([Fish, OnTileType])
 export const fishSystem: System = (world) => {
   for (const eid of theFish(world)) {
-    if (GridPosition.dirty[eid] === 0) continue
-    const prevTileType = OnTileType.previous[eid]
     const currentTileType = OnTileType.current[eid]
-    if (prevTileType === currentTileType) continue
+    if (OnTileType.previous[eid] === currentTileType) continue
     if (currentTileType === Tile.Floor) {
       SpritesByEID[eid].texture = getTexture('fish')
       addComponent(world, SeekWater, eid)

@@ -21,9 +21,9 @@ import {
   Wander,
 } from './ecs/components'
 
-export const DEBUG_VISIBILITY = true
-const MAP_WIDTH = 80
-const MAP_HEIGHT = 80
+export const DEBUG_VISIBILITY = false
+export const MAP_WIDTH = 80
+export const MAP_HEIGHT = 80
 
 export let Level: TileMap
 export let EntityMap: GridMap<number>
@@ -104,7 +104,7 @@ export function createLevel() {
           currentTile.pondIndex = ponds.length
           Level.get4Neighbors(currentTile).forEach((t) => t.pondIndex! < 0 && uncheckedNeighbors.add(t))
         } while (uncheckedNeighbors.size > 0)
-        const tilesPerFish = Math.max(8, RNG.getNormal(15, 5))
+        const tilesPerFish = Math.max(8, RNG.getNormal(24, 8))
         const fishCount = Math.floor(pond.length / tilesPerFish)
         for (let i = 0; i < fishCount; i++) {
           addFish(RNG.getItem(pond)!)
@@ -132,7 +132,7 @@ function addFish(grid: Vector2) {
   addComponent(World, CanSwim, fish)
   addComponent(World, Predator, fish)
   Predator.lungeRange[fish] = 4
-  Predator.senseRange[fish] = 12
+  Predator.senseRange[fish] = 8
   addComponent(World, Health, fish)
   Health.max[fish] = 4
   Health.current[fish] = 4

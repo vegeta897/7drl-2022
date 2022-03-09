@@ -1,4 +1,4 @@
-import { addComponent, defineQuery, Not, removeComponent, System } from 'bitecs'
+import { addComponent, defineQuery, hasComponent, Not, removeComponent, System } from 'bitecs'
 import {
   getEntGrid,
   GridPosition,
@@ -9,23 +9,21 @@ import {
   CanWalk,
   Wander,
   Scent,
+  Wetness,
 } from './components'
 import { RNG } from 'rot-js'
 import {
   diffVector2,
-  Down,
   getDiamondAround,
   getDistance,
   getStraightLine,
-  Left,
-  Right,
   sortByDistance,
-  Up,
   vectorsAreInline,
 } from '../vector2'
 import { findPath, Level } from '../level'
 import { Log } from '../hud'
 import { Tile } from '../map'
+import { PlayerEntity } from '../'
 
 const predators = defineQuery([GridPosition, Predator, Not(Stunned), Not(SeekWater)])
 const scents = defineQuery([Scent])
@@ -36,7 +34,6 @@ export const predatorSystem: System = (world) => {
     for (const scentEnt of scents(world)) {
       const scentGrid = getEntGrid(scentEnt)
       const distance = getDistance(myGrid, scentGrid)
-      if (distance > Predator.senseRange[eid]) continue
       if (distance <= Predator.lungeRange[eid] && vectorsAreInline(myGrid, scentGrid)) {
         if (getStraightLine(myGrid, scentGrid, false).some((t) => Level.get(t).type === Tile.Wall)) continue
         const move = diffVector2(myGrid, scentGrid)
@@ -45,20 +42,32 @@ export const predatorSystem: System = (world) => {
         MoveAction.y[eid] = move.y
         MoveAction.noclip[eid] = 0
         addComponent(world, CanWalk, eid)
-        if (distance > 1) Log.unshift('The fish lunges at you!')
+        if (distance > 1 && scentEnt === PlayerEntity) Log.unshift('The fish lunges at you!')
         break
       }
-      const nearness = (Predator.senseRange[eid] - distance) / Predator.senseRange[eid]
-      const attractChance = nearness * Scent.strength[scentEnt]
-      if (attractChance > RNG.getUniform()) {
-        const towardScent = findPath(myGrid, scentGrid, eid, (grid) => Level.get(grid).type === Tile.Water)[0]
+      const senseRange = Predator.senseRange[eid]
+      let scentRange = Scent.range[scentEnt]
+      // Scent range amplified by wetness
+      if (hasComponent(world, Wetness, scentEnt)) scentRange += Math.round(scentRange * Wetness.factor[scentEnt])
+      if (distance >= senseRange + scentRange) continue
+      const lingerArea = getDiamondAround(scentGrid, scentRange)
+        .filter((g) => getDistance(myGrid, g) <= senseRange)
+        .map((g) => ({ ...g, d: getDistance(scentGrid, g) }))
+        .sort((a, b) => a.d - b.d)
+      for (const lingerGrid of lingerArea) {
+        const towardScent = findPath(myGrid, lingerGrid, eid, (grid) => Level.get(grid).type === Tile.Water)[0]
         if (!towardScent) continue
-        const move = diffVector2(myGrid, towardScent)
-        addComponent(world, MoveAction, eid)
-        MoveAction.x[eid] = move.x
-        MoveAction.y[eid] = move.y
-        MoveAction.noclip[eid] = 0
-        break
+        const lingerStrength = (1 + scentRange - lingerGrid.d) / scentRange
+        const lingerDistanceFromMe = getDistance(myGrid, lingerGrid)
+        const attractChance = 1 - lingerDistanceFromMe / senseRange + lingerStrength
+        if (attractChance > RNG.getUniform()) {
+          const move = diffVector2(myGrid, towardScent)
+          addComponent(world, MoveAction, eid)
+          MoveAction.x[eid] = move.x
+          MoveAction.y[eid] = move.y
+          MoveAction.noclip[eid] = 0
+          break
+        }
       }
     }
   }
@@ -97,9 +106,11 @@ const waterSeekers = defineQuery([SeekWater, Not(Stunned)])
 export const seekWaterSystem: System = (world) => {
   for (const eid of waterSeekers(world)) {
     const myGrid = getEntGrid(eid)
-    const nearestTiles = sortByDistance(myGrid, getDiamondAround(myGrid, SeekWater.distance[eid]))
+    const nearestTiles = sortByDistance(
+      myGrid,
+      getDiamondAround(myGrid, SeekWater.distance[eid]).filter((g) => Level.get(g).type === Tile.Water)
+    )
     for (const tile of nearestTiles) {
-      if (Level.get(tile).type !== Tile.Water) continue
       const towardWater = findPath(myGrid, tile, eid)[0]
       if (towardWater) {
         const move = diffVector2(myGrid, towardWater)
