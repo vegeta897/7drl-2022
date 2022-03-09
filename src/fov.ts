@@ -23,11 +23,7 @@ export const RecalcEntities: Set<number> = new Set()
 
 const getEasedVisibility = ([d, r]: Visibility): number => d * sineOut((FOV_RADIUS - r) / FOV_RADIUS)
 
-let fovEntities: Query
-
-export function initFOV() {
-  fovEntities = defineQuery([CalculateFOV])
-}
+let fovEntities: Query // This file is loaded before component registration
 
 export function updateVisibility() {
   if (DEBUG_VISIBILITY) return
@@ -60,7 +56,7 @@ export function updateVisibility() {
     }
   })
   VisibilityMap = newVisibilityMap
-  // fovEntities = fovEntities || defineQuery([CalculateFOV])
+  fovEntities = fovEntities || defineQuery([CalculateFOV])
   for (const eid of fovEntities(World)) {
     RecalcEntities.add(eid)
   }

@@ -60,7 +60,12 @@ export const predatorSystem: System = (world) => {
         .map((g) => ({ ...g, d: getDistance(scentGrid, g) }))
         .sort((a, b) => a.d - b.d)
       for (const lingerGrid of lingerArea) {
-        const towardScent = findPath(myGrid, lingerGrid, eid, (grid) => Level.get(grid).type === Tile.Water)[0]
+        const towardScent = findPath(
+          myGrid,
+          lingerGrid,
+          eid,
+          (g) => Level.get(g).type === Tile.Water && !EntityMap.get(g)
+        )[0]
         if (!towardScent) continue
         const lingerStrength = (1 + scentRange - lingerGrid.d) / scentRange
         const lingerDistanceFromMe = getDistance(myGrid, lingerGrid)

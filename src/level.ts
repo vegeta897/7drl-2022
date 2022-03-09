@@ -160,6 +160,7 @@ export function findPath(
     to.y,
     (x, y) => {
       if (x === from.x && y === from.y) return true
+      if (x === to.x && y === to.y) return true
       return checkFn({ x, y })
     },
     { topology: 4 }

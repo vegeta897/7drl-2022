@@ -62,7 +62,6 @@ export async function onInput() {
 
 export const runRender = () => systemGroups.render(World)
 
-console.log('registering components')
 registerComponents(World, [
   DisplayObject,
   GridPosition,
