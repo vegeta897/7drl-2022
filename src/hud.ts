@@ -11,7 +11,8 @@ export let Log: string[]
 const hudDefaults = { width: 30, height: 32, fontSize: 20 }
 
 export function initHud() {
-  HUD = new Display({ ...hudDefaults, fontStyle: 'bold', bg: '#102b3b' })
+  HUD = new Display({ width: 15, height: 16, fontSize: 40, fontStyle: 'bold', bg: '#102b3b' })
+  HUD.drawText(4, 7, 'LOADING')
   document.body.appendChild(HUD.getContainer()!)
   Log = []
 }

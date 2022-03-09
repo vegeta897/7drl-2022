@@ -65,6 +65,7 @@ export function updateVisibility() {
 }
 
 export function updateEntityVisibility() {
+  if (DEBUG_VISIBILITY) return
   for (const eid of RecalcEntities) {
     const sprite = SpritesByEID[eid]
     const entityGrid = getEntGrid(eid)

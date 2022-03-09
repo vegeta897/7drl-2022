@@ -20,7 +20,7 @@ export const PixiViewport = new Viewport({
   screenWidth: gameWidth,
   screenHeight: gameHeight,
 })
-PixiViewport.setZoom(2)
+PixiViewport.setZoom(0.5)
 
 export let WorldSprites: Container
 export let EntitySprites: Container
@@ -33,6 +33,9 @@ export async function initPixi() {
   initSprites() // Create Textures
   resetPixi()
   document.body.appendChild(PixiApp.view)
+}
+
+export function startPixi() {
   Ticker.shared.add(() => {
     runRender()
   })

@@ -3,7 +3,7 @@ import { Sprite } from 'pixi.js'
 import { TILE_SIZE } from './'
 import { EntitySprites, WorldSprites } from './pixi'
 import { getDiamondAround, Vector2 } from './vector2'
-import Dijkstra from 'rot-js/lib/path/dijkstra'
+import AStar from 'rot-js/lib/path/astar'
 import { GridMap, Tile, TileData, TileMap } from './map'
 import { RNG } from 'rot-js'
 import { getTexture, SpritesByEID } from './sprites'
@@ -23,12 +23,14 @@ import {
   Wander,
 } from './ecs/components'
 
-export const DEBUG_VISIBILITY = false
+export const DEBUG_VISIBILITY = true
 export const MAP_WIDTH = 80
 export const MAP_HEIGHT = 80
 const seed = 0
 if (seed) RNG.setSeed(seed)
 console.log('rng seed', RNG.getSeed())
+
+const REQUIRED_FISH_COUNT = (MAP_WIDTH * MAP_HEIGHT) / 160
 
 export let Level: TileMap
 export let EntityMap: GridMap<number>
@@ -38,20 +40,30 @@ export let EntityMap: GridMap<number>
 // TODO: Generate map boundaries with another cellular with high probability to form a big blob
 
 export let OpenFloors: Vector2[]
-let openWaters: Vector2[]
-let ponds: Vector2[][]
 
 export function createLevel() {
+  let fishSpawns
+  do {
+    generateMap()
+    OpenFloors = []
+    const ponds = getPonds()
+    fishSpawns = getFishSpawns(ponds)
+    console.log('spawned', fishSpawns.size)
+  } while (fishSpawns.size < REQUIRED_FISH_COUNT)
+  createMapSprites()
   EntityMap = new GridMap()
+  fishSpawns.forEach(createFish)
+}
 
-  const walls = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
-  walls.randomize(0.55)
+function generateMap() {
+  const caves = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
+  caves.randomize(0.55)
   for (let i = 0; i < 2; i++) {
-    walls.create()
+    caves.create()
   }
   Level = new TileMap()
   let c = 0
-  walls.connect((x, y, value) => {
+  caves.connect((x, y, value) => {
     c++
     const isBoundary = x === 0 || x === MAP_WIDTH - 1 || y === 0 || y === MAP_HEIGHT - 1
     Level.createTile({ x, y }, !isBoundary && value === 1 ? Tile.Floor : Tile.Wall)
@@ -66,7 +78,51 @@ export function createLevel() {
     if (Level.get({ x, y }).type === Tile.Wall) return
     Level.createTile({ x, y }, Tile.Water)
   })
+}
 
+function getPonds() {
+  const ponds: Vector2[][] = []
+  Level.data.forEach((tile) => {
+    if (tile.type === Tile.Floor) {
+      const diamond2 = getDiamondAround(tile, 2)
+      if (diamond2.every((g) => Level.get(g).type === Tile.Floor)) {
+        OpenFloors.push(tile)
+      }
+    } else if (tile.type === Tile.Water) {
+      if (tile.pondIndex! >= 0) return
+      const uncheckedNeighbors: Set<TileData> = new Set([tile])
+      const pond: TileData[] = []
+      let currentTile: TileData
+      do {
+        currentTile = [...uncheckedNeighbors.values()][0]
+        uncheckedNeighbors.delete(currentTile)
+        pond.push(currentTile)
+        currentTile.pondIndex = ponds.length
+        Level.get4Neighbors(currentTile).forEach((t) => t.pondIndex! < 0 && uncheckedNeighbors.add(t))
+      } while (uncheckedNeighbors.size > 0)
+      ponds.push(pond)
+    }
+  })
+  return ponds
+}
+
+function getFishSpawns(ponds: Vector2[][]): Set<Vector2> {
+  const spawns: Set<Vector2> = new Set()
+  for (const pond of ponds) {
+    const tilesPerFish = Math.max(7, RNG.getNormal(16, 6))
+    const fishCount = Math.min(8, Math.floor(pond.length / tilesPerFish))
+    for (let i = 0; i < fishCount; i++) {
+      let randomPick
+      do {
+        randomPick = RNG.getItem(pond)!
+      } while (spawns.has(randomPick))
+      spawns.add(randomPick)
+    }
+  }
+  return spawns
+}
+
+function createMapSprites() {
   const wallTexture = getTexture('wall')
   const floorTextures = ['floor1', 'floor2', 'floor3', 'floor4'].map((t) => getTexture(t))
   const waterTexture = getTexture('water')
@@ -80,48 +136,16 @@ export function createLevel() {
         return waterTexture
     }
   }
-  OpenFloors = []
-  openWaters = []
-  ponds = []
-  for (let x = 0; x < MAP_WIDTH; x++) {
-    for (let y = 0; y < MAP_HEIGHT; y++) {
-      const grid = { x, y }
-      const tile = Level.get(grid)
-      tile.sprite = new Sprite(getTileTexture(tile.type))
-      tile.sprite.x = x * TILE_SIZE
-      tile.sprite.y = y * TILE_SIZE
-      if (!DEBUG_VISIBILITY) tile.sprite.alpha = 0
-      WorldSprites.addChild(tile.sprite)
-      if (tile.type === Tile.Floor) {
-        const diamond2 = getDiamondAround(grid, 2)
-        if (diamond2.every((g) => Level.get(g).type === Tile.Floor)) {
-          OpenFloors.push(grid)
-        }
-      } else if (tile.type === Tile.Water) {
-        if (tile.pondIndex! >= 0) continue
-        const uncheckedNeighbors: Set<TileData> = new Set([tile])
-        const pond: TileData[] = []
-        let currentTile: TileData
-        do {
-          currentTile = [...uncheckedNeighbors.values()][0]
-          uncheckedNeighbors.delete(currentTile)
-          pond.push(currentTile)
-          currentTile.pondIndex = ponds.length
-          Level.get4Neighbors(currentTile).forEach((t) => t.pondIndex! < 0 && uncheckedNeighbors.add(t))
-        } while (uncheckedNeighbors.size > 0)
-        const tilesPerFish = Math.max(8, RNG.getNormal(24, 8))
-        const fishCount = Math.floor(pond.length / tilesPerFish)
-        for (let i = 0; i < fishCount; i++) {
-          addFish(RNG.getItem(pond)!)
-        }
-        ponds.push(pond)
-      }
-    }
-  }
+  Level.data.forEach((tile) => {
+    tile.sprite = new Sprite(getTileTexture(tile.type))
+    tile.sprite.x = tile.x * TILE_SIZE
+    tile.sprite.y = tile.y * TILE_SIZE
+    if (!DEBUG_VISIBILITY) tile.sprite.alpha = 0
+    WorldSprites.addChild(tile.sprite)
+  })
 }
 
-function addFish(grid: Vector2) {
-  if (EntityMap.has(grid)) return
+function createFish(grid: Vector2): boolean {
   const fish = addEntity(World)
   const fishSprite = new Sprite(getTexture('fishSwim'))
   if (!DEBUG_VISIBILITY) fishSprite.alpha = 0
@@ -146,6 +170,7 @@ function addFish(grid: Vector2) {
   addComponent(World, Spotting, fish)
   Spotting.current[fish] = 0
   Spotting.increaseBy[fish] = 0.15
+  return true
 }
 
 export function findPath(
@@ -153,12 +178,15 @@ export function findPath(
   to: Vector2,
   selfEntity: number,
   checkFn = (grid: Vector2) => !Level.get(grid).solid,
-  distance = 1
+  distance = 1,
+  maxNodes = 100
 ): Vector2[] {
-  const map = new Dijkstra(
+  let nodesTried = 0
+  const map = new AStar(
     to.x,
     to.y,
     (x, y) => {
+      if (nodesTried++ > maxNodes) return false
       if (x === from.x && y === from.y) return true
       if (x === to.x && y === to.y) return true
       return checkFn({ x, y })
