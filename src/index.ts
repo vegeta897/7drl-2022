@@ -7,7 +7,7 @@ import { DisplayObject, GridPosition, Health, setEntGrid, CanSwim, CanWalk, OnTi
 import { getTexture, resetSprites, SpritesByEID } from './sprites'
 import { createLevel, MAP_HEIGHT, MAP_WIDTH, OpenFloors } from './level'
 import { drawHud, initHud, resetHud } from './hud'
-import { resetFOV } from './fov'
+import { resetFOV, updateVisibility } from './fov'
 import { initCasting, resetCasting } from './casting'
 import { setPlayerState } from './ecs/input_systems'
 import { RNG } from 'rot-js'
@@ -45,6 +45,8 @@ export function startGame() {
   Health.current[PlayerEntity] = PLAYER_HEALTH
 
   initCasting()
+
+  updateVisibility()
 
   GameState = 'Playing'
   drawHud()

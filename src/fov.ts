@@ -1,14 +1,16 @@
 import { GridMap } from './map'
 import { FOV } from 'rot-js'
 import { DEBUG_VISIBILITY, Level } from './level'
-import { getEntGrid } from './ecs/components'
+import { getEntGrid, InFOV, Spotting } from './ecs/components'
 import { PlayerEntity } from './'
 import { sineOut } from '@gamestdio/easing'
 import { Sprite } from 'pixi.js'
 import { clamp } from 'rot-js/lib/util'
 import { SpritesByEID } from './sprites'
+import { addComponent, entityExists, hasComponent, removeComponent } from 'bitecs'
+import { World } from './ecs'
 
-const FOV_RADIUS = 12
+export const FOV_RADIUS = 12
 const FOG_VISIBILITY = 0.7 // Max visibility of previously seen tiles
 const TWEEN_TIME = 120 // Milliseconds
 
@@ -17,7 +19,7 @@ let needEntityUpdate = true
 export const triggerTileUpdate = () => (needTileUpdate = true)
 export const triggerEntityUpdate = () => (needEntityUpdate = true)
 
-type VisibilityMap = GridMap<[visibility: number, radius: number]>
+type VisibilityMap = GridMap<[directness: number, radius: number]>
 
 let prevVisibilityMap: VisibilityMap = new GridMap()
 
@@ -28,10 +30,10 @@ export function updateVisibility() {
   if (needTileUpdate) {
     const fov = new FOV.PreciseShadowcasting((x, y) => Level.get({ x, y }).seeThrough)
     const playerGrid = getEntGrid(PlayerEntity)
-    fov.compute(playerGrid.x, playerGrid.y, FOV_RADIUS, (x, y, radius, visibility) => {
+    fov.compute(playerGrid.x, playerGrid.y, FOV_RADIUS, (x, y, radius, directness) => {
       const prevVisibility = prevVisibilityMap.get({ x, y })
       newVisibilityMap.set({ x, y }, [
-        Math.max(getEasedVisibility(visibility, radius), prevVisibility ? prevVisibility[0] : 0),
+        Math.max(getEasedVisibility(directness, radius), prevVisibility ? prevVisibility[0] : 0),
         radius,
       ])
     })
@@ -57,9 +59,22 @@ export function updateVisibility() {
     // Update non-player entities
     SpritesByEID.forEach((sprite, eid) => {
       if (eid === PlayerEntity) return
+      if (!entityExists(World, eid)) return
       const entityGrid = getEntGrid(eid)
-      const alpha = newVisibilityMap.has(entityGrid) ? 1 : 0
-      if (alpha !== sprite.alpha) tweeningSprites.set(sprite, [TWEEN_TIME, sprite.alpha, alpha])
+      const visibility = newVisibilityMap.get(entityGrid)
+      let alpha: number
+      if (!visibility) {
+        removeComponent(World, InFOV, eid)
+        alpha = 0
+      } else {
+        addComponent(World, InFOV, eid)
+        if (hasComponent(World, Spotting, eid)) {
+          alpha = Spotting.current[eid] >= 1 ? 1 : 0
+        } else {
+          alpha = 1
+        }
+      }
+      if (sprite.alpha !== alpha) tweeningSprites.set(sprite, [TWEEN_TIME, sprite.alpha, alpha])
     })
   }
   prevVisibilityMap = newVisibilityMap
@@ -68,8 +83,8 @@ export function updateVisibility() {
   tweeningFOV = true
 }
 
-function getEasedVisibility(visibility: number, radius: number): number {
-  return visibility * sineOut((FOV_RADIUS - radius) / FOV_RADIUS)
+function getEasedVisibility(directness: number, radius: number): number {
+  return directness * sineOut((FOV_RADIUS - radius) / FOV_RADIUS)
 }
 
 let tweeningFOV = false

@@ -18,6 +18,7 @@ import {
   OnTileType,
   Predator,
   setEntGrid,
+  Spotting,
   Wander,
 } from './ecs/components'
 
@@ -137,6 +138,9 @@ function addFish(grid: Vector2) {
   Health.max[fish] = 4
   Health.current[fish] = 4
   addComponent(World, Fish, fish)
+  addComponent(World, Spotting, fish)
+  Spotting.current[fish] = 0
+  Spotting.increaseBy[fish] = 0.15
 }
 
 export function findPath(

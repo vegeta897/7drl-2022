@@ -35,7 +35,6 @@ export const spriteRemoveSystem: System = (world) => {
 }
 
 export const fovSystem: System = (world) => {
-  updateVisibility()
   tweenVisibility(Ticker.shared.deltaMS)
   return world
 }

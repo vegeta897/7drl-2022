@@ -16,6 +16,8 @@ import {
   OnTileType,
   Scent,
   Wetness,
+  Spotting,
+  InFOV,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { wanderSystem, predatorSystem, stunnedSystem, seekWaterSystem } from './enemy_systems'
@@ -23,6 +25,7 @@ import { fishSystem, gameSystem, moveSystem, wetnessSystem } from './action_syst
 import { runAnimations } from './anim_systems'
 import { cameraSystem, fadeSystem, fovSystem, spriteAddSystem, spriteRemoveSystem } from './render_systems'
 import { drawHud } from '../hud'
+import { updateVisibility } from '../fov'
 
 // @ts-ignore
 export const World = createWorld(5000)
@@ -41,11 +44,13 @@ export async function onInput() {
   systemGroups.input(World)
   if (WaitingForInput) return
   systemGroups.playerActions(World) // Execute player actions
+  updateVisibility()
   LoopState = 'AnimatePlayer'
   await runAnimations(World) // Animate player actions
   drawHud()
   systemGroups.enemyTurn(World) // Plan enemy actions
   systemGroups.enemyActions(World) // Run enemy actions
+  updateVisibility()
   LoopState = 'AnimateEnemies'
   await runAnimations(World) // Animate enemy actions
   drawHud()
@@ -72,4 +77,6 @@ registerComponents(World, [
   OnTileType,
   Scent,
   Wetness,
+  Spotting,
+  InFOV,
 ])
