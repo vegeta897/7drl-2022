@@ -1,30 +1,44 @@
 import * as ROT from 'rot-js'
 import { Sprite } from 'pixi.js'
 import { TILE_SIZE } from './'
-import { WorldSprites } from './pixi'
-import { getDiamondAround, getSquareAround, Vector2 } from './vector2'
+import { EntitySprites, WorldSprites } from './pixi'
+import { getDiamondAround, Vector2 } from './vector2'
 import Dijkstra from 'rot-js/lib/path/dijkstra'
-import { GridMap, Tile, TileMap } from './map'
+import { GridMap, Tile, TileData, TileMap } from './map'
 import { RNG } from 'rot-js'
-import { getTexture } from './sprites'
+import { getTexture, SpritesByEID } from './sprites'
+import { addComponent, addEntity } from 'bitecs'
+import { World } from './ecs'
+import {
+  CanSwim,
+  DisplayObject,
+  Fish,
+  GridPosition,
+  Health,
+  OnTileType,
+  Predator,
+  setEntGrid,
+  Wander,
+} from './ecs/components'
 
 export const DEBUG_VISIBILITY = true
-const MAP_WIDTH = 120
-const MAP_HEIGHT = 40
+const MAP_WIDTH = 80
+const MAP_HEIGHT = 80
 
 export let Level: TileMap
 export let EntityMap: GridMap<number>
 
-// TODO: Entity map doesn't allow more than one entity on a tile, so the bait is overwriting entities when you're angling
+// TODO: Entity map doesn't allow more than one entity on a tile, this may cause issues!
 
 export let OpenFloors: Vector2[]
-export let OpenWaters: Vector2[]
+let openWaters: Vector2[]
+let ponds: Vector2[][]
 
 export function createLevel() {
   EntityMap = new GridMap()
 
   const walls = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
-  walls.randomize(0.5)
+  walls.randomize(0.55)
   for (let i = 0; i < 2; i++) {
     walls.create()
   }
@@ -60,25 +74,66 @@ export function createLevel() {
     }
   }
   OpenFloors = []
-  OpenWaters = []
+  openWaters = []
+  ponds = []
   for (let x = 0; x < MAP_WIDTH; x++) {
     for (let y = 0; y < MAP_HEIGHT; y++) {
-      const tile = Level.get({ x, y })
+      const grid = { x, y }
+      const tile = Level.get(grid)
       tile.sprite = new Sprite(getTileTexture(tile.type))
       tile.sprite.x = x * TILE_SIZE
       tile.sprite.y = y * TILE_SIZE
       if (!DEBUG_VISIBILITY) tile.sprite.alpha = 0
       WorldSprites.addChild(tile.sprite)
-      const diamond2 = getDiamondAround({ x, y }, 2)
-      if (diamond2.every((g) => Level.get(g).type === Tile.Floor)) {
-        OpenFloors.push({ x, y })
-      }
-      const square3x3 = getSquareAround({ x, y }, 1)
-      if (square3x3.every((g) => Level.get(g).type === Tile.Water)) {
-        OpenWaters.push({ x, y })
+      if (tile.type === Tile.Floor) {
+        const diamond2 = getDiamondAround(grid, 2)
+        if (diamond2.every((g) => Level.get(g).type === Tile.Floor)) {
+          OpenFloors.push(grid)
+        }
+      } else if (tile.type === Tile.Water) {
+        if (tile.pondIndex! >= 0) continue
+        const uncheckedNeighbors: Set<TileData> = new Set([tile])
+        const pond: TileData[] = []
+        let currentTile: TileData
+        do {
+          currentTile = [...uncheckedNeighbors.values()][0]
+          uncheckedNeighbors.delete(currentTile)
+          pond.push(currentTile)
+          currentTile.pondIndex = ponds.length
+          Level.get4Neighbors(currentTile).forEach((t) => t.pondIndex! < 0 && uncheckedNeighbors.add(t))
+        } while (uncheckedNeighbors.size > 0)
+        const tilesPerFish = Math.max(8, RNG.getNormal(15, 5))
+        const fishCount = Math.floor(pond.length / tilesPerFish)
+        for (let i = 0; i < fishCount; i++) {
+          addFish(RNG.getItem(pond)!)
+        }
+        ponds.push(pond)
       }
     }
   }
+}
+
+function addFish(grid: Vector2) {
+  if (EntityMap.has(grid)) return
+  const fish = addEntity(World)
+  const fishSprite = new Sprite(getTexture('fishSwim'))
+  if (!DEBUG_VISIBILITY) fishSprite.alpha = 0
+  SpritesByEID[fish] = fishSprite
+  EntitySprites.addChild(fishSprite)
+  addComponent(World, DisplayObject, fish)
+  addComponent(World, OnTileType, fish)
+  addComponent(World, GridPosition, fish)
+  setEntGrid(fish, grid)
+  addComponent(World, Wander, fish)
+  Wander.maxChance[fish] = 10
+  Wander.chance[fish] = RNG.getUniformInt(0, 10)
+  addComponent(World, CanSwim, fish)
+  addComponent(World, Predator, fish)
+  Predator.range[fish] = 4
+  addComponent(World, Health, fish)
+  Health.max[fish] = 4
+  Health.current[fish] = 4
+  addComponent(World, Fish, fish)
 }
 
 export function findPath(from: Vector2, to: Vector2, selfEntity: number, distance = 1): Vector2[] {

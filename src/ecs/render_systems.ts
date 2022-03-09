@@ -1,6 +1,6 @@
 import { defineQuery, enterQuery, exitQuery, System } from 'bitecs'
 import { GameState, PlayerSprite, setGameState, TILE_SIZE } from '../'
-import { PixiViewport, WorldSprites } from '../pixi'
+import { PixiViewport } from '../pixi'
 import { Util } from 'rot-js'
 import { DisplayObject, GridPosition } from './components'
 import { SpritesByEID } from '../sprites'
@@ -58,7 +58,7 @@ let fadeProgress = 0
 export const fadeSystem: System = (world) => {
   if (GameState === 'Losing') {
     fadeProgress = Math.min(1, fadeProgress + Ticker.shared.deltaMS / 5000)
-    WorldSprites.alpha = cubicOut(1 - fadeProgress)
+    PixiViewport.alpha = cubicOut(1 - fadeProgress)
     if (fadeProgress === 1) {
       fadeProgress = 0
       setGameState('Lost')

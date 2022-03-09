@@ -1,4 +1,4 @@
-import { Vector2 } from './vector2'
+import { get4Neighbors, Vector2 } from './vector2'
 import { Sprite } from 'pixi.js'
 
 export class GridMap<T> {
@@ -35,15 +35,20 @@ const EmptyTile = {
 
 export class TileMap extends GridMap<TileData> {
   get(grid: Vector2): TileData {
-    return this.data.get(GridMap.Key(grid)) || { ...EmptyTile, ...grid }
+    return this.data.get(GridMap.Key(grid)) || { ...EmptyTile, x: grid.x, y: grid.y }
+  }
+  get4Neighbors(grid: Vector2): TileData[] {
+    return get4Neighbors(grid).map((g) => this.get(g))
   }
   createTile(grid: Vector2, tileType: Tile): void {
-    const tileData = { ...EmptyTile, ...grid, type: tileType }
+    const tileData: TileData = { ...EmptyTile, ...grid, type: tileType }
     switch (tileType) {
       case Tile.Wall:
         tileData.seeThrough = false
         tileData.solid = true
         break
+      case Tile.Water:
+        tileData.pondIndex = -1
     }
     this.set(grid, tileData)
   }
@@ -55,6 +60,7 @@ export type TileData = {
   y: number
   type: Tile
   seeThrough: boolean
+  pondIndex?: number
   solid: boolean
   tint?: number
   ignoreFOV?: boolean

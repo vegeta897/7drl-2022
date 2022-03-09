@@ -20,9 +20,10 @@ export const PixiViewport = new Viewport({
   screenWidth: gameWidth,
   screenHeight: gameHeight,
 })
-PixiViewport.setZoom(1)
+PixiViewport.setZoom(0.5)
 
 export let WorldSprites: Container
+export let EntitySprites: Container
 export let OverlaySprites: Container
 
 PixiApp.stage.addChild(PixiViewport)
@@ -39,10 +40,13 @@ export async function initPixi() {
 
 export function resetPixi() {
   WorldSprites?.destroy({ children: true })
+  EntitySprites?.destroy({ children: true })
   OverlaySprites?.destroy({ children: true })
   WorldSprites = new Container()
+  EntitySprites = new Container()
   OverlaySprites = new Container()
   PixiViewport.addChild(WorldSprites)
+  PixiViewport.addChild(EntitySprites)
   PixiViewport.addChild(OverlaySprites)
 }
 
