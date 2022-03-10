@@ -6,6 +6,7 @@ import { initTextures } from './sprites'
 
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST
 // PIXI.settings.ROUND_PIXELS = true
+Ticker.shared.autoStart = false
 
 const gameWidth = 640
 const gameHeight = 640
@@ -22,6 +23,7 @@ export const PixiViewport = new Viewport({
 })
 // PixiViewport.setZoom(2)
 PixiViewport.setZoom(2)
+PixiViewport.visible = false
 
 export let WorldSprites: Container
 export let EntitySprites: Container
@@ -40,6 +42,8 @@ export function startPixi() {
   Ticker.shared.add(() => {
     runRender()
   })
+  Ticker.shared.start()
+  PixiViewport.visible = true
 }
 
 export function resetPixi() {

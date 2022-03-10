@@ -1,6 +1,6 @@
 import * as ROT from 'rot-js'
 import { Sprite } from 'pixi.js'
-import { getDistance, getStraightLine, Vector2 } from './vector2'
+import { addVector2, getDistance, getStraightLine, Vector2 } from './vector2'
 import AStar from 'rot-js/lib/path/astar'
 import { GridMap, isWalkable, isWet, Tile, TileMap } from './map'
 import { RNG } from 'rot-js'
@@ -16,9 +16,9 @@ import {
   Fish,
   GridPosition,
   Health,
+  initEntGrid,
   OnTileType,
   Predator,
-  setEntGrid,
   Spotting,
   Wander,
 } from './ecs/components'
@@ -26,7 +26,7 @@ import { OverlaySprites, promisedFrame } from './pixi'
 import { showLevelGen } from './hud'
 
 export const ALL_VISIBLE = 0
-const seed = 1646930307248
+const seed = 0
 if (seed) RNG.setSeed(seed)
 console.log('rng seed', RNG.getSeed())
 
@@ -47,7 +47,7 @@ export let EntityMap: GridMap<number>
 // TODO: Entity map doesn't allow more than one entity on a tile, this may cause issues!
 
 export async function createLevel(levelNumber: number): Promise<Vector2> {
-  ;[mapWidth, mapHeight] = levelSizes[levelNumber]
+  ;[mapWidth, mapHeight] = levelSizes[levelNumber - 1]
   const requiredFishCount = (mapWidth * mapHeight) / 180
   let attempts = 0
   let enterExitGrids
@@ -72,7 +72,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   EntityMap = new GridMap()
   fishSpawns.forEach(createFish)
   chestSpawns.forEach(createChest)
-  createExit(enterExitGrids.exit)
+  createExit(addVector2(enterExitGrids.enter, { x: 1, y: 0 }) /*enterExitGrids.exit*/)
   return enterExitGrids.enter
 }
 
@@ -201,7 +201,7 @@ function createFish(grid: Vector2): boolean {
   addComponent(World, DisplayObject, fish)
   addComponent(World, OnTileType, fish)
   addComponent(World, GridPosition, fish)
-  setEntGrid(fish, grid)
+  initEntGrid(fish, grid)
   addComponent(World, Wander, fish)
   Wander.maxChance[fish] = 10
   Wander.chance[fish] = RNG.getUniformInt(0, 10)
@@ -227,20 +227,20 @@ function createChest(grid: Vector2) {
   addSprite(chest, chestSprite)
   addComponent(World, DisplayObject, chest)
   addComponent(World, GridPosition, chest)
-  setEntGrid(chest, grid)
+  initEntGrid(chest, grid)
   addComponent(World, CalculateFOV, chest)
   addComponent(World, Chest, chest)
 }
 
 function createExit(grid: Vector2) {
   const exit = addEntity(World)
-  const chestSprite = new Sprite(getTexture('exit'))
-  chestSprite.anchor.y = 0.5
-  if (!ALL_VISIBLE) chestSprite.alpha = 0
-  addSprite(exit, chestSprite, OverlaySprites)
+  const exitSprite = new Sprite(getTexture('exit'))
+  exitSprite.anchor.y = 0.5
+  if (!ALL_VISIBLE) exitSprite.alpha = 0
+  addSprite(exit, exitSprite, OverlaySprites)
   addComponent(World, DisplayObject, exit)
   addComponent(World, GridPosition, exit)
-  setEntGrid(exit, grid)
+  initEntGrid(exit, grid)
   addComponent(World, CalculateFOV, exit)
   addComponent(World, Exit, exit)
 }

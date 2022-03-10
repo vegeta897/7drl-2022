@@ -4,8 +4,9 @@ import { GameState, PlayerEntity } from './index'
 import { PlayerState } from './ecs/input_systems'
 import { hasComponent } from 'bitecs'
 import { World } from './ecs'
+import { promisedFrame } from './pixi'
 
-export let HUD: Display
+let HUD: Display
 let log: string[]
 let killedFish = 0
 
@@ -51,7 +52,7 @@ function getEntityName(entity: number, _capitalize = false) {
 export function logAttack(attacker: number, victim: number, damage: number) {
   let color = attacker === PlayerEntity ? Colors.Good : Colors.White
   if (victim === PlayerEntity) color = Colors.Bad
-  logMessage(`${getEntityName(attacker, true)} hit ${getEntityName(victim)} for ${damage} dmg`, color)
+  logMessage(`${getEntityName(attacker, true)} hit ${getEntityName(victim)}: ${damage} dmg`, color)
 }
 
 export function logKill(victim: number) {
@@ -68,14 +69,20 @@ export function updateHud() {
   dirty = true
 }
 
+export function defaultHud() {
+  HUD.setOptions(hudDefaults)
+  updateHud()
+}
+
 const maxLogLines = 20
 const lowestY = 32
 
 let dirty = true
 
-export function drawHud() {
+export async function drawHud() {
   if (!dirty) return
   dirty = false
+  await promisedFrame()
   HUD.clear()
   if (GameState === 'Losing') return
   if (GameState === 'Lost') {
@@ -122,7 +129,8 @@ export function drawHud() {
             Math.round(Math.min(255, (maxLogLines - i) / maxLogLines) * 255)
               .toString(16)
               .padStart(2, '0')
-        )
+        ),
+        25
       )
       if (y >= lowestY) {
         log = log.slice(0, i + 1)
@@ -132,8 +140,7 @@ export function drawHud() {
   }
 }
 
-export function resetHud() {
-  HUD.setOptions(hudDefaults)
+export function clearLog() {
   log = []
   updateHud()
 }

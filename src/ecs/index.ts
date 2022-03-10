@@ -25,7 +25,7 @@ import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { wanderSystem, predatorSystem, stunnedSystem, seekWaterSystem } from './enemy_systems'
 import { fishSystem, gameSystem, moveSystem, wetnessSystem } from './action_systems'
 import { runAnimations } from './anim_systems'
-import { cameraSystem, fadeSystem, fovSystem, spriteAddSystem, spriteRemoveSystem } from './render_systems'
+import { cameraSystem, fadeSystem, fovSystem, spriteRemoveSystem } from './render_systems'
 import { drawHud } from '../hud'
 import { updateEntityVisibility, updateVisibility } from '../fov'
 
@@ -37,7 +37,7 @@ const systemGroups = {
   enemyTurn: pipe(predatorSystem, wanderSystem, stunnedSystem, seekWaterSystem),
   enemyActions: pipe(moveSystem, fishSystem, gameSystem),
   playerActions: pipe(moveSystem, wetnessSystem, gameSystem),
-  render: pipe(spriteAddSystem, spriteRemoveSystem, fovSystem, cameraSystem, fadeSystem),
+  render: pipe(spriteRemoveSystem, fovSystem, cameraSystem, fadeSystem),
 }
 
 export let LoopState: 'Waiting' | 'AnimatePlayer' | 'AnimateEnemies' = 'Waiting'

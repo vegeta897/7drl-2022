@@ -31,7 +31,7 @@ import {
   System,
 } from 'bitecs'
 import { EntityMap, Level } from '../level'
-import { CurrentLevel, GameState, LastLevel, PlayerEntity, PlayerSprite, setGameState } from '../'
+import { CurrentLevel, GameState, LastLevel, nextLevel, PlayerEntity, PlayerSprite, setGameState } from '../'
 import { Colors, logAttack, logKill, logMessage, updateHud } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
@@ -86,7 +86,7 @@ export const moveSystem: System = (world) => {
             addComponent(world, Stunned, eid)
             Stunned.remaining[eid] = 6
             cutLine()
-            logMessage('The fish is eating the bait', Colors.GoodWater)
+            logMessage('The fish took the bait', Colors.GoodWater)
           }
           deleteEntGrid(targetEntity)
           removeEntity(world, targetEntity)
@@ -95,8 +95,7 @@ export const moveSystem: System = (world) => {
           deleteEntGrid(targetEntity)
           removeEntity(world, targetEntity)
         } else if (eid === PlayerEntity && hasComponent(world, Exit, targetEntity)) {
-          logMessage('You ascend the ladder...', Colors.Sky)
-          setGameState('ChangeLevel')
+          setGameState('EndLevel')
         } else {
           break
         }
@@ -195,8 +194,17 @@ export const gameSystem: System = (world) => {
   if (!entityExists(world, PlayerEntity)) {
     PixiViewport.filters = [desaturated]
     setGameState('Losing')
-  } else if (GameState === 'ChangeLevel' && CurrentLevel === LastLevel) {
-    setGameState('Won')
+  } else if (GameState === 'EndLevel') {
+    if (CurrentLevel === LastLevel) {
+      setGameState('Won')
+    } else {
+      if (CurrentLevel === LastLevel - 1) {
+        logMessage('You ascend the ladder, and sense that you are near the surface now...', Colors.Sky)
+      } else {
+        logMessage('You ascend the ladder...', Colors.Sky)
+      }
+      nextLevel()
+    }
   }
   return world
 }

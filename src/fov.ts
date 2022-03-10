@@ -69,7 +69,6 @@ export function updateVisibility() {
     RecalcEntities.add(eid)
   }
   needTileUpdate = false
-  tweeningFOV = true
 }
 
 export function updateEntityVisibility() {
@@ -93,14 +92,11 @@ export function updateEntityVisibility() {
     if (sprite.alpha !== alpha) tweeningSprites.set(sprite, [TWEEN_TIME, sprite.alpha, alpha])
   }
   RecalcEntities.clear()
-  tweeningFOV = true
 }
 
-let tweeningFOV = false
 const tweeningSprites: Map<Sprite, [timeLeft: number, fromAlpha: number, toAlpha: number]> = new Map()
 
 export function tweenVisibility(delta: number) {
-  if (!tweeningFOV) return
   tweeningSprites.forEach((tween, sprite) => {
     let [timeLeft, fromAlpha, toAlpha] = tween
     timeLeft = Math.max(0, timeLeft - delta)
@@ -112,7 +108,6 @@ export function tweenVisibility(delta: number) {
     }
     tween[0] = timeLeft
   })
-  tweeningFOV = tweeningSprites.size > 0
 }
 
 export function resetFOV() {

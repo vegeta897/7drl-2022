@@ -1,8 +1,11 @@
-import { ComponentType, defineComponent, Types } from 'bitecs'
+import { ComponentType, defineComponent, hasComponent, Types } from 'bitecs'
 import { Vector2 } from '../vector2'
 import { EntityMap } from '../level'
-import { PlayerEntity } from '../'
+import { PlayerEntity, PlayerSprite, TILE_SIZE } from '../'
 import { RecalcEntities, triggerTileUpdate, updateEntityVisibility } from '../fov'
+import { SpritesByEID } from '../sprites'
+import { PixiViewport } from '../pixi'
+import { World } from './index'
 
 export const DisplayObject = defineComponent()
 
@@ -54,6 +57,14 @@ export function getEntGrid(eid: number) {
 export function changeEntGrid(eid: number, grid: Vector2) {
   EntityMap.delete(getEntGrid(eid))
   setEntGrid(eid, grid)
+}
+
+export function initEntGrid(eid: number, grid: Vector2) {
+  setEntGrid(eid, grid)
+  if (SpritesByEID[eid]) {
+    SpritesByEID[eid].x = grid.x * TILE_SIZE
+    SpritesByEID[eid].y = grid.y * TILE_SIZE
+  }
 }
 
 export function setEntGrid(eid: number, grid: Vector2) {

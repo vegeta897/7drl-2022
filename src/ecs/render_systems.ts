@@ -14,17 +14,7 @@ const PAD_X = Math.floor(PixiViewport.screenWidthInWorldPixels / 2 - PixiViewpor
 const PAD_Y = Math.floor(PixiViewport.screenHeightInWorldPixels / 2 - PixiViewport.screenHeightInWorldPixels * PADDING)
 
 const spriteQuery = defineQuery([DisplayObject, GridPosition])
-const enteredSpriteQuery = enterQuery(spriteQuery)
 const exitedSpriteQuery = exitQuery(spriteQuery)
-
-export const spriteAddSystem: System = (world) => {
-  for (const eid of enteredSpriteQuery(world)) {
-    SpritesByEID[eid].x = GridPosition.x[eid] * TILE_SIZE
-    SpritesByEID[eid].y = GridPosition.y[eid] * TILE_SIZE
-    if (eid === PlayerEntity) PixiViewport.moveCenter(PlayerSprite)
-  }
-  return world
-}
 
 export const spriteRemoveSystem: System = (world) => {
   for (const eid of exitedSpriteQuery(world)) {
