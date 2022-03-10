@@ -11,7 +11,7 @@ import { defineQuery, hasComponent, Query } from 'bitecs'
 import { World } from './ecs'
 
 export const FOV_RADIUS = 10
-const FOG_VISIBILITY = 0.5 // Max visibility of previously seen tiles
+const FOG_VISIBILITY = 0.4 // Max visibility of previously seen tiles
 const TWEEN_TIME = 120 // Milliseconds
 
 let needTileUpdate = true

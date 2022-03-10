@@ -2,7 +2,7 @@ import { PlayerEntity, PlayerSprite, TILE_SIZE } from './'
 import { addVector2, Down, getDistance, GridZero, Left, Right, Up, Vector2, vectorsAreParallel } from './vector2'
 import { World } from './ecs'
 import { Graphics, Sprite } from 'pixi.js'
-import { getTexture, SpritesByEID } from './sprites'
+import { addSprite, getTexture } from './sprites'
 import { WorldSprites } from './pixi'
 import {
   Bait,
@@ -65,9 +65,7 @@ export function confirmCast() {
   castTargetSprite.visible = false
   if (getDistance(CastVector) > 0) {
     BaitEntity = addEntity(World)
-    const baitSprite = new Sprite(getTexture('bait'))
-    SpritesByEID[BaitEntity] = baitSprite
-    WorldSprites.addChild(baitSprite)
+    addSprite(BaitEntity, new Sprite(getTexture('bait')), WorldSprites)
     addComponent(World, Bait, BaitEntity)
     addComponent(World, DisplayObject, BaitEntity)
     addComponent(World, Scent, BaitEntity)

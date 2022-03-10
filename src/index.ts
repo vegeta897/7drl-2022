@@ -2,15 +2,14 @@ import './style.css'
 import { World } from './ecs'
 import { addComponent, addEntity, resetWorld } from 'bitecs'
 import { Sprite } from 'pixi.js'
-import { initPixi, OverlaySprites, promisedFrame, resetPixi, startPixi } from './pixi'
+import { initPixi, OverlaySprites, resetPixi, startPixi } from './pixi'
 import { DisplayObject, GridPosition, Health, setEntGrid, CanSwim, CanWalk, OnTileType, Scent } from './ecs/components'
-import { getTexture, resetSprites, SpritesByEID } from './sprites'
-import { createLevel, MAP_HEIGHT, MAP_WIDTH, OpenFloors } from './level'
+import { addSprite, getTexture, resetSprites, SpritesByEID } from './sprites'
+import { createLevel, MAP_HEIGHT, MAP_WIDTH } from './level'
 import { drawHud, initHud, resetHud } from './hud'
 import { resetFOV, updateEntityVisibility, updateVisibility } from './fov'
 import { initCasting, resetCasting } from './casting'
 import { setPlayerState } from './ecs/input_systems'
-import { RNG } from 'rot-js'
 
 export const TILE_SIZE = 16
 
@@ -25,16 +24,14 @@ const PLAYER_HEALTH = 10
 
 async function startGame() {
   PlayerEntity = addEntity(World)
+
+  const playerStart = createLevel()
+
   PlayerSprite = new Sprite(getTexture('player'))
-  SpritesByEID[PlayerEntity] = PlayerSprite
-  OverlaySprites.addChild(PlayerSprite)
-
-  createLevel()
-
+  addSprite(PlayerEntity, PlayerSprite, OverlaySprites)
   addComponent(World, DisplayObject, PlayerEntity)
   addComponent(World, OnTileType, PlayerEntity)
   addComponent(World, GridPosition, PlayerEntity)
-  const playerStart = { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 } // RNG.getItem(OpenFloors)!
   setEntGrid(PlayerEntity, playerStart)
   addComponent(World, CanWalk, PlayerEntity)
   addComponent(World, CanSwim, PlayerEntity)

@@ -33,9 +33,9 @@ import { PlayerEntity, PlayerSprite, setGameState } from '../'
 import { Log, logAttack, logKill } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
-import { isWet, Tile } from '../map'
+import { isWalkable, isWet, Tile } from '../map'
 import { getTexture, SpritesByEID } from '../sprites'
-import { FOV_RADIUS, RecalcEntities, updateEntityVisibility, VisibilityMap } from '../fov'
+import { FOV_RADIUS, RecalcEntities, VisibilityMap } from '../fov'
 import { clamp } from 'rot-js/lib/util'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
@@ -92,8 +92,10 @@ export const moveSystem: System = (world) => {
       const targetTile = Level.get(targetGrid)
       if (MoveAction.noclip[eid] === 0) {
         if (targetTile.solid) break
-        if (targetTile.type === Tile.Water && !hasComponent(world, CanSwim, eid)) break
-        if (targetTile.type === Tile.Floor && !hasComponent(world, CanWalk, eid)) break
+        let validTile = false
+        if (hasComponent(world, CanSwim, eid) && isWet(targetTile.type)) validTile = true
+        if (hasComponent(world, CanWalk, eid) && isWalkable(targetTile.type)) validTile = true
+        if (!validTile) break
       }
       currentGrid = targetGrid
     }
@@ -103,12 +105,12 @@ export const moveSystem: System = (world) => {
       OnTileType.previous[eid] = OnTileType.current[eid]
       OnTileType.current[eid] = Level.get(currentGrid).type
     }
-    if (!VisibilityMap.has(currentGrid)) continue
+    if ((!VisibilityMap.has(startGrid) && !VisibilityMap.has(currentGrid)) || MoveAction.noclip[eid]) continue
     addComponent(world, AnimateMovement, eid)
     AnimateMovement.x[eid] = MoveAction.x[eid]
     AnimateMovement.y[eid] = MoveAction.y[eid]
     AnimateMovement.elapsed[eid] = 0
-    AnimateMovement.length[eid] = 120
+    AnimateMovement.length[eid] = 90 + 30 * distance
   }
   return world
 }
@@ -116,9 +118,9 @@ export const moveSystem: System = (world) => {
 const onTileTypeQuery = defineQuery([OnTileType, Not(Fish)])
 export const wetnessSystem: System = (world) => {
   for (const eid of onTileTypeQuery(world)) {
-    const prevTileType = OnTileType.previous[eid]
-    const currentTileType = OnTileType.current[eid]
-    if (currentTileType === Tile.Floor) {
+    const prevWet = isWet(OnTileType.previous[eid])
+    const nowWet = isWet(OnTileType.current[eid])
+    if (!nowWet) {
       if (hasComponent(world, Wetness, eid)) {
         Wetness.factor[eid] -= 0.1
         if (Wetness.factor[eid] <= 0) {
@@ -126,16 +128,14 @@ export const wetnessSystem: System = (world) => {
           if (eid === PlayerEntity) Log.unshift('You are no longer wet')
         }
       }
-      if (eid === PlayerEntity && prevTileType !== currentTileType) PlayerSprite.texture = getTexture('player')
-    } else if (isWet(currentTileType)) {
-      if (prevTileType !== currentTileType) {
-        if (eid === PlayerEntity) {
-          if (!hasComponent(world, Wetness, eid)) Log.unshift('You are wet')
-          PlayerSprite.texture = getTexture('playerSwim')
-        }
-        addComponent(world, Wetness, eid)
-        Wetness.factor[eid] = 1
+      if (eid === PlayerEntity && prevWet) PlayerSprite.texture = getTexture('player')
+    } else if (nowWet && !prevWet) {
+      if (eid === PlayerEntity) {
+        if (!hasComponent(world, Wetness, eid)) Log.unshift('You are wet')
+        PlayerSprite.texture = getTexture('playerSwim')
       }
+      addComponent(world, Wetness, eid)
+      Wetness.factor[eid] = 1
     }
   }
   return world
@@ -144,8 +144,7 @@ export const wetnessSystem: System = (world) => {
 const theFish = defineQuery([Fish, OnTileType])
 export const fishSystem: System = (world) => {
   for (const eid of theFish(world)) {
-    const currentTileType = OnTileType.current[eid]
-    const onWater = isWet(currentTileType)
+    const onWater = isWet(OnTileType.current[eid])
     const currentSpotting = Spotting.current[eid]
     let spotChange
     const fovDistance = CalculateFOV.distance[eid]
@@ -160,15 +159,15 @@ export const fishSystem: System = (world) => {
       Spotting.current[eid] = newSpotting
       RecalcEntities.add(eid)
     }
-    if (OnTileType.previous[eid] === currentTileType) continue
-    if (currentTileType === Tile.Floor) {
-      SpritesByEID[eid].texture = getTexture('fish')
-      addComponent(world, SeekWater, eid)
-      SeekWater.distance[eid] = 6
-    } else if (onWater) {
+    if (isWet(OnTileType.previous[eid]) === onWater) continue
+    if (onWater) {
       SpritesByEID[eid].texture = getTexture('fishSwim')
       removeComponent(world, CanWalk, eid)
       removeComponent(world, SeekWater, eid)
+    } else {
+      SpritesByEID[eid].texture = getTexture('fish')
+      addComponent(world, SeekWater, eid)
+      SeekWater.distance[eid] = 6
     }
   }
   return world

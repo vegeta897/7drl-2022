@@ -1,12 +1,10 @@
 import * as ROT from 'rot-js'
 import { Sprite } from 'pixi.js'
-import { TILE_SIZE } from './'
-import { EntitySprites, WorldSprites } from './pixi'
-import { get8Neighbors, getDiamondAround, getDistance, Vector2 } from './vector2'
+import { getDistance, getStraightLine, Vector2 } from './vector2'
 import AStar from 'rot-js/lib/path/astar'
-import { GridMap, isWet, Tile, TileData, TileMap } from './map'
+import { GridMap, isWalkable, isWet, Tile, TileData, TileMap } from './map'
 import { RNG } from 'rot-js'
-import { getTexture, SpritesByEID } from './sprites'
+import { addSprite, createMapSprites, getTexture } from './sprites'
 import { addComponent, addEntity } from 'bitecs'
 import { World } from './ecs'
 import {
@@ -23,50 +21,70 @@ import {
   Wander,
 } from './ecs/components'
 
-export const DEBUG_VISIBILITY = false
+export const DEBUG_VISIBILITY = true
 export const MAP_WIDTH = 80
 export const MAP_HEIGHT = 80
 const seed = 0
 if (seed) RNG.setSeed(seed)
 console.log('rng seed', RNG.getSeed())
 
-const REQUIRED_FISH_COUNT = (MAP_WIDTH * MAP_HEIGHT) / 160
+const REQUIRED_FISH_COUNT = (MAP_WIDTH * MAP_HEIGHT) / 170
 
 export let Level: TileMap
 export let EntityMap: GridMap<number>
 
 // TODO: Entity map doesn't allow more than one entity on a tile, this may cause issues!
 
-// TODO: Generate map boundaries with another cellular with high probability to form a big blob
-
-export let OpenFloors: Vector2[]
-
-export function createLevel() {
+export function createLevel(): Vector2 {
+  let attempts = 0
+  let playerSpawn
   let fishSpawns
-  do {
+  while (true) {
+    attempts++
+    if (attempts > 50) throw 'Level generation failed!'
+    console.log('attempt', attempts)
     generateMap()
-    OpenFloors = []
+    console.log('getting player spawn')
+    playerSpawn = getPlayerSpawn()
+    if (!playerSpawn) continue
     const ponds = getPonds()
-    fishSpawns = getFishSpawns(ponds)
-  } while (fishSpawns.size < REQUIRED_FISH_COUNT)
+    console.log('getting fish spawns')
+    fishSpawns = getFishSpawns(ponds, playerSpawn)
+    if (fishSpawns.size >= REQUIRED_FISH_COUNT) break
+    console.log('too few fish', fishSpawns.size)
+  }
+  console.log('success after', attempts)
   createMapSprites()
   EntityMap = new GridMap()
   fishSpawns.forEach(createFish)
+  return playerSpawn
 }
 
 function generateMap() {
+  Level = new TileMap(MAP_WIDTH, MAP_HEIGHT)
   const caves = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
-  caves.randomize(0.55)
+  caves.randomize(0.5)
   for (let i = 0; i < 2; i++) {
     caves.create()
   }
-  Level = new TileMap()
-  let c = 0
-  caves.connect((x, y, value) => {
-    c++
-    const isBoundary = x === 0 || x === MAP_WIDTH - 1 || y === 0 || y === MAP_HEIGHT - 1
-    Level.createTile({ x, y }, !isBoundary && value === 1 ? Tile.Floor : Tile.Wall)
-  }, 1)
+  let longestConnection = 0
+  caves.connect(
+    () => {},
+    1,
+    (from, to) => {
+      let distance = Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1])
+      longestConnection = Math.max(longestConnection, distance)
+      getStraightLine({ x: from[0], y: from[1] }, { x: to[0], y: to[1] }).forEach(({ x, y }) => {
+        caves.set(x, y, 2)
+      })
+    }
+  )
+  console.log('longest tunnel', longestConnection)
+  Level.loadRotJSMap(<(0 | 1)[][]>caves._map)
+
+  const holes = Level.getContiguousAreas((t) => t.type === Tile.Floor, 9)
+  console.log(holes.map((h) => h.length))
+
   const water = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
   water.randomize(0.45)
   for (let i = 0; i < 3; i++) {
@@ -86,6 +104,7 @@ function generateMap() {
         let tileAppeal = 0
         if (n.type === Tile.Wall) tileAppeal = 0.5
         if (n.type === Tile.Floor) tileAppeal = 1
+        if (n.type === Tile.Path) tileAppeal = -0.5
         if (n.type === Tile.Shallows) tileAppeal = 1
         if (n.d > 1) tileAppeal /= 4
         shallowAppeal += tileAppeal
@@ -96,80 +115,55 @@ function generateMap() {
   })
 }
 
-function getPonds() {
-  const ponds: Vector2[][] = []
+const between = (val: number, min: number, max: number) => val > min && val < max
+
+function getPlayerSpawn(): Vector2 | false {
+  const outer = 5
+  const inner = 15
+  const validSpawns: Vector2[] = []
   Level.data.forEach((tile) => {
-    if (tile.type === Tile.Floor) {
-      const diamond2 = getDiamondAround(tile, 2)
-      if (diamond2.every((g) => Level.get(g).type === Tile.Floor)) {
-        OpenFloors.push(tile)
-      }
-    } else if (isWet(tile.type)) {
-      if (tile.pondIndex! >= 0) return
-      const uncheckedNeighbors: Set<TileData> = new Set([tile])
-      const pond: TileData[] = []
-      let currentTile: TileData
-      do {
-        currentTile = [...uncheckedNeighbors.values()][0]
-        uncheckedNeighbors.delete(currentTile)
-        pond.push(currentTile)
-        currentTile.pondIndex = ponds.length
-        Level.get4Neighbors(currentTile).forEach((t) => t.pondIndex! < 0 && uncheckedNeighbors.add(t))
-      } while (uncheckedNeighbors.size > 0)
-      ponds.push(pond)
-    }
+    if (!isWalkable(tile.type)) return
+    if (!between(tile.x, outer, inner) && !between(tile.x, MAP_WIDTH - inner, MAP_WIDTH - outer)) return
+    if (!between(tile.y, outer, inner) && !between(tile.y, MAP_HEIGHT - inner, MAP_HEIGHT - outer)) return
+    if (Level.getDiamondAround(tile, 2).every((t) => isWalkable(t.type))) validSpawns.push(tile)
   })
-  return ponds
+  if (validSpawns.length === 0) return false
+  return RNG.getItem(validSpawns)!
 }
 
-function getFishSpawns(ponds: Vector2[][]): Set<Vector2> {
+function getPonds() {
+  return Level.getContiguousAreas((t) => isWet(t.type)).filter((pond) => {
+    if (pond.length === 1) {
+      pond.forEach((p) => Level.createTile(p, Tile.Floor))
+      return false
+    }
+    return true
+  })
+}
+
+function getFishSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
   const spawns: Set<Vector2> = new Set()
   for (const pond of ponds) {
     const tilesPerFish = Math.max(7, RNG.getNormal(16, 6))
     const fishCount = Math.min(8, Math.floor(pond.length / tilesPerFish))
+    let spawnCandidate = [...pond]
     for (let i = 0; i < fishCount; i++) {
       let randomPick
       do {
-        randomPick = RNG.getItem(pond)!
-      } while (spawns.has(randomPick))
+        randomPick = RNG.getItem(spawnCandidate)!
+        spawnCandidate.splice(spawnCandidate.indexOf(randomPick), 1)
+      } while (spawnCandidate.length > 0 && getDistance(randomPick, player) < 10)
       spawns.add(randomPick)
     }
   }
   return spawns
 }
 
-function createMapSprites() {
-  const wallTexture = getTexture('wall')
-  const floorTextures = ['floor1', 'floor2', 'floor3', 'floor4'].map((t) => getTexture(t))
-  const waterTexture = getTexture('water')
-  const shallowTexture = getTexture('waterReeds')
-  const getTileTexture = (tile: Tile) => {
-    switch (tile) {
-      case Tile.Floor:
-        return RNG.getItem(floorTextures)!
-      case Tile.Wall:
-        return wallTexture
-      case Tile.Water:
-        return waterTexture
-      case Tile.Shallows:
-        return shallowTexture
-    }
-  }
-  Level.data.forEach((tile) => {
-    tile.sprite = new Sprite(getTileTexture(tile.type))
-    tile.sprite.x = tile.x * TILE_SIZE
-    tile.sprite.y = tile.y * TILE_SIZE
-    if (!DEBUG_VISIBILITY) tile.sprite.alpha = 0
-    WorldSprites.addChild(tile.sprite)
-  })
-}
-
 function createFish(grid: Vector2): boolean {
   const fish = addEntity(World)
   const fishSprite = new Sprite(getTexture('fishSwim'))
   if (!DEBUG_VISIBILITY) fishSprite.alpha = 0
-  SpritesByEID[fish] = fishSprite
-  EntitySprites.addChild(fishSprite)
+  addSprite(fish, fishSprite)
   addComponent(World, DisplayObject, fish)
   addComponent(World, OnTileType, fish)
   addComponent(World, GridPosition, fish)

@@ -1,5 +1,6 @@
-import { get4Neighbors, get8Neighbors, Vector2 } from './vector2'
+import { get4Neighbors, get8Neighbors, getDiamondAround, Vector2 } from './vector2'
 import { Sprite } from 'pixi.js'
+import { Level } from './level'
 
 export class GridMap<T> {
   data: Map<string, T> = new Map()
@@ -25,6 +26,7 @@ export enum Tile {
   Wall,
   Water,
   Shallows,
+  Path,
 }
 
 const EmptyTile = {
@@ -35,30 +37,75 @@ const EmptyTile = {
 }
 
 export class TileMap extends GridMap<TileData> {
+  constructor(public width: number, public height: number) {
+    super()
+  }
   get(grid: Vector2): TileData {
     return this.data.get(GridMap.Key(grid)) || { ...EmptyTile, x: grid.x, y: grid.y }
   }
   get4Neighbors(grid: Vector2): TileData[] {
-    return get4Neighbors(grid).map((g) => this.get(g))
+    return get4Neighbors(grid)
+      .filter((g) => this.has(g))
+      .map((g) => this.get(g))
   }
   get8Neighbors(grid: Vector2): TileData[] {
-    return get8Neighbors(grid).map((g) => this.get(g))
+    return get8Neighbors(grid)
+      .filter((g) => this.has(g))
+      .map((g) => this.get(g))
   }
-  createTile(grid: Vector2, tileType: Tile): void {
-    const tileData: TileData = { ...EmptyTile, ...grid, type: tileType }
+  getDiamondAround(grid: Vector2, radius: number): TileData[] {
+    return getDiamondAround(grid, radius)
+      .filter((g) => this.has(g))
+      .map((g) => this.get(g))
+  }
+  createTile({ x, y }: Vector2, tileType: Tile): void {
+    const tileData: TileData = { ...EmptyTile, x, y, type: tileType }
     switch (tileType) {
       case Tile.Wall:
         tileData.seeThrough = false
         tileData.solid = true
         break
-      case Tile.Water:
-        tileData.pondIndex = -1
-        break
       case Tile.Shallows:
         tileData.seeThrough = false
         break
     }
-    this.set(grid, tileData)
+    this.set({ x, y }, tileData)
+  }
+  loadRotJSMap(map: (0 | 1 | 2)[][]) {
+    for (let y = 0; y < map.length; y++) {
+      const row = map[y]
+      for (let x = 0; x < row.length; x++) {
+        const onBorder = x === 0 || y === 0 || x === this.width - 1 || y === this.height - 1
+        let tileType = row[x] === 1 ? Tile.Floor : Tile.Path
+        if (onBorder || row[x] === 0) tileType = Tile.Wall
+        Level.createTile({ x, y }, tileType)
+      }
+    }
+  }
+  getContiguousAreas(tileCheck: (tile: TileData) => boolean, maxSize = 0): TileData[][] {
+    const areas: TileData[][] = []
+    const crawled = new Set()
+    this.data.forEach((tile) => {
+      if (!tileCheck(tile)) return
+      if (crawled.has(tile)) return
+      const uncheckedNeighbors = new Set([tile])
+      const area: TileData[] = []
+      let currentTile: TileData
+      do {
+        currentTile = [...uncheckedNeighbors.values()][0]
+        uncheckedNeighbors.delete(currentTile)
+        area.push(currentTile)
+        crawled.add(currentTile)
+        if (maxSize && area.length > maxSize) break
+        this.get4Neighbors(currentTile).forEach((t) => {
+          if (!crawled.has(t) && tileCheck(t)) {
+            uncheckedNeighbors.add(t)
+          }
+        })
+      } while (uncheckedNeighbors.size > 0)
+      if (!maxSize || area.length <= maxSize) areas.push(area)
+    })
+    return areas
   }
 }
 
@@ -68,14 +115,18 @@ export type TileData = {
   y: number
   type: Tile
   seeThrough: boolean
-  pondIndex?: number
   solid: boolean
-  tint?: number
   ignoreFOV?: boolean
   revealed: number
 }
 
 export function isWet(tile: Tile): boolean {
   if (tile === Tile.Water) return true
+  return tile === Tile.Shallows
+}
+
+export function isWalkable(tile: Tile): boolean {
+  if (tile === Tile.Floor) return true
+  if (tile === Tile.Path) return true
   return tile === Tile.Shallows
 }
