@@ -1,6 +1,6 @@
 import * as ROT from 'rot-js'
 import { Sprite } from 'pixi.js'
-import { addVector2, getDistance, getStraightLine, Vector2 } from './vector2'
+import { getDistance, getStraightLine, Vector2 } from './vector2'
 import AStar from 'rot-js/lib/path/astar'
 import { GridMap, isWalkable, isWet, Tile, TileMap } from './map'
 import { RNG } from 'rot-js'
@@ -26,14 +26,14 @@ import { OverlaySprites, promisedFrame } from './pixi'
 import { showLevelGen } from './hud'
 
 export const ALL_VISIBLE = 1
-const seed = 1646937907724
+const seed = 0
 const worldRNG = RNG.clone()
 if (seed) worldRNG.setSeed(seed)
 console.log('rng seed', worldRNG.getSeed())
 
 const levelSizes = [
-  [30, 30],
   [40, 40],
+  [50, 50],
   [60, 60],
 ]
 let mapWidth: number
@@ -55,7 +55,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   let chestSpawns
   while (true) {
     attempts++
-    if (attempts > 500) throw 'Level generation failed!'
+    if (attempts > 1000) throw 'Level generation failed!'
     await promisedFrame()
     showLevelGen(attempts)
     chestSpawns = generateMap()
@@ -101,6 +101,19 @@ function generateMap(): Vector2[] {
   // console.log('longest tunnel', longestConnection)
   Level.loadRotJSMap(<(0 | 1)[][]>caves._map)
 
+  // Connect path gaps
+  let pathsAdded: number
+  do {
+    pathsAdded = 0
+    Level.data.forEach((tile) => {
+      if (tile.type !== Tile.Floor) return
+      if (Level.get4Neighbors(tile).filter((n) => n.type === Tile.Path).length > 1) {
+        pathsAdded++
+        Level.createTile(tile, Tile.Path)
+      }
+    })
+  } while (pathsAdded > 0)
+
   const water = new ROT.Map.Cellular(mapWidth, mapHeight)
   RNG.setState(worldRNG.getState()) // Because rot.js maps use the global RNG
   water.randomize(0.45)
@@ -130,6 +143,20 @@ function generateMap(): Vector2[] {
       })
     if (shallowAppeal / 6 > worldRNG.getUniform()) {
       Level.createTile(tile, Tile.Shallows)
+    }
+  })
+
+  // Create stalactites
+  Level.data.forEach((tile) => {
+    if (tile.type === Tile.Wall) {
+      if (Level.isOnBorder(tile)) return
+      const neighbors4 = Level.get4Neighbors(tile)
+      if (neighbors4.every((n) => n.type === Tile.Wall)) return
+      if (worldRNG.getUniform() > 0.9) Level.createTile(tile, Tile.Stalagmite)
+    } else if (tile.type === Tile.Floor) {
+      const neighbors8 = Level.get8Neighbors(tile)
+      if (neighbors8.some((n) => n.solid)) return
+      if (worldRNG.getUniform() > 0.9) Level.createTile(tile, Tile.Stalagmite)
     }
   })
 

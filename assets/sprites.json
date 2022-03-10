@@ -79,6 +79,11 @@
       "frame": { "x": 16, "y": 96, "w": 16, "h": 16 },
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "sourceSize": { "w": 16, "h": 16 }
+    },
+    "stalagmites1": {
+      "frame": { "x": 16, "y": 112, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
     }
   },
   "meta": {

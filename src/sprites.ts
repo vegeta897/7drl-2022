@@ -14,11 +14,6 @@ export function initTextures() {
   for (const [key] of Object.entries(spriteData.frames)) {
     textures[key] = Texture.from(key)
   }
-  wallTexture = getTexture('wall')
-  floorTextures = ['floor1', 'floor2', 'floor3', 'floor4'].map((t) => getTexture(t))
-  waterTexture = getTexture('water')
-  shallowTexture = getTexture('waterReeds')
-  floorBricksTexture = getTexture('floorBricks')
 }
 
 export function getTexture(name: string): Texture {
@@ -31,32 +26,29 @@ export function addSprite(eid: number, sprite: Sprite, container = EntitySprites
   else container.addChild(sprite)
 }
 
-let wallTexture: Texture
-let floorTextures: Texture[]
-let waterTexture: Texture
-let shallowTexture: Texture
-let floorBricksTexture: Texture
-
 export function createMapSprites(rng: typeof RNG) {
-  const getTileTexture = (tile: Tile) => {
+  const getTileTexture = (tile: Tile): string => {
     switch (tile) {
       case Tile.Floor:
-        return rng.getItem(floorTextures)!
+        return rng.getItem(['floor1', 'floor2', 'floor3', 'floor4'])!
       case Tile.Wall:
-        return wallTexture
+        return 'wall'
       case Tile.Water:
-        return waterTexture
+        return 'water'
       case Tile.Shallows:
-        return shallowTexture
+        return 'waterReeds'
       case Tile.Path:
-        return floorBricksTexture
+        return 'floorBricks'
+      case Tile.Stalagmite:
+        return 'stalagmites1'
     }
+    throw `No texture found for tile type ${tile}`
   }
   while (WorldSprites.children[0]) {
     WorldSprites.children[0].destroy({ children: true })
   }
   Level.data.forEach((tile) => {
-    tile.sprite = new Sprite(getTileTexture(tile.type))
+    tile.sprite = new Sprite(getTexture(getTileTexture(tile.type)))
     tile.sprite.x = tile.x * TILE_SIZE
     tile.sprite.y = tile.y * TILE_SIZE
     if (!ALL_VISIBLE) tile.sprite.alpha = 0

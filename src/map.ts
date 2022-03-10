@@ -22,15 +22,17 @@ export class GridMap<T> {
 }
 
 export enum Tile {
+  Empty,
   Floor,
   Wall,
   Water,
   Shallows,
   Path,
+  Stalagmite,
 }
 
 const EmptyTile = {
-  type: Tile.Floor,
+  type: Tile.Empty,
   seeThrough: true,
   solid: false,
   revealed: 0,
@@ -68,14 +70,20 @@ export class TileMap extends GridMap<TileData> {
       case Tile.Shallows:
         tileData.seeThrough = false
         break
+      case Tile.Stalagmite:
+        tileData.solid = true
+        break
     }
     this.set({ x, y }, tileData)
+  }
+  isOnBorder({ x, y }: Vector2) {
+    return x === 0 || y === 0 || x === this.width - 1 || y === this.height - 1
   }
   loadRotJSMap(map: (0 | 1 | 2)[][]) {
     for (let y = 0; y < map.length; y++) {
       const row = map[y]
       for (let x = 0; x < row.length; x++) {
-        const onBorder = x === 0 || y === 0 || x === this.width - 1 || y === this.height - 1
+        const onBorder = this.isOnBorder({ x, y })
         let tileType = row[x] === 1 ? Tile.Floor : Tile.Path
         if (onBorder || row[x] === 0) tileType = Tile.Wall
         Level.createTile({ x, y }, tileType)
@@ -108,7 +116,7 @@ export class TileMap extends GridMap<TileData> {
   removeRedundantWalls() {
     const toRemove: Vector2[] = []
     this.data.forEach((tile) => {
-      if (this.get4Neighbors(tile).every((t) => t.type === Tile.Wall)) toRemove.push(tile)
+      if (this.get8Neighbors(tile).every((t) => !t.seeThrough && t.solid)) toRemove.push(tile)
     })
     for (const tile of toRemove) {
       this.delete(tile)
