@@ -87,6 +87,7 @@ export function confirmCast() {
 
 export function cancelCast() {
   castTargetSprite.visible = false
+  setPlayerState('Idle')
 }
 
 export function angleBait(move: Vector2) {

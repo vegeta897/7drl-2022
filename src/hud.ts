@@ -1,5 +1,5 @@
 import { Display } from 'rot-js'
-import { Fish, Health } from './ecs/components'
+import { Fish, Health, Wetness } from './ecs/components'
 import { GameState, PlayerEntity } from './index'
 import { PlayerState } from './ecs/input_systems'
 import { hasComponent } from 'bitecs'
@@ -17,6 +17,7 @@ export enum Colors {
   Danger = '#f57221',
   Dim = '#8098a1',
   Water = '#477d85',
+  StrongWater = '#328e98',
   GoodWater = '#5daf8d',
   DeepWater = '#102b3b',
   Gold = '#ffd541',
@@ -60,6 +61,10 @@ export function logKill(victim: number) {
 
 export function logMessage(message: string, color: Colors = Colors.White) {
   log.unshift(`%c{${color ?? ''}}${message}`)
+  updateHud()
+}
+
+export function updateHud() {
   dirty = true
 }
 
@@ -67,14 +72,10 @@ const maxLogLines = 20
 const lowestY = 32
 
 let dirty = true
-let lastGameState: string
-let lastPlayerState: string
 
 export function drawHud() {
-  if (!dirty && lastGameState === GameState && lastPlayerState === PlayerState) return
+  if (!dirty) return
   dirty = false
-  lastGameState = GameState
-  lastPlayerState = PlayerState
   HUD.clear()
   if (GameState === 'Losing') return
   if (GameState === 'Lost') {
@@ -103,6 +104,8 @@ export function drawHud() {
   }
   const health = Health.current[PlayerEntity]
   HUD.drawText(3, 1, `Health: %c{${health <= 3 ? Colors.Bad : ''}}${health.toString().padStart(3)}`)
+  const wet = hasComponent(World, Wetness, PlayerEntity)
+  HUD.drawText(24, 1, `%c{${wet ? Colors.StrongWater : Colors.Dim}}${wet ? 'Wet' : 'Dry'}`)
   if (PlayerState === 'Idle') HUD.drawText(3, 3, '[C] to cast')
   if (PlayerState === 'Casting') HUD.drawText(3, 3, 'CASTING ⟆\n\n[C] to confirm\n[Esc] to cancel')
   if (PlayerState === 'Angling') HUD.drawText(3, 3, 'ANGLING ⟆\n\n[C] to cut line')
@@ -132,6 +135,7 @@ export function drawHud() {
 export function resetHud() {
   HUD.setOptions(hudDefaults)
   log = []
+  updateHud()
 }
 
 const capitalize = (str: string) => str[0].toUpperCase() + str.slice(1)

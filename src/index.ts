@@ -6,7 +6,7 @@ import { initPixi, OverlaySprites, resetPixi, startPixi } from './pixi'
 import { DisplayObject, GridPosition, Health, setEntGrid, CanSwim, CanWalk, OnTileType, Scent } from './ecs/components'
 import { addSprite, getTexture, resetSprites } from './sprites'
 import { createLevel } from './level'
-import { drawHud, initHud, resetHud } from './hud'
+import { drawHud, initHud, resetHud, updateHud } from './hud'
 import { resetFOV, updateEntityVisibility, updateVisibility } from './fov'
 import { initCasting, resetCasting } from './casting'
 import { setPlayerState } from './ecs/input_systems'
@@ -20,7 +20,10 @@ type GameStates = 'Loading' | 'Playing' | 'ChangeLevel' | 'Losing' | 'Lost' | 'W
 export let GameState: GameStates = 'Loading'
 export let CurrentLevel: number
 export const LastLevel = 3
-export const setGameState = (state: GameStates) => (GameState = state)
+export const setGameState = (state: GameStates) => {
+  GameState = state
+  updateHud()
+}
 
 const PLAYER_HEALTH = 10
 

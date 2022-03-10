@@ -3,7 +3,7 @@ import { LoopState, onInput, World } from './'
 import { GameState, PlayerEntity, resetGame } from '../'
 import { MoveAction } from './components'
 import { DirectionGrids, DirectionNames } from '../vector2'
-import { drawHud } from '../hud'
+import { drawHud, updateHud } from '../hud'
 import { angleBait, beginCast, cancelCast, confirmCast, cutLine, moveCastTarget } from '../casting'
 
 export const waitForInput = () => {
@@ -15,7 +15,10 @@ export let WaitingForInput = true
 
 type PlayerStates = 'Idle' | 'Casting' | 'Angling'
 export let PlayerState: PlayerStates = 'Idle'
-export const setPlayerState = (state: PlayerStates) => (PlayerState = state)
+export const setPlayerState = (state: PlayerStates) => {
+  PlayerState = state
+  updateHud()
+}
 
 export const inputSystem: System = (world) => {
   buttonQueued = false

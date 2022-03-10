@@ -32,7 +32,7 @@ import {
 } from 'bitecs'
 import { EntityMap, Level } from '../level'
 import { CurrentLevel, GameState, LastLevel, PlayerEntity, PlayerSprite, setGameState } from '../'
-import { Colors, logAttack, logKill, logMessage } from '../hud'
+import { Colors, logAttack, logKill, logMessage, updateHud } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
 import { isWalkable, isWet, Tile } from '../map'
@@ -137,13 +137,13 @@ export const wetnessSystem: System = (world) => {
         Wetness.factor[eid] -= 0.1
         if (Wetness.factor[eid] <= 0) {
           removeComponent(world, Wetness, eid)
-          if (eid === PlayerEntity) logMessage('You are no longer wet', Colors.Dim)
+          updateHud()
         }
       }
       if (eid === PlayerEntity && prevWet) PlayerSprite.texture = getTexture('player')
     } else if (nowWet && !prevWet) {
       if (eid === PlayerEntity) {
-        if (!hasComponent(world, Wetness, eid)) logMessage('You are wet', Colors.Water)
+        if (!hasComponent(world, Wetness, eid)) updateHud()
         PlayerSprite.texture = getTexture('playerSwim')
       }
       addComponent(world, Wetness, eid)
@@ -169,7 +169,7 @@ export const fishSystem: System = (world) => {
     const newSpotting = clamp(currentSpotting + spotChange, 0, 2)
     if (newSpotting !== currentSpotting) {
       if (newSpotting >= 0.7 && newSpotting < 1 && currentSpotting < 0.7) {
-        logMessage('You hear something in the water', Colors.Water)
+        logMessage('You hear something in the water', Colors.StrongWater)
       }
       Spotting.current[eid] = newSpotting
       RecalcEntities.add(eid)
