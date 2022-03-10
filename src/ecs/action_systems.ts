@@ -2,35 +2,36 @@
 import {
   AnimateMovement,
   Bait,
+  CalculateFOV,
+  CanSwim,
+  CanWalk,
   changeEntGrid,
+  Chest,
   deleteEntGrid,
   Fish,
   getEntGrid,
   GridPosition,
   Health,
   MoveAction,
-  SeekWater,
-  Stunned,
-  CanSwim,
-  CanWalk,
   OnTileType,
-  Wetness,
+  SeekWater,
   Spotting,
-  CalculateFOV,
+  Stunned,
+  Wetness,
 } from './components'
 import {
-  defineQuery,
-  System,
   addComponent,
-  removeComponent,
-  hasComponent,
-  removeEntity,
+  defineQuery,
   entityExists,
+  hasComponent,
   Not,
+  removeComponent,
+  removeEntity,
+  System,
 } from 'bitecs'
 import { EntityMap, Level } from '../level'
 import { PlayerEntity, PlayerSprite, setGameState } from '../'
-import { Log, logAttack, logKill } from '../hud'
+import { Colors, logAttack, logKill, logMessage } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
 import { isWalkable, isWet, Tile } from '../map'
@@ -52,13 +53,14 @@ export const moveSystem: System = (world) => {
       targetGrid = addVector2(currentGrid, unitMove)
       const targetEntity = EntityMap.get(targetGrid)
       if (targetEntity !== undefined) {
-        if (eid === PlayerEntity && OnTileType.current[eid] === Tile.Water) {
-          Log.unshift(`You can't attack while swimming!`)
-          break
-        }
+        // TODO: Move this to a collision system
         const playerInvolved = [eid, targetEntity].includes(PlayerEntity)
         const attackedHasHealth = hasComponent(world, Health, targetEntity)
         if (playerInvolved && attackedHasHealth) {
+          if (eid === PlayerEntity && OnTileType.current[eid] === Tile.Water) {
+            logMessage(`You can't attack while swimming!`, Colors.Warning)
+            break
+          }
           let damage = 1
           if (hasComponent(world, Stunned, targetEntity)) {
             damage = 5
@@ -73,7 +75,7 @@ export const moveSystem: System = (world) => {
           }
         }
         if (hasComponent(world, Bait, targetEntity)) {
-          if (eid === PlayerEntity) Log.unshift('You ate the bait')
+          if (eid === PlayerEntity) logMessage('You ate the bait')
           if (hasComponent(world, Health, eid)) {
             Health.current[eid] = Math.min(Health.max[eid], Health.current[eid] + 1)
           }
@@ -81,8 +83,12 @@ export const moveSystem: System = (world) => {
             addComponent(world, Stunned, eid)
             Stunned.remaining[eid] = 6
             cutLine()
-            Log.unshift('The fish is eating the bait')
+            logMessage('The fish is eating the bait', Colors.GoodWater)
           }
+          deleteEntGrid(targetEntity)
+          removeEntity(world, targetEntity)
+        } else if (eid === PlayerEntity && hasComponent(world, Chest, targetEntity)) {
+          logMessage('You got the chest!', Colors.Gold)
           deleteEntGrid(targetEntity)
           removeEntity(world, targetEntity)
         } else {
@@ -125,13 +131,13 @@ export const wetnessSystem: System = (world) => {
         Wetness.factor[eid] -= 0.1
         if (Wetness.factor[eid] <= 0) {
           removeComponent(world, Wetness, eid)
-          if (eid === PlayerEntity) Log.unshift('You are no longer wet')
+          if (eid === PlayerEntity) logMessage('You are no longer wet', Colors.Dim)
         }
       }
       if (eid === PlayerEntity && prevWet) PlayerSprite.texture = getTexture('player')
     } else if (nowWet && !prevWet) {
       if (eid === PlayerEntity) {
-        if (!hasComponent(world, Wetness, eid)) Log.unshift('You are wet')
+        if (!hasComponent(world, Wetness, eid)) logMessage('You are wet', Colors.Water)
         PlayerSprite.texture = getTexture('playerSwim')
       }
       addComponent(world, Wetness, eid)
@@ -156,6 +162,9 @@ export const fishSystem: System = (world) => {
     }
     const newSpotting = clamp(currentSpotting + spotChange, 0, 2)
     if (newSpotting !== currentSpotting) {
+      if (newSpotting >= 0.7 && newSpotting < 1 && currentSpotting < 0.7) {
+        logMessage('You hear something in the water', Colors.Water)
+      }
       Spotting.current[eid] = newSpotting
       RecalcEntities.add(eid)
     }

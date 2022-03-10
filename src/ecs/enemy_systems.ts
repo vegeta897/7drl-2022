@@ -22,7 +22,7 @@ import {
   vectorsAreInline,
 } from '../vector2'
 import { EntityMap, findPath, Level } from '../level'
-import { Log } from '../hud'
+import { Colors, logMessage } from '../hud'
 import { isWet, Tile } from '../map'
 import { PlayerEntity } from '../'
 import { RecalcEntities } from '../fov'
@@ -47,7 +47,7 @@ export const predatorSystem: System = (world) => {
         addComponent(world, CanWalk, eid)
         Spotting.current[eid] = 2
         RecalcEntities.add(eid)
-        if (distance > 1 && scentEnt === PlayerEntity) Log.unshift('The fish lunges at you!')
+        if (distance > 1 && scentEnt === PlayerEntity) logMessage('The fish lunges at you!', Colors.Danger)
         break
       }
       const senseRange = Predator.senseRange[eid]

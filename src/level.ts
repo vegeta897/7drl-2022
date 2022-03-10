@@ -2,7 +2,7 @@ import * as ROT from 'rot-js'
 import { Sprite } from 'pixi.js'
 import { getDistance, getStraightLine, Vector2 } from './vector2'
 import AStar from 'rot-js/lib/path/astar'
-import { GridMap, isWalkable, isWet, Tile, TileData, TileMap } from './map'
+import { GridMap, isWalkable, isWet, Tile, TileMap } from './map'
 import { RNG } from 'rot-js'
 import { addSprite, createMapSprites, getTexture } from './sprites'
 import { addComponent, addEntity } from 'bitecs'
@@ -10,6 +10,7 @@ import { World } from './ecs'
 import {
   CalculateFOV,
   CanSwim,
+  Chest,
   DisplayObject,
   Fish,
   GridPosition,
@@ -21,10 +22,10 @@ import {
   Wander,
 } from './ecs/components'
 
-export const DEBUG_VISIBILITY = true
+export const DEBUG_VISIBILITY = false
 export const MAP_WIDTH = 80
 export const MAP_HEIGHT = 80
-const seed = 1646875024968
+const seed = 0
 if (seed) RNG.setSeed(seed)
 console.log('rng seed', RNG.getSeed())
 
@@ -45,6 +46,7 @@ export function createLevel(): Vector2 {
     if (attempts > 50) throw 'Level generation failed!'
     console.log('attempt', attempts)
     chestSpawns = generateMap()
+    // TODO: Change chest spawns to look for tiles with many surrounding walls/waters in a 5x5 area?
     playerSpawn = getPlayerSpawn()
     if (!playerSpawn) continue
     const ponds = getPonds()
@@ -150,7 +152,7 @@ function getPonds() {
 function getFishSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
   const spawns: Set<Vector2> = new Set()
   for (const pond of ponds) {
-    const tilesPerFish = Math.max(7, RNG.getNormal(16, 6))
+    const tilesPerFish = Math.max(7, RNG.getNormal(16, 5))
     const fishCount = Math.min(8, Math.floor(pond.length / tilesPerFish))
     let spawnCandidate = [...pond]
     for (let i = 0; i < fishCount; i++) {
@@ -201,6 +203,7 @@ function createChest(grid: Vector2) {
   addComponent(World, GridPosition, chest)
   setEntGrid(chest, grid)
   addComponent(World, CalculateFOV, chest)
+  addComponent(World, Chest, chest)
 }
 
 export function findPath(

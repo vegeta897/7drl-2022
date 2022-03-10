@@ -84,28 +84,24 @@ export class TileMap extends GridMap<TileData> {
   }
   getContiguousAreas(tileCheck: (tile: TileData) => boolean, maxSize = 0): TileData[][] {
     const areas: TileData[][] = []
-    let allCrawled = new Set()
+    const crawled = new Set()
     this.data.forEach((tile) => {
       if (!tileCheck(tile)) return
-      if (allCrawled.has(tile)) return
+      if (crawled.has(tile)) return
       const uncheckedNeighbors = new Set([tile])
       const area: TileData[] = []
       let currentTile: TileData
-      const localCrawled = new Set()
       do {
         currentTile = [...uncheckedNeighbors.values()][0]
         uncheckedNeighbors.delete(currentTile)
         area.push(currentTile)
         if (maxSize && area.length > maxSize) return
-        localCrawled.add(currentTile)
+        crawled.add(currentTile)
         this.get4Neighbors(currentTile).forEach((t) => {
-          if (!localCrawled.has(t) && tileCheck(t)) {
-            uncheckedNeighbors.add(t)
-          }
+          if (!crawled.has(t) && tileCheck(t)) uncheckedNeighbors.add(t)
         })
       } while (uncheckedNeighbors.size > 0)
-      allCrawled = new Set([...allCrawled, ...localCrawled])
-      areas.push(area)
+      if (!maxSize || area.length <= maxSize) areas.push(area)
     })
     return areas
   }

@@ -33,6 +33,8 @@ export const OnTileType = defineComponent({ current: Types.ui8, previous: Types.
 
 export const Fish = defineComponent()
 export const Bait = defineComponent()
+export const Chest = defineComponent()
+
 export const Scent = defineComponent({ range: Types.ui8 })
 export const Wetness = defineComponent({ factor: Types.f32 })
 export const Spotting = defineComponent({ current: Types.f32, increaseBy: Types.f32 })

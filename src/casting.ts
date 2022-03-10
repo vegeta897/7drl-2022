@@ -18,7 +18,7 @@ import {
 import { processInput, setPlayerState } from './ecs/input_systems'
 import { addComponent, addEntity, entityExists, removeEntity } from 'bitecs'
 import { EntityMap, Level } from './level'
-import { Log } from './hud'
+import { Colors, logMessage } from './hud'
 import { Tile } from './map'
 
 export const CastVector = { x: 0, y: 0 }
@@ -61,6 +61,11 @@ export function moveCastTarget(move: Vector2) {
 }
 
 export function confirmCast() {
+  const castGrid = addVector2(getEntGrid(PlayerEntity), CastVector)
+  if (EntityMap.has(castGrid)) {
+    logMessage("You can't cast there")
+    return
+  }
   setPlayerState('Idle')
   castTargetSprite.visible = false
   if (getDistance(CastVector) > 0) {
@@ -71,10 +76,9 @@ export function confirmCast() {
     addComponent(World, Scent, BaitEntity)
     Scent.range[BaitEntity] = 5
     addComponent(World, GridPosition, BaitEntity)
-    const baitGrid = addVector2(getEntGrid(PlayerEntity), CastVector)
-    setEntGrid(BaitEntity, baitGrid)
+    setEntGrid(BaitEntity, castGrid)
     addComponent(World, OnTileType, BaitEntity)
-    OnTileType.current[BaitEntity] = Level.get(baitGrid).type
+    OnTileType.current[BaitEntity] = Level.get(castGrid).type
     processInput()
     setPlayerState('Angling')
     drawFishingLine()
@@ -105,7 +109,7 @@ export function angleBait(move: Vector2) {
         removeEntity(World, BaitEntity!)
         BaitEntity = null
         setPlayerState('Idle')
-        Log.unshift('You reeled in the bait')
+        logMessage('You reeled in the bait', Colors.Dim)
         fishingLineGraphics.clear()
       } else {
         if (EntityMap.get(moddedAbsolute)) continue

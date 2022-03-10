@@ -6,9 +6,21 @@ import { hasComponent } from 'bitecs'
 import { World } from './ecs'
 
 export let HUD: Display
-export let Log: string[]
+let Log: string[]
 
 const hudDefaults = { width: 30, height: 32, fontSize: 20 }
+
+export enum Colors {
+  White = '#ffffff',
+  Good = '#14a02e',
+  Bad = '#e86a73',
+  Warning = '#f5a097',
+  Danger = '#fa6a0a',
+  Dim = '#888888',
+  Water = '#477d85',
+  GoodWater = '#5daf8d',
+  Gold = '#ffd541',
+}
 
 export function initHud() {
   HUD = new Display({ width: 15, height: 16, fontSize: 40, fontStyle: 'bold', bg: '#102b3b' })
@@ -30,14 +42,20 @@ function getEntityName(entity: number, _capitalize = false) {
 }
 
 export function logAttack(attacker: number, victim: number, damage: number) {
-  Log.unshift(`${getEntityName(attacker, true)} hit ${getEntityName(victim)} for ${damage} dmg`)
+  let color = attacker === PlayerEntity ? Colors.Good : Colors.White
+  if (victim === PlayerEntity) color = Colors.Bad
+  logMessage(`${getEntityName(attacker, true)} hit ${getEntityName(victim)} for ${damage} dmg`, color)
 }
 
 export function logKill(victim: number) {
-  Log.unshift(`You killed ${getEntityName(victim)}`)
+  logMessage(`You killed ${getEntityName(victim)}`)
 }
 
-const maxLogLines = 16
+export function logMessage(message: string, color: Colors = Colors.White) {
+  Log.unshift(`%c{${color ?? ''}}${message}`)
+}
+
+const maxLogLines = 20
 const lowestY = 32
 
 export function drawHud() {
@@ -59,11 +77,16 @@ export function drawHud() {
       y += HUD.drawText(
         2,
         y,
-        `%c{#ffffff${Math.round(((maxLogLines - i) / maxLogLines) * 255)
-          .toString(16)
-          .padStart(2, '0')}}${Log[i]}`
+        Log[i].replaceAll(
+          /%c{#[a-z0-9]+/gi,
+          '$&' +
+            Math.round(Math.min(255, (maxLogLines - i) / maxLogLines) * 255)
+              .toString(16)
+              .padStart(2, '0')
+        )
       )
       if (y >= lowestY) {
+        console.log(y)
         Log = Log.slice(0, i + 1)
         break
       }
