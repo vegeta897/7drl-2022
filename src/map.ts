@@ -105,6 +105,15 @@ export class TileMap extends GridMap<TileData> {
     })
     return areas
   }
+  removeRedundantWalls() {
+    const toRemove: Vector2[] = []
+    this.data.forEach((tile) => {
+      if (this.get4Neighbors(tile).every((t) => t.type === Tile.Wall)) toRemove.push(tile)
+    })
+    for (const tile of toRemove) {
+      this.delete(tile)
+    }
+  }
 }
 
 export type TileData = {

@@ -25,7 +25,7 @@ import {
 import { OverlaySprites, promisedFrame } from './pixi'
 import { showLevelGen } from './hud'
 
-export const ALL_VISIBLE = 0
+export const ALL_VISIBLE = 1
 const seed = 1646937907724
 const worldRNG = RNG.clone()
 if (seed) worldRNG.setSeed(seed)
@@ -68,11 +68,12 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     console.log('too few fish', fishSpawns.size)
   }
   console.log('success after', attempts)
+  Level.removeRedundantWalls()
   createMapSprites(worldRNG)
   EntityMap = new GridMap()
   fishSpawns.forEach(createFish)
   chestSpawns.forEach(createChest)
-  createExit(addVector2(enterExitGrids.enter, { x: 1, y: 0 }) /*enterExitGrids.exit*/)
+  createExit(enterExitGrids.exit)
   return enterExitGrids.enter
 }
 

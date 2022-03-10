@@ -45,7 +45,6 @@ import { filters } from 'pixi.js'
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
   for (const eid of moveQuery(world)) {
-    if (eid === PlayerEntity) console.log('moving player')
     const move = { x: MoveAction.x[eid], y: MoveAction.y[eid] }
     removeComponent(world, MoveAction, eid)
     const distance = getDistance(move)
