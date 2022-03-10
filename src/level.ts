@@ -24,11 +24,11 @@ import {
 export const DEBUG_VISIBILITY = true
 export const MAP_WIDTH = 80
 export const MAP_HEIGHT = 80
-const seed = 0
+const seed = 1646875024968
 if (seed) RNG.setSeed(seed)
 console.log('rng seed', RNG.getSeed())
 
-const REQUIRED_FISH_COUNT = (MAP_WIDTH * MAP_HEIGHT) / 170
+const REQUIRED_FISH_COUNT = (MAP_WIDTH * MAP_HEIGHT) / 180
 
 export let Level: TileMap
 export let EntityMap: GridMap<number>
@@ -39,16 +39,15 @@ export function createLevel(): Vector2 {
   let attempts = 0
   let playerSpawn
   let fishSpawns
+  let chestSpawns
   while (true) {
     attempts++
     if (attempts > 50) throw 'Level generation failed!'
     console.log('attempt', attempts)
-    generateMap()
-    console.log('getting player spawn')
+    chestSpawns = generateMap()
     playerSpawn = getPlayerSpawn()
     if (!playerSpawn) continue
     const ponds = getPonds()
-    console.log('getting fish spawns')
     fishSpawns = getFishSpawns(ponds, playerSpawn)
     if (fishSpawns.size >= REQUIRED_FISH_COUNT) break
     console.log('too few fish', fishSpawns.size)
@@ -57,10 +56,11 @@ export function createLevel(): Vector2 {
   createMapSprites()
   EntityMap = new GridMap()
   fishSpawns.forEach(createFish)
+  chestSpawns.forEach(createChest)
   return playerSpawn
 }
 
-function generateMap() {
+function generateMap(): Vector2[] {
   Level = new TileMap(MAP_WIDTH, MAP_HEIGHT)
   const caves = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
   caves.randomize(0.5)
@@ -82,9 +82,6 @@ function generateMap() {
   console.log('longest tunnel', longestConnection)
   Level.loadRotJSMap(<(0 | 1)[][]>caves._map)
 
-  const holes = Level.getContiguousAreas((t) => t.type === Tile.Floor, 9)
-  console.log(holes.map((h) => h.length))
-
   const water = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
   water.randomize(0.45)
   for (let i = 0; i < 3; i++) {
@@ -95,24 +92,33 @@ function generateMap() {
     if (Level.get({ x, y }).type === Tile.Wall) return
     Level.createTile({ x, y }, Tile.Water)
   })
+  // Create shallows
   Level.data.forEach((tile) => {
     if (tile.type !== Tile.Water) return
     let shallowAppeal = 0
     Level.get8Neighbors(tile)
       .map((n) => ({ ...n, d: getDistance(tile, n) }))
       .forEach((n) => {
-        let tileAppeal = 0
-        if (n.type === Tile.Wall) tileAppeal = 0.5
-        if (n.type === Tile.Floor) tileAppeal = 1
-        if (n.type === Tile.Path) tileAppeal = -0.5
-        if (n.type === Tile.Shallows) tileAppeal = 1
-        if (n.d > 1) tileAppeal /= 4
-        shallowAppeal += tileAppeal
+        let shallowFactor = 0
+        if (n.type === Tile.Wall) shallowFactor = 0.5
+        if (n.type === Tile.Floor) shallowFactor = 1
+        if (n.type === Tile.Path) shallowFactor = -0.5
+        if (n.type === Tile.Shallows) shallowFactor = 1
+        if (n.d > 1) shallowFactor /= 4
+        shallowAppeal += shallowFactor
       })
     if (shallowAppeal / 6 > RNG.getUniform()) {
       Level.createTile(tile, Tile.Shallows)
     }
   })
+
+  const chestSpawns: Vector2[] = []
+  const holes = Level.getContiguousAreas((t) => t.type === Tile.Floor, 9)
+  holes.forEach((hole) => {
+    const newChest = RNG.getItem(hole)!
+    if (!chestSpawns.some((c) => getDistance(c, newChest) < 16)) chestSpawns.push(newChest)
+  })
+  return chestSpawns
 }
 
 const between = (val: number, min: number, max: number) => val > min && val < max
@@ -184,6 +190,17 @@ function createFish(grid: Vector2): boolean {
   Spotting.current[fish] = 0
   Spotting.increaseBy[fish] = 0.15
   return true
+}
+
+function createChest(grid: Vector2) {
+  const chest = addEntity(World)
+  const chestSprite = new Sprite(getTexture('chest'))
+  if (!DEBUG_VISIBILITY) chestSprite.alpha = 0
+  addSprite(chest, chestSprite)
+  addComponent(World, DisplayObject, chest)
+  addComponent(World, GridPosition, chest)
+  setEntGrid(chest, grid)
+  addComponent(World, CalculateFOV, chest)
 }
 
 export function findPath(
