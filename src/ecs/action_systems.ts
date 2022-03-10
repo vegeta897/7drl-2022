@@ -38,6 +38,8 @@ import { isWalkable, isWet, Tile } from '../map'
 import { getTexture, SpritesByEID } from '../sprites'
 import { FOV_RADIUS, RecalcEntities, VisibilityMap } from '../fov'
 import { clamp } from 'rot-js/lib/util'
+import { PixiViewport } from '../pixi'
+import { filters } from 'pixi.js'
 
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
@@ -182,8 +184,12 @@ export const fishSystem: System = (world) => {
   return world
 }
 
+const desaturated = new filters.ColorMatrixFilter()
+desaturated.desaturate()
+
 export const gameSystem: System = (world) => {
   if (!entityExists(world, PlayerEntity)) {
+    PixiViewport.filters = [desaturated]
     setGameState('Losing')
   }
   return world

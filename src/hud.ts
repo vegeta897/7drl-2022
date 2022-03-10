@@ -15,16 +15,17 @@ export enum Colors {
   Good = '#14a02e',
   Bad = '#e86a73',
   Warning = '#f5a097',
-  Danger = '#fa6a0a',
-  Dim = '#888888',
+  Danger = '#f57221',
+  Dim = '#8098a1',
   Water = '#477d85',
   GoodWater = '#5daf8d',
   Gold = '#ffd541',
+  Blood = '#d01e2a',
 }
 
 export function initHud() {
   HUD = new Display({ width: 15, height: 16, fontSize: 40, fontStyle: 'bold', bg: '#102b3b' })
-  HUD.drawText(4, 7, 'LOADING')
+  HUD.drawText(4, 7, `%c{${Colors.Dim}}LOADING`)
   document.body.appendChild(HUD.getContainer()!)
   Log = []
 }
@@ -63,11 +64,11 @@ export function drawHud() {
   if (GameState === 'Losing') return
   if (GameState === 'Lost') {
     HUD.setOptions({ width: 15, height: 16, fontSize: 40 })
-    HUD.drawText(5, 7, 'GAME')
-    HUD.drawText(5, 8, 'OVER')
+    HUD.drawText(5, 7, `%c{${Colors.Blood}}GAME OVER`, 4)
     return
   }
-  HUD.drawText(3, 1, `Health: ${Health.current[PlayerEntity].toString().padStart(3)}`)
+  const health = Health.current[PlayerEntity]
+  HUD.drawText(3, 1, `Health: %c{${health <= 3 ? Colors.Bad : ''}}${health.toString().padStart(3)}`)
   if (PlayerState === 'Casting') HUD.drawText(3, 3, 'CASTING ⟆\n\nC to confirm\nEsc to cancel')
   if (PlayerState === 'Angling') HUD.drawText(3, 3, 'ANGLING ⟆\n\nC to cut line')
   if (Log.length > 0) {
@@ -86,7 +87,6 @@ export function drawHud() {
         )
       )
       if (y >= lowestY) {
-        console.log(y)
         Log = Log.slice(0, i + 1)
         break
       }
