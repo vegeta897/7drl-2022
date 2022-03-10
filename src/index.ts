@@ -1,37 +1,28 @@
 import './style.css'
-import { World } from './ecs'
+import { resetNonPlayerEntities, World } from './ecs'
 import { addComponent, addEntity, resetWorld } from 'bitecs'
 import { Sprite } from 'pixi.js'
 import { initPixi, OverlaySprites, PixiViewport, resetPixi, startPixi } from './pixi'
-import {
-  DisplayObject,
-  GridPosition,
-  Health,
-  setEntGrid,
-  CanSwim,
-  CanWalk,
-  OnTileType,
-  Scent,
-  initEntGrid,
-} from './ecs/components'
+import { DisplayObject, GridPosition, Health, CanSwim, CanWalk, OnTileType, Scent, initEntGrid } from './ecs/components'
 import { addSprite, getTexture, resetSprites } from './sprites'
 import { createLevel } from './level'
-import { drawHud, initHud, clearLog, updateHud, defaultHud } from './hud'
+import { drawHud, initHud, clearLog, updateHud, defaultHud, bigHud, logMessage, Colors } from './hud'
 import { resetFOV, updateEntityVisibility, updateVisibility } from './fov'
 import { initCasting, resetCasting } from './casting'
-import { setPlayerState } from './ecs/input_systems'
+import { setPlayerState, waitForInput } from './ecs/input_systems'
 
 export const TILE_SIZE = 16
 
 export let PlayerEntity: number
 export let PlayerSprite: Sprite
 
-type GameStates = 'Loading' | 'Playing' | 'EndLevel' | 'Losing' | 'Lost' | 'Won' | 'CriticalFailure'
+type GameStates = 'Loading' | 'Generating' | 'Playing' | 'EndLevel' | 'Losing' | 'Lost' | 'Won' | 'CriticalFailure'
 export let GameState: GameStates = 'Loading'
 export let CurrentLevel: number
 export const LastLevel = 3
 export const nextLevel = () => {
   CurrentLevel++
+  resetNonPlayerEntities()
   startLevel()
 }
 export const setGameState = (state: GameStates) => {
@@ -39,10 +30,7 @@ export const setGameState = (state: GameStates) => {
   updateHud()
 }
 
-const PLAYER_HEALTH = 1
-
-// TODO: Create startLevel()
-// Avoid re-initializing as much as possible
+const PLAYER_HEALTH = 10
 
 async function startGame() {
   clearLog()
@@ -67,18 +55,17 @@ async function startGame() {
 }
 
 async function startLevel() {
-  console.log('starting level')
+  GameState = 'Generating'
+  bigHud()
   let playerStart
   try {
     playerStart = await createLevel(CurrentLevel)
-    console.log('level generated')
   } catch (e) {
     console.error(e)
     GameState = 'CriticalFailure'
     drawHud()
     return
   }
-  console.log('setting player grid')
   initEntGrid(PlayerEntity, playerStart)
   PixiViewport.moveCenter(PlayerSprite)
 
@@ -86,7 +73,13 @@ async function startLevel() {
   updateEntityVisibility()
 
   GameState = 'Playing'
+  waitForInput()
   defaultHud()
+  if (CurrentLevel === LastLevel) {
+    logMessage('You ascend the ladder, and sense that you are near the surface now...', Colors.Sky)
+  } else if (CurrentLevel > 1) {
+    logMessage('You ascend the ladder...', Colors.Sky)
+  }
   drawHud()
 }
 

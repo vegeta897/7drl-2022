@@ -11,7 +11,7 @@ export const waitForInput = () => {
   if (buttonQueued) onInput()
 }
 export const processInput = () => (WaitingForInput = false)
-export let WaitingForInput = true
+export let WaitingForInput = false
 
 type PlayerStates = 'Idle' | 'Casting' | 'Angling'
 export let PlayerState: PlayerStates = 'Idle'
@@ -36,7 +36,10 @@ export const inputSystem: System = (world) => {
       break
     case 'confirm':
       if (previousState === 'Casting') confirmCast()
-      if (GameState === 'Lost') resetGame()
+      if (GameState === 'Lost') {
+        resetGame()
+        return world
+      }
       break
     case 'exit':
       PlayerState = 'Idle'

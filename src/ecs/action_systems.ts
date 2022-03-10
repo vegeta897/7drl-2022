@@ -45,6 +45,7 @@ import { filters } from 'pixi.js'
 const moveQuery = defineQuery([GridPosition, MoveAction])
 export const moveSystem: System = (world) => {
   for (const eid of moveQuery(world)) {
+    if (eid === PlayerEntity) console.log('moving player')
     const move = { x: MoveAction.x[eid], y: MoveAction.y[eid] }
     removeComponent(world, MoveAction, eid)
     const distance = getDistance(move)
@@ -96,6 +97,7 @@ export const moveSystem: System = (world) => {
           removeEntity(world, targetEntity)
         } else if (eid === PlayerEntity && hasComponent(world, Exit, targetEntity)) {
           setGameState('EndLevel')
+          break
         } else {
           break
         }
@@ -167,7 +169,7 @@ export const fishSystem: System = (world) => {
     }
     const newSpotting = clamp(currentSpotting + spotChange, 0, 2)
     if (newSpotting !== currentSpotting) {
-      if (newSpotting >= 0.7 && newSpotting < 1 && currentSpotting < 0.7) {
+      if (newSpotting >= 0.5 && newSpotting < 1 && currentSpotting < 0.5) {
         logMessage('You hear something in the water', Colors.StrongWater)
       }
       Spotting.current[eid] = newSpotting
@@ -191,18 +193,13 @@ const desaturated = new filters.ColorMatrixFilter()
 desaturated.desaturate()
 
 export const gameSystem: System = (world) => {
-  if (!entityExists(world, PlayerEntity)) {
+  if (GameState !== 'Losing' && !entityExists(world, PlayerEntity)) {
     PixiViewport.filters = [desaturated]
     setGameState('Losing')
   } else if (GameState === 'EndLevel') {
     if (CurrentLevel === LastLevel) {
       setGameState('Won')
     } else {
-      if (CurrentLevel === LastLevel - 1) {
-        logMessage('You ascend the ladder, and sense that you are near the surface now...', Colors.Sky)
-      } else {
-        logMessage('You ascend the ladder...', Colors.Sky)
-      }
       nextLevel()
     }
   }

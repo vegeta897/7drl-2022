@@ -37,11 +37,11 @@ let waterTexture: Texture
 let shallowTexture: Texture
 let floorBricksTexture: Texture
 
-export function createMapSprites() {
+export function createMapSprites(rng: typeof RNG) {
   const getTileTexture = (tile: Tile) => {
     switch (tile) {
       case Tile.Floor:
-        return RNG.getItem(floorTextures)!
+        return rng.getItem(floorTextures)!
       case Tile.Wall:
         return wallTexture
       case Tile.Water:
@@ -51,6 +51,9 @@ export function createMapSprites() {
       case Tile.Path:
         return floorBricksTexture
     }
+  }
+  while (WorldSprites.children[0]) {
+    WorldSprites.children[0].destroy({ children: true })
   }
   Level.data.forEach((tile) => {
     tile.sprite = new Sprite(getTileTexture(tile.type))

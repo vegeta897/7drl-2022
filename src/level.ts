@@ -26,9 +26,10 @@ import { OverlaySprites, promisedFrame } from './pixi'
 import { showLevelGen } from './hud'
 
 export const ALL_VISIBLE = 0
-const seed = 0
-if (seed) RNG.setSeed(seed)
-console.log('rng seed', RNG.getSeed())
+const seed = 1646937907724
+const worldRNG = RNG.clone()
+if (seed) worldRNG.setSeed(seed)
+console.log('rng seed', worldRNG.getSeed())
 
 const levelSizes = [
   [30, 30],
@@ -41,7 +42,6 @@ let mapHeight: number
 export let Level: TileMap
 export let EntityMap: GridMap<number>
 
-// TODO: Have level generation use its own RNG instance
 // Keep a list of known working seeds to fall back to when max attempts exceeded
 
 // TODO: Entity map doesn't allow more than one entity on a tile, this may cause issues!
@@ -68,7 +68,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     console.log('too few fish', fishSpawns.size)
   }
   console.log('success after', attempts)
-  createMapSprites()
+  createMapSprites(worldRNG)
   EntityMap = new GridMap()
   fishSpawns.forEach(createFish)
   chestSpawns.forEach(createChest)
@@ -79,6 +79,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
 function generateMap(): Vector2[] {
   Level = new TileMap(mapWidth, mapHeight)
   const caves = new ROT.Map.Cellular(mapWidth, mapHeight)
+  RNG.setState(worldRNG.getState()) // Because rot.js maps use the global RNG
   caves.randomize(0.5)
   for (let i = 0; i < 2; i++) {
     caves.create()
@@ -95,11 +96,14 @@ function generateMap(): Vector2[] {
       })
     }
   )
-  console.log('longest tunnel', longestConnection)
+  worldRNG.setState(RNG.getState())
+  // console.log('longest tunnel', longestConnection)
   Level.loadRotJSMap(<(0 | 1)[][]>caves._map)
 
   const water = new ROT.Map.Cellular(mapWidth, mapHeight)
+  RNG.setState(worldRNG.getState()) // Because rot.js maps use the global RNG
   water.randomize(0.45)
+  worldRNG.setState(RNG.getState())
   for (let i = 0; i < 3; i++) {
     water.create()
   }
@@ -123,7 +127,7 @@ function generateMap(): Vector2[] {
         if (n.d > 1) shallowFactor /= 4
         shallowAppeal += shallowFactor
       })
-    if (shallowAppeal / 6 > RNG.getUniform()) {
+    if (shallowAppeal / 6 > worldRNG.getUniform()) {
       Level.createTile(tile, Tile.Shallows)
     }
   })
@@ -131,7 +135,7 @@ function generateMap(): Vector2[] {
   const chestSpawns: Vector2[] = []
   const holes = Level.getContiguousAreas((t) => t.type === Tile.Floor, 9)
   holes.forEach((hole) => {
-    const newChest = RNG.getItem(hole)!
+    const newChest = worldRNG.getItem(hole)!
     if (!chestSpawns.some((c) => getDistance(c, newChest) < 16)) chestSpawns.push(newChest)
   })
   return chestSpawns
@@ -150,7 +154,7 @@ function getEnterExitGrids(): { enter: Vector2; exit: Vector2 } | false {
     if (Level.getDiamondAround(tile, 2).every((t) => isWalkable(t.type))) validSpawns.push(tile)
   })
   if (validSpawns.length < 2) return false
-  RNG.shuffle(validSpawns)
+  worldRNG.shuffle(validSpawns)
   let enter
   let exit
   for (let i = 0; i < validSpawns.length; i++) {
@@ -178,13 +182,13 @@ function getPonds() {
 function getFishSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
   const spawns: Set<Vector2> = new Set()
   for (const pond of ponds) {
-    const tilesPerFish = Math.max(7, RNG.getNormal(16, 5))
+    const tilesPerFish = Math.max(7, worldRNG.getNormal(16, 5))
     const fishCount = Math.min(8, Math.floor(pond.length / tilesPerFish))
     let spawnCandidate = [...pond]
     for (let i = 0; i < fishCount; i++) {
       let randomPick
       do {
-        randomPick = RNG.getItem(spawnCandidate)!
+        randomPick = worldRNG.getItem(spawnCandidate)!
         spawnCandidate.splice(spawnCandidate.indexOf(randomPick), 1)
       } while (spawnCandidate.length > 0 && getDistance(randomPick, player) < 10)
       if (randomPick) spawns.add(randomPick)
@@ -204,7 +208,7 @@ function createFish(grid: Vector2): boolean {
   initEntGrid(fish, grid)
   addComponent(World, Wander, fish)
   Wander.maxChance[fish] = 10
-  Wander.chance[fish] = RNG.getUniformInt(0, 10)
+  Wander.chance[fish] = worldRNG.getUniformInt(0, 10)
   addComponent(World, CanSwim, fish)
   addComponent(World, Predator, fish)
   Predator.lungeRange[fish] = 4

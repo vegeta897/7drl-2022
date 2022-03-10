@@ -28,7 +28,7 @@ export enum Colors {
 }
 
 const hudDefaults = { width: 30, height: 32, fontSize: 20, bg: Colors.DeepWater }
-const bigHudDefaults = { width: 44, height: 16, fontSize: 40 }
+const bigHudDefaults = { width: 44, height: 16, fontSize: 40, bg: Colors.DeepWater }
 
 export function initHud() {
   HUD = new Display({ ...bigHudDefaults, fontStyle: 'bold' })
@@ -70,7 +70,14 @@ export function updateHud() {
 }
 
 export function defaultHud() {
+  HUD.clear()
   HUD.setOptions(hudDefaults)
+  updateHud()
+}
+
+export function bigHud() {
+  HUD.clear()
+  HUD.setOptions(bigHudDefaults)
   updateHud()
 }
 

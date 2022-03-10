@@ -1,4 +1,4 @@
-import { createWorld, pipe, registerComponents } from 'bitecs'
+import { createWorld, defineQuery, pipe, registerComponents, removeEntity } from 'bitecs'
 import {
   AnimateMovement,
   Bait,
@@ -28,6 +28,7 @@ import { runAnimations } from './anim_systems'
 import { cameraSystem, fadeSystem, fovSystem, spriteRemoveSystem } from './render_systems'
 import { drawHud } from '../hud'
 import { updateEntityVisibility, updateVisibility } from '../fov'
+import { GameState, PlayerEntity } from '../index'
 
 // @ts-ignore
 export const World = createWorld(5000)
@@ -46,6 +47,7 @@ export async function onInput() {
   systemGroups.input(World)
   if (WaitingForInput) return
   systemGroups.playerActions(World) // Execute player actions
+  if (GameState === 'Generating') return
   updateVisibility()
   updateEntityVisibility()
   LoopState = 'AnimatePlayer'
@@ -63,6 +65,13 @@ export async function onInput() {
 }
 
 export const runRender = () => systemGroups.render(World)
+
+const allEntities = defineQuery([])
+export function resetNonPlayerEntities() {
+  for (const eid of allEntities(World)) {
+    if (eid !== PlayerEntity) removeEntity(World, eid)
+  }
+}
 
 registerComponents(World, [
   DisplayObject,
