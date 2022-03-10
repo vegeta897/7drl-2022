@@ -24,42 +24,49 @@ export const setGameState = (state: GameStates) => (GameState = state)
 
 const PLAYER_HEALTH = 10
 
+// TODO: Create startLevel()
+// Avoid re-initializing as much as possible
+
 async function startGame() {
   CurrentLevel = 1
   PlayerEntity = addEntity(World)
 
+  let playerStart
   try {
-    const playerStart = createLevel(CurrentLevel)
-
-    PlayerSprite = new Sprite(getTexture('player'))
-    addSprite(PlayerEntity, PlayerSprite, OverlaySprites, true)
-    addComponent(World, DisplayObject, PlayerEntity)
-    addComponent(World, OnTileType, PlayerEntity)
-    addComponent(World, GridPosition, PlayerEntity)
-    setEntGrid(PlayerEntity, playerStart)
-    addComponent(World, CanWalk, PlayerEntity)
-    addComponent(World, CanSwim, PlayerEntity)
-    addComponent(World, Scent, PlayerEntity)
-    Scent.range[PlayerEntity] = 3
-    addComponent(World, Health, PlayerEntity)
-    Health.max[PlayerEntity] = PLAYER_HEALTH
-    Health.current[PlayerEntity] = PLAYER_HEALTH
-
-    initCasting()
-
-    updateVisibility()
-    updateEntityVisibility()
-
-    GameState = 'Playing'
-    resetHud()
-    drawHud()
-    startPixi()
+    playerStart = await createLevel(CurrentLevel)
   } catch (e) {
     GameState = 'CriticalFailure'
     resetHud()
     drawHud()
+    return
   }
+
+  PlayerSprite = new Sprite(getTexture('player'))
+  addSprite(PlayerEntity, PlayerSprite, OverlaySprites, true)
+  addComponent(World, DisplayObject, PlayerEntity)
+  addComponent(World, OnTileType, PlayerEntity)
+  addComponent(World, GridPosition, PlayerEntity)
+  setEntGrid(PlayerEntity, playerStart)
+  addComponent(World, CanWalk, PlayerEntity)
+  addComponent(World, CanSwim, PlayerEntity)
+  addComponent(World, Scent, PlayerEntity)
+  Scent.range[PlayerEntity] = 3
+  addComponent(World, Health, PlayerEntity)
+  Health.max[PlayerEntity] = PLAYER_HEALTH
+  Health.current[PlayerEntity] = PLAYER_HEALTH
+
+  initCasting()
+
+  updateVisibility()
+  updateEntityVisibility()
+
+  GameState = 'Playing'
+  resetHud()
+  drawHud()
+  startPixi()
 }
+
+async function startLevel() {}
 
 export function resetGame() {
   resetHud()

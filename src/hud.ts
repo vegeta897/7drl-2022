@@ -9,8 +9,6 @@ export let HUD: Display
 let log: string[]
 let killedFish = 0
 
-const hudDefaults = { width: 30, height: 32, fontSize: 20 }
-
 export enum Colors {
   White = '#ffffff',
   Good = '#14a02e',
@@ -20,21 +18,26 @@ export enum Colors {
   Dim = '#8098a1',
   Water = '#477d85',
   GoodWater = '#5daf8d',
+  DeepWater = '#102b3b',
   Gold = '#ffd541',
   Blood = '#d01e2a',
+  DeepestBlood = '#25141c',
   Sky = '#6bb9e1',
 }
 
+const hudDefaults = { width: 30, height: 32, fontSize: 20, bg: Colors.DeepWater }
+const bigHudDefaults = { width: 44, height: 16, fontSize: 40 }
+
 export function initHud() {
-  HUD = new Display({ width: 15, height: 16, fontSize: 40, fontStyle: 'bold', bg: '#102b3b' })
-  HUD.drawText(4, 7, `%c{${Colors.Dim}}LOADING`)
+  HUD = new Display({ ...bigHudDefaults, fontStyle: 'bold' })
+  HUD.drawText(19, 8, `%c{${Colors.Dim}}LOADING`)
   document.body.appendChild(HUD.getContainer()!)
   log = []
 }
 
-export function resetHud() {
-  HUD.setOptions(hudDefaults)
-  log = []
+export function showLevelGen(attempt: number) {
+  HUD.clear()
+  HUD.drawText(8, 8, `%c{${Colors.Dim}}Level generation attempt #${attempt}`)
 }
 
 function getEntityName(entity: number, _capitalize = false) {
@@ -57,21 +60,30 @@ export function logKill(victim: number) {
 
 export function logMessage(message: string, color: Colors = Colors.White) {
   log.unshift(`%c{${color ?? ''}}${message}`)
+  dirty = true
 }
 
 const maxLogLines = 20
 const lowestY = 32
 
+let dirty = true
+let lastGameState: string
+let lastPlayerState: string
+
 export function drawHud() {
+  if (!dirty && lastGameState === GameState && lastPlayerState === PlayerState) return
+  dirty = false
+  lastGameState = GameState
+  lastPlayerState = PlayerState
   HUD.clear()
   if (GameState === 'Losing') return
   if (GameState === 'Lost') {
-    HUD.setOptions({ width: 15, height: 16, fontSize: 40 })
-    HUD.drawText(5, 7, `%c{${Colors.Blood}}GAME\nOVER`)
+    HUD.setOptions({ ...bigHudDefaults, fontStyle: 'bold', bg: Colors.DeepestBlood })
+    HUD.drawText(20, 7, `%c{${Colors.Blood}}GAME\nOVER`)
     return
   }
   if (GameState === 'Won') {
-    HUD.setOptions({ width: 44, height: 16, fontSize: 40 })
+    HUD.setOptions(bigHudDefaults)
     HUD.drawText(
       7,
       4,
@@ -81,7 +93,7 @@ export function drawHud() {
     return
   }
   if (GameState === 'CriticalFailure') {
-    HUD.setOptions({ width: 44, height: 16, fontSize: 40 })
+    HUD.setOptions(bigHudDefaults)
     HUD.drawText(
       9,
       6,
@@ -115,6 +127,11 @@ export function drawHud() {
       }
     }
   }
+}
+
+export function resetHud() {
+  HUD.setOptions(hudDefaults)
+  log = []
 }
 
 const capitalize = (str: string) => str[0].toUpperCase() + str.slice(1)

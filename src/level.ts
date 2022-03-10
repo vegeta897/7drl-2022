@@ -22,10 +22,11 @@ import {
   Spotting,
   Wander,
 } from './ecs/components'
-import { OverlaySprites } from './pixi'
+import { OverlaySprites, promisedFrame } from './pixi'
+import { showLevelGen } from './hud'
 
-export const ALL_VISIBLE = 1
-const seed = 0
+export const ALL_VISIBLE = 0
+const seed = 1646930307248
 if (seed) RNG.setSeed(seed)
 console.log('rng seed', RNG.getSeed())
 
@@ -40,9 +41,12 @@ let mapHeight: number
 export let Level: TileMap
 export let EntityMap: GridMap<number>
 
+// TODO: Have level generation use its own RNG instance
+// Keep a list of known working seeds to fall back to when max attempts exceeded
+
 // TODO: Entity map doesn't allow more than one entity on a tile, this may cause issues!
 
-export function createLevel(levelNumber: number): Vector2 {
+export async function createLevel(levelNumber: number): Promise<Vector2> {
   ;[mapWidth, mapHeight] = levelSizes[levelNumber]
   const requiredFishCount = (mapWidth * mapHeight) / 180
   let attempts = 0
@@ -52,9 +56,10 @@ export function createLevel(levelNumber: number): Vector2 {
   while (true) {
     attempts++
     if (attempts > 500) throw 'Level generation failed!'
-    console.log('attempt', attempts)
+    await promisedFrame()
+    showLevelGen(attempts)
     chestSpawns = generateMap()
-    // TODO: Change chest spawns to look for tiles with many surrounding walls/waters in a 5x5 area?
+    // TODO: Change chest spawns to look for tiles with many surrounding walls/waters in a 5x5 area? Sort by most secluded to least, cutoff at X number of open tiles
     enterExitGrids = getEnterExitGrids()
     if (!enterExitGrids) continue
     const ponds = getPonds()

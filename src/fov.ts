@@ -4,7 +4,7 @@ import { ALL_VISIBLE, Level } from './level'
 import { CalculateFOV, getEntGrid, Spotting } from './ecs/components'
 import { PlayerEntity } from './'
 import { cubicOut } from '@gamestdio/easing'
-import { filters, Sprite } from 'pixi.js'
+import { Sprite } from 'pixi.js'
 import { clamp } from 'rot-js/lib/util'
 import { SpritesByEID } from './sprites'
 import { defineQuery, hasComponent, Query } from 'bitecs'
@@ -14,9 +14,9 @@ export const FOV_RADIUS = 10
 const FOG_VISIBILITY = 0.5 // Max visibility of previously seen tiles
 const TWEEN_TIME = 150 // Milliseconds
 
-const desaturated = new filters.ColorMatrixFilter()
-desaturated.desaturate()
-desaturated.alpha = 0.3
+// const desaturated = new filters.ColorMatrixFilter() // Too expensive on CPU, try pre-made desaturated textures
+// desaturated.desaturate()
+// desaturated.alpha = 0.3
 
 let needTileUpdate = true
 export const triggerTileUpdate = () => (needTileUpdate = true)
@@ -54,10 +54,10 @@ export function updateVisibility() {
     if (prevVisibility && !newVisibility) {
       // Previously visible tile no longer visible
       const alpha = clamp(tile.revealed, prevVisibility[0], FOG_VISIBILITY)
-      tile.sprite.filters = [desaturated]
+      // tile.sprite.filters = [desaturated] // Too expensive on CPU
       tweeningSprites.set(tile.sprite, [TWEEN_TIME, tile.sprite.alpha, alpha])
     } else if (newVisibility) {
-      tile.sprite.filters = null
+      // tile.sprite.filters = null
       tile.revealed = Math.max(tile.revealed, newVisibility[0])
       const alpha = tile.revealed
       if (tile.sprite.alpha !== alpha) tweeningSprites.set(tile.sprite, [TWEEN_TIME, tile.sprite.alpha, alpha])
