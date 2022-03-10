@@ -12,6 +12,7 @@ import {
   CanSwim,
   Chest,
   DisplayObject,
+  Exit,
   Fish,
   GridPosition,
   Health,
@@ -21,37 +22,44 @@ import {
   Spotting,
   Wander,
 } from './ecs/components'
+import { OverlaySprites } from './pixi'
 
-export const DEBUG_VISIBILITY = false
-export const MAP_WIDTH = 80
-export const MAP_HEIGHT = 80
+export const ALL_VISIBLE = 1
 const seed = 0
 if (seed) RNG.setSeed(seed)
 console.log('rng seed', RNG.getSeed())
 
-const REQUIRED_FISH_COUNT = (MAP_WIDTH * MAP_HEIGHT) / 180
+const levelSizes = [
+  [30, 30],
+  [40, 40],
+  [60, 60],
+]
+let mapWidth: number
+let mapHeight: number
 
 export let Level: TileMap
 export let EntityMap: GridMap<number>
 
 // TODO: Entity map doesn't allow more than one entity on a tile, this may cause issues!
 
-export function createLevel(): Vector2 {
+export function createLevel(levelNumber: number): Vector2 {
+  ;[mapWidth, mapHeight] = levelSizes[levelNumber]
+  const requiredFishCount = (mapWidth * mapHeight) / 180
   let attempts = 0
-  let playerSpawn
+  let enterExitGrids
   let fishSpawns
   let chestSpawns
   while (true) {
     attempts++
-    if (attempts > 50) throw 'Level generation failed!'
+    if (attempts > 500) throw 'Level generation failed!'
     console.log('attempt', attempts)
     chestSpawns = generateMap()
     // TODO: Change chest spawns to look for tiles with many surrounding walls/waters in a 5x5 area?
-    playerSpawn = getPlayerSpawn()
-    if (!playerSpawn) continue
+    enterExitGrids = getEnterExitGrids()
+    if (!enterExitGrids) continue
     const ponds = getPonds()
-    fishSpawns = getFishSpawns(ponds, playerSpawn)
-    if (fishSpawns.size >= REQUIRED_FISH_COUNT) break
+    fishSpawns = getFishSpawns(ponds, enterExitGrids.enter)
+    if (fishSpawns.size >= requiredFishCount) break
     console.log('too few fish', fishSpawns.size)
   }
   console.log('success after', attempts)
@@ -59,12 +67,13 @@ export function createLevel(): Vector2 {
   EntityMap = new GridMap()
   fishSpawns.forEach(createFish)
   chestSpawns.forEach(createChest)
-  return playerSpawn
+  createExit(enterExitGrids.exit)
+  return enterExitGrids.enter
 }
 
 function generateMap(): Vector2[] {
-  Level = new TileMap(MAP_WIDTH, MAP_HEIGHT)
-  const caves = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
+  Level = new TileMap(mapWidth, mapHeight)
+  const caves = new ROT.Map.Cellular(mapWidth, mapHeight)
   caves.randomize(0.5)
   for (let i = 0; i < 2; i++) {
     caves.create()
@@ -84,7 +93,7 @@ function generateMap(): Vector2[] {
   console.log('longest tunnel', longestConnection)
   Level.loadRotJSMap(<(0 | 1)[][]>caves._map)
 
-  const water = new ROT.Map.Cellular(MAP_WIDTH, MAP_HEIGHT)
+  const water = new ROT.Map.Cellular(mapWidth, mapHeight)
   water.randomize(0.45)
   for (let i = 0; i < 3; i++) {
     water.create()
@@ -125,18 +134,30 @@ function generateMap(): Vector2[] {
 
 const between = (val: number, min: number, max: number) => val > min && val < max
 
-function getPlayerSpawn(): Vector2 | false {
-  const outer = 5
-  const inner = 15
+function getEnterExitGrids(): { enter: Vector2; exit: Vector2 } | false {
+  const outer = 4
+  const inner = 10
   const validSpawns: Vector2[] = []
   Level.data.forEach((tile) => {
     if (!isWalkable(tile.type)) return
-    if (!between(tile.x, outer, inner) && !between(tile.x, MAP_WIDTH - inner, MAP_WIDTH - outer)) return
-    if (!between(tile.y, outer, inner) && !between(tile.y, MAP_HEIGHT - inner, MAP_HEIGHT - outer)) return
+    if (!between(tile.x, outer, inner) && !between(tile.x, mapWidth - inner, mapWidth - outer)) return
+    if (!between(tile.y, outer, inner) && !between(tile.y, mapHeight - inner, mapHeight - outer)) return
     if (Level.getDiamondAround(tile, 2).every((t) => isWalkable(t.type))) validSpawns.push(tile)
   })
-  if (validSpawns.length === 0) return false
-  return RNG.getItem(validSpawns)!
+  if (validSpawns.length < 2) return false
+  RNG.shuffle(validSpawns)
+  let enter
+  let exit
+  for (let i = 0; i < validSpawns.length; i++) {
+    enter = validSpawns[i]
+    for (let ii = i + 1; ii < validSpawns.length; ii++) {
+      exit = validSpawns[ii]
+      if (getDistance(enter, exit) > Math.max(mapWidth, mapHeight)) {
+        return { enter, exit }
+      }
+    }
+  }
+  return false
 }
 
 function getPonds() {
@@ -161,7 +182,7 @@ function getFishSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
         randomPick = RNG.getItem(spawnCandidate)!
         spawnCandidate.splice(spawnCandidate.indexOf(randomPick), 1)
       } while (spawnCandidate.length > 0 && getDistance(randomPick, player) < 10)
-      spawns.add(randomPick)
+      if (randomPick) spawns.add(randomPick)
     }
   }
   return spawns
@@ -170,7 +191,7 @@ function getFishSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
 function createFish(grid: Vector2): boolean {
   const fish = addEntity(World)
   const fishSprite = new Sprite(getTexture('fishSwim'))
-  if (!DEBUG_VISIBILITY) fishSprite.alpha = 0
+  if (!ALL_VISIBLE) fishSprite.alpha = 0
   addSprite(fish, fishSprite)
   addComponent(World, DisplayObject, fish)
   addComponent(World, OnTileType, fish)
@@ -197,13 +218,26 @@ function createFish(grid: Vector2): boolean {
 function createChest(grid: Vector2) {
   const chest = addEntity(World)
   const chestSprite = new Sprite(getTexture('chest'))
-  if (!DEBUG_VISIBILITY) chestSprite.alpha = 0
+  if (!ALL_VISIBLE) chestSprite.alpha = 0
   addSprite(chest, chestSprite)
   addComponent(World, DisplayObject, chest)
   addComponent(World, GridPosition, chest)
   setEntGrid(chest, grid)
   addComponent(World, CalculateFOV, chest)
   addComponent(World, Chest, chest)
+}
+
+function createExit(grid: Vector2) {
+  const exit = addEntity(World)
+  const chestSprite = new Sprite(getTexture('exit'))
+  chestSprite.anchor.y = 0.5
+  if (!ALL_VISIBLE) chestSprite.alpha = 0
+  addSprite(exit, chestSprite, OverlaySprites)
+  addComponent(World, DisplayObject, exit)
+  addComponent(World, GridPosition, exit)
+  setEntGrid(exit, grid)
+  addComponent(World, CalculateFOV, exit)
+  addComponent(World, Exit, exit)
 }
 
 export function findPath(

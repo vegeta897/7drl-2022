@@ -1,6 +1,6 @@
 import { GridMap } from './map'
 import { FOV } from 'rot-js'
-import { DEBUG_VISIBILITY, Level } from './level'
+import { ALL_VISIBLE, Level } from './level'
 import { CalculateFOV, getEntGrid, Spotting } from './ecs/components'
 import { PlayerEntity } from './'
 import { cubicOut } from '@gamestdio/easing'
@@ -30,7 +30,7 @@ const getEasedVisibility = ([d, r]: Visibility): number => d * cubicOut((FOV_RAD
 let fovEntities: Query // This file is loaded before component registration
 
 export function updateVisibility() {
-  if (DEBUG_VISIBILITY) return
+  if (ALL_VISIBLE) return
   if (!needTileUpdate) return
   const newVisibilityMap: GridMap<Visibility> = new GridMap()
   const playerGrid = getEntGrid(PlayerEntity)
@@ -73,7 +73,7 @@ export function updateVisibility() {
 }
 
 export function updateEntityVisibility() {
-  if (DEBUG_VISIBILITY) return
+  if (ALL_VISIBLE) return
   for (const eid of RecalcEntities) {
     const sprite = SpritesByEID[eid]
     const entityGrid = getEntGrid(eid)

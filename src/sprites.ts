@@ -4,7 +4,7 @@ import { EntitySprites, WorldSprites } from './pixi'
 import { Tile } from './map'
 import { RNG } from 'rot-js'
 import { TILE_SIZE } from './index'
-import { DEBUG_VISIBILITY, Level } from './level'
+import { ALL_VISIBLE, Level } from './level'
 
 export const SpritesByEID: Sprite[] = []
 
@@ -25,9 +25,10 @@ export function getTexture(name: string): Texture {
   return textures[name]
 }
 
-export function addSprite(eid: number, sprite: Sprite, container = EntitySprites) {
+export function addSprite(eid: number, sprite: Sprite, container = EntitySprites, insertFirst = false) {
   SpritesByEID[eid] = sprite
-  container.addChild(sprite)
+  if (insertFirst) container.addChildAt(sprite, 0)
+  else container.addChild(sprite)
 }
 
 let wallTexture: Texture
@@ -55,7 +56,7 @@ export function createMapSprites() {
     tile.sprite = new Sprite(getTileTexture(tile.type))
     tile.sprite.x = tile.x * TILE_SIZE
     tile.sprite.y = tile.y * TILE_SIZE
-    if (!DEBUG_VISIBILITY) tile.sprite.alpha = 0
+    if (!ALL_VISIBLE) tile.sprite.alpha = 0
     WorldSprites.addChild(tile.sprite)
   })
 }

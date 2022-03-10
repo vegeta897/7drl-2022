@@ -20,7 +20,8 @@ export const PixiViewport = new Viewport({
   screenWidth: gameWidth,
   screenHeight: gameHeight,
 })
-PixiViewport.setZoom(2)
+// PixiViewport.setZoom(2)
+PixiViewport.setZoom(0.5)
 
 export let WorldSprites: Container
 export let EntitySprites: Container

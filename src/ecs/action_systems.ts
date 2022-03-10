@@ -8,6 +8,7 @@ import {
   changeEntGrid,
   Chest,
   deleteEntGrid,
+  Exit,
   Fish,
   getEntGrid,
   GridPosition,
@@ -30,7 +31,7 @@ import {
   System,
 } from 'bitecs'
 import { EntityMap, Level } from '../level'
-import { PlayerEntity, PlayerSprite, setGameState } from '../'
+import { CurrentLevel, GameState, LastLevel, PlayerEntity, PlayerSprite, setGameState } from '../'
 import { Colors, logAttack, logKill, logMessage } from '../hud'
 import { addVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
@@ -93,6 +94,9 @@ export const moveSystem: System = (world) => {
           logMessage('You got the chest!', Colors.Gold)
           deleteEntGrid(targetEntity)
           removeEntity(world, targetEntity)
+        } else if (eid === PlayerEntity && hasComponent(world, Exit, targetEntity)) {
+          logMessage('You ascend the ladder...', Colors.Sky)
+          setGameState('ChangeLevel')
         } else {
           break
         }
@@ -191,6 +195,8 @@ export const gameSystem: System = (world) => {
   if (!entityExists(world, PlayerEntity)) {
     PixiViewport.filters = [desaturated]
     setGameState('Losing')
+  } else if (GameState === 'ChangeLevel' && CurrentLevel === LastLevel) {
+    setGameState('Won')
   }
   return world
 }

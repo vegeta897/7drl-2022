@@ -19,6 +19,7 @@ import {
   Spotting,
   CalculateFOV,
   Chest,
+  Exit,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { wanderSystem, predatorSystem, stunnedSystem, seekWaterSystem } from './enemy_systems'
@@ -83,4 +84,5 @@ registerComponents(World, [
   Spotting,
   CalculateFOV,
   Chest,
+  Exit,
 ])
