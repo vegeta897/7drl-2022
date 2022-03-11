@@ -10,10 +10,10 @@ import { World } from './ecs'
 import { CalculateFOV, Chest, DisplayObject, Exit, GridPosition, initEntGrid, NonPlayer } from './ecs/components'
 import { OverlaySprites, promisedFrame } from './pixi'
 import { showLevelGen } from './hud'
-import { createWaterCreature } from './creatures'
+import { createTurtle, createWaterCreature } from './creatures'
 
 export const ALL_VISIBLE = 1
-const seed = 1646964943220
+const seed = 0
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())
@@ -60,6 +60,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   EntityMap = new GridMap()
   waterSpawns.forEach((tile) => createWaterCreature(tile, worldRNG))
   chestSpawns.forEach(createChest)
+  createTurtle(enterExitGrids.enter, mapWidth / 2, worldRNG)
   createExit(enterExitGrids.exit)
   return enterExitGrids.enter
 }

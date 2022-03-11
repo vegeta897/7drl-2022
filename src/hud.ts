@@ -1,6 +1,6 @@
 import { Display } from 'rot-js'
 import { Health, WaterCreature, Wetness } from './ecs/components'
-import { GameState, PlayerEntity } from './index'
+import { CurrentLevel, GameState, LastLevel, PlayerEntity } from './index'
 import { PlayerState } from './ecs/input_systems'
 import { hasComponent } from 'bitecs'
 import { World } from './ecs'
@@ -10,6 +10,7 @@ import { Creature, CreatureProps } from './creatures'
 let HUD: Display
 let log: string[]
 let killedFish = 0
+const turtlePetLevels = new Set()
 
 export enum Colors {
   White = '#ffffff',
@@ -81,6 +82,11 @@ export function logBaiting(baited: number) {
   logMessage(`The ${getEntityName(baited)} took the bait`, Colors.GoodWater)
 }
 
+export function logPetting() {
+  turtlePetLevels.add(CurrentLevel)
+  logMessage(`You pet the turtle`, Colors.Good)
+}
+
 export function logMessage(message: string, color: Colors = Colors.White) {
   log.unshift(`%c{${color ?? ''}}${message}`)
   updateHud()
@@ -120,10 +126,15 @@ export async function drawHud() {
   }
   if (GameState === 'Won') {
     HUD.setOptions(bigHudDefaults)
+    let turtlePetResult = `%c{${Colors.Water}}You didn't pet any turtles`
+    if (turtlePetLevels.size > 0)
+      turtlePetResult = `%c{${Colors.Good}}You pet ${turtlePetLevels.size} out of ${LastLevel} turtles`
+    if (turtlePetLevels.size === LastLevel)
+      turtlePetResult = `%c{${Colors.Good}}You pet all ${turtlePetLevels.size} turtles!`
     HUD.drawText(
       7,
       4,
-      `%c{${Colors.Sky}}At last, you made it back up to the dry, daylit surface\n\n\n\n\n\n%c{${Colors.GoodWater}}You killed ${killedFish} fish`,
+      `%c{${Colors.Sky}}At last, you made it back up to the dry, daylit surface\n\n\n\n\n%c{${Colors.GoodWater}}You killed ${killedFish} fish\n\n${turtlePetResult}`,
       30
     )
     return
@@ -170,6 +181,8 @@ export async function drawHud() {
 
 export function clearLog() {
   log = []
+  killedFish = 0
+  turtlePetLevels.clear()
   updateHud()
 }
 

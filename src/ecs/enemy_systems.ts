@@ -12,6 +12,7 @@ import {
   Spotting,
   Airborne,
   CanWalk,
+  WaterCreature,
 } from './components'
 import { RNG } from 'rot-js'
 import {
@@ -27,6 +28,7 @@ import { logLunge } from '../hud'
 import { isWet } from '../map'
 import { PlayerEntity } from '../'
 import { RecalcEntities } from '../fov'
+import { Creature } from '../creatures'
 
 const predators = defineQuery([GridPosition, Predator, Not(Stunned)])
 const scents = defineQuery([Scent])
@@ -97,9 +99,12 @@ export const wanderSystem: System = (world) => {
     Wander.chance[eid] = 0
     const myGrid = getEntGrid(eid)
     const inWater = isWet(Level.get(myGrid).type)
-    const choices = Level.get4Neighbors(myGrid).filter(
-      (t) => isWet(t.type) || inWater || hasComponent(world, Airborne, eid)
-    )
+    const creatureType = WaterCreature.type[eid]
+    const choices = Level.get4Neighbors(myGrid).filter((t) => {
+      if (creatureType === Creature.Fish) return isWet(t.type) || hasComponent(world, Airborne, eid)
+      if (creatureType === Creature.Alligator) return inWater || isWet(t.type)
+      return true // Turtles can walk anywhere
+    })
     if (choices.length === 0) continue
     const dir = diffVector2(myGrid, RNG.getItem(choices)!)
     addComponent(world, MoveAction, eid)

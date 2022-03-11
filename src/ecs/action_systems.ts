@@ -34,7 +34,7 @@ import {
 } from 'bitecs'
 import { EntityMap, Level } from '../level'
 import { CurrentLevel, GameState, LastLevel, nextLevel, PlayerEntity, PlayerSprite, setGameState } from '../'
-import { Colors, logAttack, logBaiting, logKill, logMessage, updateHud } from '../hud'
+import { Colors, logAttack, logBaiting, logKill, logMessage, logPetting, updateHud } from '../hud'
 import { addVector2, diffVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
 import { isWalkable, isWet, Tile } from '../map'
@@ -43,7 +43,7 @@ import { FOV_RADIUS, RecalcEntities, VisibilityMap } from '../fov'
 import { clamp } from 'rot-js/lib/util'
 import { PixiViewport } from '../pixi'
 import { filters } from 'pixi.js'
-import { CreatureProps } from '../creatures'
+import { Creature, CreatureProps } from '../creatures'
 
 export const playerActionSystem: System = (world) => {
   if (!hasComponent(world, MoveAction, PlayerEntity)) return world
@@ -72,6 +72,12 @@ export const playerActionSystem: System = (world) => {
       removeEntity(world, targetEntity)
     } else if (hasComponent(world, Exit, targetEntity)) {
       setGameState('EndLevel')
+      removeComponent(world, MoveAction, PlayerEntity)
+    } else if (
+      hasComponent(world, WaterCreature, targetEntity) &&
+      WaterCreature.type[targetEntity] === Creature.Turtle
+    ) {
+      logPetting()
       removeComponent(world, MoveAction, PlayerEntity)
     }
   }

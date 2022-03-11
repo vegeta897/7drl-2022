@@ -50,7 +50,7 @@ export const setGameState = (state: GameStates) => {
   updateHud()
 }
 
-const PLAYER_HEALTH = 10
+const PLAYER_HEALTH = 100
 
 async function startGame() {
   clearLog()
