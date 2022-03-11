@@ -5,6 +5,7 @@ import { MoveAction } from './components'
 import { DirectionGrids, DirectionNames } from '../vector2'
 import { drawHud, updateHud } from '../hud'
 import { angleBait, beginCast, cancelCast, confirmCast, cutLine, moveCastTarget } from '../casting'
+import { toggleLure } from '../inventory'
 
 export const waitForInput = () => {
   WaitingForInput = true
@@ -22,7 +23,7 @@ export const setPlayerState = (state: PlayerStates) => {
 
 export const inputSystem: System = (world) => {
   buttonQueued = false
-  if (!button) return world
+  if (button === null) return world
   if (GameState !== 'Playing' && button !== 'confirm') return world
   const previousState = PlayerState
   switch (button) {
@@ -48,19 +49,23 @@ export const inputSystem: System = (world) => {
       if (previousState === 'Angling') cutLine()
       break
     default:
-      const move = DirectionGrids[DirectionNames.indexOf(button)]
-      if (previousState === 'Casting') {
-        moveCastTarget(move)
-      } else if (previousState === 'Angling') {
-        angleBait(move)
+      if (isNumber(button)) {
+        if (previousState === 'Idle') toggleLure(button)
       } else {
-        const boost = Keys.has('ControlLeft') || Keys.has('ControlRight')
-        const noclip = Keys.has('ShiftLeft') || Keys.has('ShiftRight')
-        addComponent(World, MoveAction, PlayerEntity)
-        MoveAction.x[PlayerEntity] = move.x * (boost ? 10 : 1)
-        MoveAction.y[PlayerEntity] = move.y * (boost ? 10 : 1)
-        MoveAction.noclip[PlayerEntity] = noclip || boost ? 1 : 0
-        WaitingForInput = false
+        const move = DirectionGrids[DirectionNames.indexOf(button)]
+        if (previousState === 'Casting') {
+          moveCastTarget(move)
+        } else if (previousState === 'Angling') {
+          angleBait(move)
+        } else {
+          const boost = Keys.has('ControlLeft') || Keys.has('ControlRight')
+          const noclip = Keys.has('ShiftLeft') || Keys.has('ShiftRight')
+          addComponent(World, MoveAction, PlayerEntity)
+          MoveAction.x[PlayerEntity] = move.x * (boost ? 10 : 1)
+          MoveAction.y[PlayerEntity] = move.y * (boost ? 10 : 1)
+          MoveAction.noclip[PlayerEntity] = noclip || boost ? 1 : 0
+          WaitingForInput = false
+        }
       }
   }
   drawHud()
@@ -79,7 +84,7 @@ window.addEventListener('keydown', async (e) => {
   e.preventDefault()
   Keys.add(e.code)
   button = getButton(e.code)
-  if (button) {
+  if (button !== null) {
     if (WaitingForInput) await onInput()
     else if (LoopState === 'AnimateEnemies') buttonQueued = true
   }
@@ -89,7 +94,7 @@ window.addEventListener('keyup', (e) => {
   Keys.delete(e.code)
 })
 
-type Button = typeof DirectionNames[number] | 'wait' | 'cast' | 'exit' | 'confirm' | null
+type Button = typeof DirectionNames[number] | 'wait' | 'cast' | 'exit' | 'confirm' | typeof numbers[number] | null
 function getButton(keyCode: GameKey): Button {
   switch (keyCode) {
     case 'KeyW':
@@ -116,6 +121,36 @@ function getButton(keyCode: GameKey): Button {
       return 'wait'
     case 'Enter':
       return 'confirm'
+    case 'Digit1':
+    case 'Numpad1':
+      return 1
+    case 'Digit2':
+    case 'Numpad2':
+      return 2
+    case 'Digit3':
+    case 'Numpad3':
+      return 3
+    case 'Digit4':
+    case 'Numpad4':
+      return 4
+    case 'Digit5':
+    case 'Numpad5':
+      return 5
+    case 'Digit6':
+    case 'Numpad6':
+      return 6
+    case 'Digit7':
+    case 'Numpad7':
+      return 7
+    case 'Digit8':
+    case 'Numpad8':
+      return 8
+    case 'Digit9':
+    case 'Numpad9':
+      return 9
+    case 'Digit0':
+    case 'Numpad0':
+      return 10
   }
   return null
 }
@@ -143,4 +178,30 @@ const gameKeys = [
   'Space',
   'Enter',
   'Escape',
+  'Digit1',
+  'Digit2',
+  'Digit3',
+  'Digit4',
+  'Digit5',
+  'Digit6',
+  'Digit7',
+  'Digit8',
+  'Digit9',
+  'Digit0',
+  'Numpad1',
+  'Numpad2',
+  'Numpad3',
+  'Numpad4',
+  'Numpad5',
+  'Numpad6',
+  'Numpad7',
+  'Numpad8',
+  'Numpad9',
+  'Numpad0',
 ] as const
+
+const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const
+
+function isNumber(button: Button): button is typeof numbers[number] {
+  return numbers.includes(<typeof numbers[number]>button)
+}

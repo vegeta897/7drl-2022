@@ -12,7 +12,7 @@ import { OverlaySprites, promisedFrame } from './pixi'
 import { showLevelGen } from './hud'
 import { createTurtle, createWaterCreature } from './creatures'
 
-export const ALL_VISIBLE = 1
+export const ALL_VISIBLE = 0
 const seed = 0
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
@@ -47,6 +47,9 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     if (attempts % 10 === 0) await promisedFrame()
     chestSpawns = generateMap()
     // TODO: Change chest spawns to look for tiles with many surrounding walls/waters in a 5x5 area? Sort by most secluded to least, cutoff at X number of open tiles
+
+    // TODO: Crawl map to find furthest tiles from spawn (for exit, or chests)
+
     enterExitGrids = getEnterExitGrids()
     if (!enterExitGrids) continue
     const ponds = getPonds()
@@ -60,6 +63,9 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   EntityMap = new GridMap()
   waterSpawns.forEach((tile) => createWaterCreature(tile, worldRNG))
   chestSpawns.forEach(createChest)
+  for (let i = 0; i < 3; i++) {
+    createChest({ x: enterExitGrids.enter.x - 1 + i, y: enterExitGrids.enter.y + 1 })
+  }
   createTurtle(enterExitGrids.enter, mapWidth / 2, worldRNG)
   createExit(enterExitGrids.exit)
   return enterExitGrids.enter

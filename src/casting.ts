@@ -6,6 +6,7 @@ import { addSprite, getTexture } from './sprites'
 import { WorldSprites } from './pixi'
 import {
   Bait,
+  CalculateFOV,
   changeEntGrid,
   deleteEntGrid,
   DisplayObject,
@@ -20,7 +21,9 @@ import { processInput, setPlayerState } from './ecs/input_systems'
 import { addComponent, addEntity, entityExists, removeEntity } from 'bitecs'
 import { EntityMap, Level } from './level'
 import { Colors, logMessage } from './hud'
-import { Tile } from './map'
+import { ActiveLures, Lure, Supplies } from './inventory'
+import { triggerTileUpdate } from './fov'
+import { isWet } from './map'
 
 export const CastVector = { x: 0, y: 0 }
 let castTargetSprite: Sprite
@@ -37,6 +40,10 @@ export function initCasting() {
 }
 
 export function beginCast() {
+  if (Supplies.bait === 0) {
+    logMessage('You need bait to cast', Colors.Warning)
+    return
+  }
   CastVector.x = 0
   CastVector.y = 0
   castTargetSprite.x = 0
@@ -51,7 +58,7 @@ export function moveCastTarget(move: Vector2) {
   for (const mod of [GridZero, Up, Down, Left, Right]) {
     if (vectorsAreParallel(mod, move)) continue
     const moddedCastTo = addVector2(castTo, mod)
-    if (getDistance(moddedCastTo) <= 4 && !Level.get(addVector2(playerGrid, moddedCastTo)).solid) {
+    if (getDistance(moddedCastTo) <= Supplies.lineLength && !Level.get(addVector2(playerGrid, moddedCastTo)).solid) {
       CastVector.x = moddedCastTo.x
       CastVector.y = moddedCastTo.y
       castTargetSprite.x = CastVector.x * TILE_SIZE
@@ -70,6 +77,7 @@ export function confirmCast() {
   setPlayerState('Idle')
   castTargetSprite.visible = false
   if (getDistance(CastVector) > 0) {
+    Supplies.bait--
     BaitEntity = addEntity(World)
     addSprite(BaitEntity, new Sprite(getTexture('bait')), WorldSprites)
     addComponent(World, NonPlayer, BaitEntity)
@@ -80,6 +88,7 @@ export function confirmCast() {
     addComponent(World, GridPosition, BaitEntity)
     setEntGrid(BaitEntity, castGrid)
     addComponent(World, OnTileType, BaitEntity)
+    addComponent(World, CalculateFOV, BaitEntity)
     OnTileType.current[BaitEntity] = Level.get(castGrid).type
     processInput()
     setPlayerState('Angling')
@@ -95,6 +104,7 @@ export function cancelCast() {
 export function angleBait(move: Vector2) {
   const playerGrid = getEntGrid(PlayerEntity)
   if (!entityExists(World, BaitEntity!)) {
+    console.warn('this code should not be reachable')
     BaitEntity = null
     setPlayerState('Idle')
   } else {
@@ -105,13 +115,24 @@ export function angleBait(move: Vector2) {
       const moddedCastTo = addVector2(angleTo, mod)
       const moddedDistance = getDistance(moddedCastTo)
       const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
-      if (Level.get(moddedAbsolute).type === Tile.Wall) continue
       if (moddedDistance > maxAngleDistance) continue
+      if (Level.get(moddedAbsolute).solid) {
+        if (!ActiveLures.has(Lure.WreckingBall)) continue
+        // Knock it down!
+        Level.mineTile(moddedAbsolute)
+        triggerTileUpdate()
+      }
+      if (isWet(Level.get(moddedAbsolute).type) && ActiveLures.has(Lure.MagicSponge)) {
+        // Soak it up!
+        Level.dryTile(moddedAbsolute)
+        triggerTileUpdate()
+      }
       if (moddedDistance === 0) {
         deleteEntGrid(BaitEntity!)
         removeEntity(World, BaitEntity!)
         BaitEntity = null
         setPlayerState('Idle')
+        Supplies.bait++
         logMessage('You reeled in the bait', Colors.Dim)
         fishingLineGraphics.cacheAsBitmap = false
         fishingLineGraphics.clear()

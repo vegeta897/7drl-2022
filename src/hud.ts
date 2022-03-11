@@ -6,7 +6,7 @@ import { hasComponent } from 'bitecs'
 import { World } from './ecs'
 import { promisedFrame } from './pixi'
 import { Creature, CreatureProps } from './creatures'
-import { Inventory } from './artifacts'
+import { ActiveLures, getLureInfo, Inventory, Supplies } from './inventory'
 
 let HUD: Display
 let log: string[]
@@ -15,6 +15,7 @@ const turtlePetLevels = new Set()
 
 export enum Colors {
   White = '#ffffff',
+  Default = '#c0c7cc',
   Good = '#14a02e',
   Bad = '#e86a73',
   Warning = '#f5a097',
@@ -30,8 +31,8 @@ export enum Colors {
   Sky = '#6bb9e1',
 }
 
-const hudDefaults = { width: 30, height: 32, fontSize: 20, bg: Colors.DeepWater }
-const bigHudDefaults = { width: 44, height: 16, fontSize: 40, bg: Colors.DeepWater }
+const hudDefaults = { width: 30, height: 32, fontSize: 20, fg: Colors.Default, bg: Colors.DeepWater }
+const bigHudDefaults = { ...hudDefaults, width: 44, height: 16, fontSize: 40 }
 
 export function initHud() {
   HUD = new Display({ ...bigHudDefaults, fontStyle: 'bold' })
@@ -62,7 +63,7 @@ function getEntityAttack(eid: number) {
 }
 
 export function logAttack(attacker: number, victim: number, damage: number, extra = '') {
-  let color = Colors.White
+  let color = Colors.Default
   if (victim === PlayerEntity) color = Colors.Bad
   logMessage(
     `${getEntityName(attacker, true)} ${getEntityAttack(attacker)} ${getEntityName(
@@ -74,20 +75,15 @@ export function logAttack(attacker: number, victim: number, damage: number, extr
 
 export function logKill(victim: number) {
   if (hasComponent(World, WaterCreature, victim) && WaterCreature.type[victim] === Creature.Fish) killedFish++
-  logMessage(`You killed ${getEntityName(victim)}`)
+  logMessage(`You killed ${getEntityName(victim)}`, Colors.White)
 }
 
 export function logLunge(attacker: number) {
   logMessage(`The ${getEntityName(attacker)} lunges at you!`, Colors.Danger)
 }
 
-export function logBaitEat(baited: number, healed = false) {
-  logMessage(
-    baited === PlayerEntity
-      ? `You ate the bait${healed ? ' (+1 hp)' : ''}`
-      : `The ${getEntityName(baited)} is eating the bait${healed ? ' (+1 hp)' : ''}`,
-    Colors.GoodWater
-  )
+export function logBaitEat(baited: number) {
+  logMessage(`The ${getEntityName(baited)} is eating the bait`, Colors.GoodWater)
 }
 
 export function logPetting() {
@@ -95,16 +91,21 @@ export function logPetting() {
   logMessage(`You pet the turtle`, Colors.Good)
 }
 
-const statusNames = ['eating', 'stunned']
-export function logCreatureStatus(eid: number, status: Statuses, ended = false) {
+const statusNames = ['', 'eating', 'stunned']
+export function logCreatureStatus(eid: number, status: Statuses, ended = false, extra = '') {
+  let verb = 'is'
+  if (ended) {
+    verb = status === Statuses.Eating ? 'has finished' : 'is no longer'
+  }
   logMessage(
-    `${getEntityName(eid, true)} is ${ended ? 'no longer ' : ''}${statusNames[status]}${ended ? '' : '!'}`,
-    ended ? Colors.Dim : Colors.White
+    `${getEntityName(eid, true)} ${verb} ${statusNames[status]}${ended ? '' : '!'}${extra}`,
+    ended ? Colors.Dim : Colors.Default
   )
 }
 
-export function logMessage(message: string, color: Colors = Colors.White) {
+export function logMessage(message: string, color: Colors = Colors.Default) {
   log.unshift(`%c{${color ?? ''}}${message}`)
+  if (log.length > maxLogLines) log.length = maxLogLines
   updateHud()
 }
 
@@ -165,34 +166,55 @@ export async function drawHud() {
     return
   }
   const health = Health.current[PlayerEntity]
-  HUD.drawText(3, 1, `Health: %c{${health <= 3 ? Colors.Bad : ''}}${health.toString().padStart(3)}`)
+  HUD.drawText(
+    3,
+    1,
+    `%c{${Colors.Dim}}Health %c{${health <= 3 ? Colors.Bad : Colors.Default}}${health.toString().padStart(4)}`
+  )
   const wet = hasComponent(World, Wetness, PlayerEntity)
   HUD.drawText(24, 1, `%c{${wet ? Colors.StrongWater : Colors.Dim}}${wet ? 'Wet' : 'Dry'}`)
+  HUD.drawText(
+    3,
+    2,
+    `%c{${Colors.Dim}}Bait   %c{${Supplies.bait === 0 ? Colors.Water : Colors.Default}}${Supplies.bait
+      .toString()
+      .padStart(4)}`
+  )
+  let nextY = 4
   if (PlayerState === 'Idle') {
-    HUD.drawText(3, 3, '[C] to cast')
-    for (const artifact of Inventory) {
-      HUD.drawText(3, 5, `%c{${Colors.Gold}}Pickaxe`)
+    for (const lure of Inventory) {
+      const active = ActiveLures.has(lure)
+      const number = [...Inventory].indexOf(lure) + 1
+      const { color, name } = getLureInfo(lure)
+      HUD.drawText(3, nextY++, `[${number}] %c{${active ? color : Colors.Dim}}${name} lure`)
     }
+    HUD.drawText(3, nextY, '[C] Cast')
+    nextY++
   }
-  if (PlayerState === 'Casting') HUD.drawText(3, 3, 'CASTING ⟆\n\n[C] to confirm\n[Esc] to cancel')
-  if (PlayerState === 'Angling') HUD.drawText(3, 3, 'ANGLING ⟆\n\n[C] to cut line')
+  if (PlayerState === 'Casting') {
+    nextY += HUD.drawText(3, nextY, 'CASTING ⟆\n\n[C] to confirm\n[Esc] to cancel')
+  }
+  if (PlayerState === 'Angling') {
+    nextY += HUD.drawText(3, nextY, 'ANGLING ⟆\n\n[C] to cut line')
+  }
   if (log.length > 0) {
-    HUD.drawText(1, 8, `%c{${Colors.Dim}}=========== LOG ===========`)
-    let y = 10
+    nextY += 1
+    HUD.drawText(1, nextY, `%c{${Colors.Dim}}=========== LOG ===========`)
+    nextY += 2
     for (let i = 0; i < log.length; i++) {
-      y += HUD.drawText(
+      nextY += HUD.drawText(
         2,
-        y,
+        nextY,
         log[i].replaceAll(
           /%c{#[a-z0-9]+/gi,
           '$&' +
-            Math.round(Math.min(255, (maxLogLines - i) / maxLogLines) * 255)
+            Math.round(((maxLogLines - i) / maxLogLines) * 255)
               .toString(16)
               .padStart(2, '0')
         ),
         25
       )
-      if (y >= lowestY) {
+      if (i >= lowestY) {
         log = log.slice(0, i + 1)
         break
       }

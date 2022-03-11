@@ -130,13 +130,19 @@ export class TileMap extends GridMap<TileData> {
     tile.type = Tile.Floor
     tile.solid = false
     tile.seeThrough = true
-    tile.revealed = 1
     for (const neighbor of get8Neighbors(grid)) {
       if (!this.has(neighbor)) {
         this.createTile(neighbor, Tile.Wall)
         createTileSprite(this.get(neighbor))
       }
     }
+  }
+  dryTile(grid: Vector2) {
+    const tile = this.get(grid)
+    tile.sprite!.texture = getTexture(getTileTexture(Tile.Floor))
+    tile.type = Tile.Floor
+    tile.solid = false
+    tile.seeThrough = true
   }
 }
 

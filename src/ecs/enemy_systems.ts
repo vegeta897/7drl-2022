@@ -14,6 +14,7 @@ import {
   CanWalk,
   WaterCreature,
   Statuses,
+  Health,
 } from './components'
 import { RNG } from 'rot-js'
 import {
@@ -151,7 +152,14 @@ const nonActors = defineQuery([NoAction])
 export const noActionSystem: System = (world) => {
   for (const eid of nonActors(world)) {
     if (--NoAction.remaining[eid] === 0) {
-      if (NoAction.status[eid] === Statuses.Eating) logCreatureStatus(eid, NoAction.status[eid], true)
+      if (NoAction.status[eid] === Statuses.Eating) {
+        let healed = false
+        if (hasComponent(world, Health, eid) && Health.current[eid] < Health.max[eid]) {
+          Health.current[eid]++
+          healed = true
+        }
+        logCreatureStatus(eid, NoAction.status[eid], true, healed ? ' (+1 hp)' : '')
+      }
       removeComponent(world, NoAction, eid)
     }
   }

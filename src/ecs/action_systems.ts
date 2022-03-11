@@ -46,7 +46,7 @@ import { PixiViewport } from '../pixi'
 import { filters } from 'pixi.js'
 import { Creature, CreatureProps } from '../creatures'
 import { World } from './index'
-import { Artifact, Inventory, openChest } from '../artifacts'
+import { getPlayerDamage, openChest, Supplies } from '../inventory'
 
 export const playerActionSystem: System = (world) => {
   if (!hasComponent(world, MoveAction, PlayerEntity)) return world
@@ -65,9 +65,8 @@ export const playerActionSystem: System = (world) => {
       addComponent(world, AttackAction, PlayerEntity)
       AttackAction.target[PlayerEntity] = targetEntity
     } else if (hasComponent(world, Bait, targetEntity)) {
-      const healed = Health.current[PlayerEntity] < Health.max[PlayerEntity]
-      if (healed) Health.current[PlayerEntity]++
-      logBaitEat(PlayerEntity, healed)
+      Supplies.bait++
+      logMessage('You picked up the bait', Colors.Dim)
       deleteEntGrid(targetEntity)
       removeEntity(world, targetEntity)
     } else if (hasComponent(world, Chest, targetEntity)) {
@@ -84,9 +83,6 @@ export const playerActionSystem: System = (world) => {
     }
   }
   if (MoveAction.noclip[PlayerEntity] === 0 && Level.get(targetGrid).solid) {
-    if (Inventory.has(Artifact.Pickaxe)) {
-      Level.mineTile(targetGrid)
-    }
     removeComponent(world, MoveAction, PlayerEntity)
   }
   if (hasComponent(World, MoveAction, PlayerEntity)) moveEntity(PlayerEntity, move)
@@ -113,13 +109,8 @@ export const enemyActionSystem: System = (world) => {
           AttackAction.target[eid] = targetEntity
           break
         } else if (hasComponent(world, Bait, targetEntity)) {
-          let healed = false
-          if (hasComponent(world, Health, eid) && Health.current[eid] < Health.max[eid]) {
-            Health.current[eid]++
-            healed = true
-          }
           if (hasComponent(world, Predator, eid)) {
-            logBaitEat(eid, healed)
+            logBaitEat(eid)
             addComponent(world, NoAction, eid)
             NoAction.status[eid] = Statuses.Eating
             NoAction.remaining[eid] = Predator.eatingTurns[eid]
@@ -173,22 +164,25 @@ export const attackSystem: System = (world) => {
   for (const eid of attackQuery(world)) {
     const target = AttackAction.target[eid]
     let damage = CanAttack.damage[eid]
+    if (eid === PlayerEntity) damage = getPlayerDamage()
     let stunnedByAttack = false
     if (hasComponent(world, NoAction, target)) {
       const status = NoAction.status[target]
-      damage = 3
+      damage += 3
       if (status === Statuses.Eating) {
         stunnedByAttack = true
         NoAction.status[target] = Statuses.Stunned
         NoAction.remaining[target] = 1
       }
     }
-    logAttack(eid, target, damage, stunnedByAttack ? ', stunning it' : '')
     const healthLeft = (Health.current[target] -= damage)
     if (healthLeft <= 0) {
+      logAttack(eid, target, damage)
       logKill(target)
       deleteEntGrid(target)
       removeEntity(world, target)
+    } else {
+      logAttack(eid, target, damage, stunnedByAttack ? `, %c{${Colors.Warning}}stunning it` : '')
     }
     removeComponent(world, AttackAction, eid)
   }

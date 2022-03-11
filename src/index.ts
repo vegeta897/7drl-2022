@@ -1,15 +1,6 @@
 import './style.css'
 import { resetNonPlayerEntities, World } from './ecs'
-import {
-  addComponent,
-  addEntity,
-  commitRemovals,
-  createWorld,
-  defineComponent,
-  defineQuery,
-  removeEntity,
-  resetWorld,
-} from 'bitecs'
+import { addComponent, addEntity, resetWorld } from 'bitecs'
 import { Sprite } from 'pixi.js'
 import { initPixi, OverlaySprites, PixiViewport, resetPixi, startPixi } from './pixi'
 import {
@@ -29,6 +20,7 @@ import { drawHud, initHud, clearLog, updateHud, defaultHud, bigHud, logMessage, 
 import { resetFOV, updateEntityVisibility, updateVisibility } from './fov'
 import { initCasting, resetCasting } from './casting'
 import { setPlayerState, waitForInput } from './ecs/input_systems'
+import { clearInventory, Inventory, Supplies } from './inventory'
 
 export const TILE_SIZE = 16
 
@@ -50,11 +42,12 @@ export const setGameState = (state: GameStates) => {
   updateHud()
 }
 
-const PLAYER_HEALTH = 100
+const PLAYER_HEALTH = 10
 
 async function startGame() {
   clearLog()
   CurrentLevel = 1
+  clearInventory()
   PlayerEntity = addEntity(World)
   PlayerSprite = new Sprite(getTexture('player'))
   addSprite(PlayerEntity, PlayerSprite, OverlaySprites, true)
