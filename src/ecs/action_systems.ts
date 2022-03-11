@@ -112,6 +112,8 @@ export const enemyActionSystem: System = (world) => {
           deleteEntGrid(targetEntity)
           removeEntity(world, targetEntity)
           stopHere = true
+        } else {
+          break
         }
       }
       const targetTile = Level.get(targetGrid)

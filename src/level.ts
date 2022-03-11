@@ -7,13 +7,13 @@ import { RNG } from 'rot-js'
 import { addSprite, createMapSprites, getTexture } from './sprites'
 import { addComponent, addEntity } from 'bitecs'
 import { World } from './ecs'
-import { CalculateFOV, Chest, DisplayObject, Exit, GridPosition, initEntGrid } from './ecs/components'
+import { CalculateFOV, Chest, DisplayObject, Exit, GridPosition, initEntGrid, NonPlayer } from './ecs/components'
 import { OverlaySprites, promisedFrame } from './pixi'
 import { showLevelGen } from './hud'
 import { createWaterCreature } from './creatures'
 
 export const ALL_VISIBLE = 1
-const seed = 0
+const seed = 1646964943220
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())
@@ -148,10 +148,18 @@ function generateMap(): Vector2[] {
   })
 
   const chestSpawns: Vector2[] = []
+  const rooms = [...Level.data.values()].filter(
+    (tile) => tile.type === Tile.Path && Level.get8Neighbors(tile).filter((n) => n.type === Tile.Path).length >= 4
+  )
+  rooms.forEach((centerRoomTile) => {
+    if (!chestSpawns.some((c) => getDistance(c, centerRoomTile) < 16)) chestSpawns.push(centerRoomTile)
+  })
   const holes = Level.getContiguousAreas((t) => t.type === Tile.Floor, 9)
   holes.forEach((hole) => {
     const newChest = worldRNG.getItem(hole)!
-    if (!chestSpawns.some((c) => getDistance(c, newChest) < 16)) chestSpawns.push(newChest)
+    if (Level.get4Neighbors(newChest).some((t) => isWet(t.type))) return
+    if (chestSpawns.some((c) => getDistance(c, newChest) < 16)) return
+    chestSpawns.push(newChest)
   })
   return chestSpawns
 }
@@ -217,6 +225,7 @@ function createChest(grid: Vector2) {
   const chestSprite = new Sprite(getTexture('chest'))
   if (!ALL_VISIBLE) chestSprite.alpha = 0
   addSprite(chest, chestSprite)
+  addComponent(World, NonPlayer, chest)
   addComponent(World, DisplayObject, chest)
   addComponent(World, GridPosition, chest)
   initEntGrid(chest, grid)
@@ -230,6 +239,7 @@ function createExit(grid: Vector2) {
   exitSprite.anchor.y = 0.5
   if (!ALL_VISIBLE) exitSprite.alpha = 0
   addSprite(exit, exitSprite, OverlaySprites)
+  addComponent(World, NonPlayer, exit)
   addComponent(World, DisplayObject, exit)
   addComponent(World, GridPosition, exit)
   initEntGrid(exit, grid)

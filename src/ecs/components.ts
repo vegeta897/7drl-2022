@@ -5,6 +5,8 @@ import { PlayerEntity, TILE_SIZE } from '../'
 import { RecalcEntities, triggerTileUpdate } from '../fov'
 import { SpritesByEID } from '../sprites'
 
+export const NonPlayer = defineComponent()
+
 export const DisplayObject = defineComponent()
 
 const GridC = {
@@ -26,7 +28,6 @@ export const AnimateMovement = defineComponent(
   100
 )
 
-// TODO: Creatures flop around randomly if they can't walk on land -- and vice versa?
 // TODO: Change SeekWater to PreferWater, or something
 
 export const Health = defineComponent({ current: Types.ui16, max: Types.ui16 }, 200)

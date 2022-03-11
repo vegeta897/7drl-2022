@@ -11,6 +11,7 @@ import {
   DisplayObject,
   getEntGrid,
   GridPosition,
+  NonPlayer,
   OnTileType,
   Scent,
   setEntGrid,
@@ -71,6 +72,7 @@ export function confirmCast() {
   if (getDistance(CastVector) > 0) {
     BaitEntity = addEntity(World)
     addSprite(BaitEntity, new Sprite(getTexture('bait')), WorldSprites)
+    addComponent(World, NonPlayer, BaitEntity)
     addComponent(World, Bait, BaitEntity)
     addComponent(World, DisplayObject, BaitEntity)
     addComponent(World, Scent, BaitEntity)

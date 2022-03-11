@@ -11,6 +11,7 @@ import {
   GridPosition,
   Health,
   initEntGrid,
+  NonPlayer,
   OnTileType,
   Predator,
   Spotting,
@@ -64,6 +65,7 @@ export function createWaterCreature(grid: Vector2, rng: typeof RNG) {
   const creatureSprite = new Sprite(getTexture(creatureProps.texture + 'Swim'))
   if (!ALL_VISIBLE) creatureSprite.alpha = 0
   addSprite(creature, creatureSprite)
+  addComponent(World, NonPlayer, creature)
   addComponent(World, DisplayObject, creature)
   addComponent(World, OnTileType, creature)
   addComponent(World, GridPosition, creature)

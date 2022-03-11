@@ -1,4 +1,4 @@
-import { createWorld, defineQuery, pipe, registerComponents, removeEntity } from 'bitecs'
+import { createWorld, defineQuery, hasComponent, pipe, registerComponents, removeEntity } from 'bitecs'
 import {
   AnimateMovement,
   Bait,
@@ -23,6 +23,7 @@ import {
   Airborne,
   CanAttack,
   AttackAction,
+  NonPlayer,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { wanderSystem, predatorSystem, seekWaterSystem, stunnedSystem } from './enemy_systems'
@@ -76,10 +77,10 @@ export async function onInput() {
 
 export const runRender = () => systemGroups.render(World)
 
-const allEntities = defineQuery([])
+const nonPlayerEntities = defineQuery([NonPlayer])
 export function resetNonPlayerEntities() {
-  for (const eid of allEntities(World)) {
-    if (eid !== PlayerEntity) removeEntity(World, eid)
+  for (const eid of nonPlayerEntities(World)) {
+    removeEntity(World, eid)
   }
 }
 
@@ -107,4 +108,5 @@ registerComponents(World, [
   CanAttack,
   Airborne,
   AttackAction,
+  NonPlayer,
 ])

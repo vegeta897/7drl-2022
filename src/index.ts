@@ -1,6 +1,15 @@
 import './style.css'
 import { resetNonPlayerEntities, World } from './ecs'
-import { addComponent, addEntity, resetWorld } from 'bitecs'
+import {
+  addComponent,
+  addEntity,
+  commitRemovals,
+  createWorld,
+  defineComponent,
+  defineQuery,
+  removeEntity,
+  resetWorld,
+} from 'bitecs'
 import { Sprite } from 'pixi.js'
 import { initPixi, OverlaySprites, PixiViewport, resetPixi, startPixi } from './pixi'
 import {
@@ -32,6 +41,7 @@ export let CurrentLevel: number
 export const LastLevel = 3
 export const nextLevel = () => {
   CurrentLevel++
+  console.log('moving to level', CurrentLevel)
   resetNonPlayerEntities()
   startLevel()
 }
