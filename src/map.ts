@@ -76,16 +76,15 @@ export class TileMap extends GridMap<TileData> {
     }
     this.set({ x, y }, tileData)
   }
-  isOnBorder({ x, y }: Vector2) {
-    return x === 0 || y === 0 || x === this.width - 1 || y === this.height - 1
+  isOutOfBounds({ x, y }: Vector2) {
+    return x < 0 || y < 0 || x >= this.width || y >= this.height
   }
   loadRotJSMap(map: (0 | 1 | 2)[][]) {
-    for (let y = 0; y < map.length; y++) {
-      const row = map[y]
-      for (let x = 0; x < row.length; x++) {
-        const onBorder = this.isOnBorder({ x, y })
-        let tileType = row[x] === 1 ? Tile.Floor : Tile.Path
-        if (onBorder || row[x] === 0) tileType = Tile.Wall
+    for (let y = -1; y < this.height + 1; y++) {
+      for (let x = -1; x < this.width + 1; x++) {
+        let tileType
+        if (this.isOutOfBounds({ x, y }) || map[y][x] === 0) tileType = Tile.Wall
+        else tileType = map[y][x] === 1 ? Tile.Floor : Tile.Path
         Level.createTile({ x, y }, tileType)
       }
     }

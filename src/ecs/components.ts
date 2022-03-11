@@ -1,11 +1,9 @@
-import { ComponentType, defineComponent, hasComponent, Types } from 'bitecs'
+import { ComponentType, defineComponent, Types } from 'bitecs'
 import { Vector2 } from '../vector2'
 import { EntityMap } from '../level'
-import { PlayerEntity, PlayerSprite, TILE_SIZE } from '../'
-import { RecalcEntities, triggerTileUpdate, updateEntityVisibility } from '../fov'
+import { PlayerEntity, TILE_SIZE } from '../'
+import { RecalcEntities, triggerTileUpdate } from '../fov'
 import { SpritesByEID } from '../sprites'
-import { PixiViewport } from '../pixi'
-import { World } from './index'
 
 export const DisplayObject = defineComponent()
 
@@ -16,28 +14,37 @@ const GridC = {
 
 export const GridPosition = defineComponent({ ...GridC, dirty: Types.ui8 })
 
-export const MoveAction = defineComponent({ ...GridC, noclip: Types.ui8 })
+export const MoveAction = defineComponent({ ...GridC, noclip: Types.ui8 }, 100)
+export const AttackAction = defineComponent({ target: Types.eid }, 50)
 
-export const AnimateMovement = defineComponent({
-  ...GridC,
-  elapsed: Types.f32,
-  length: Types.f32,
-})
+export const AnimateMovement = defineComponent(
+  {
+    ...GridC,
+    elapsed: Types.f32,
+    length: Types.f32,
+  },
+  100
+)
 
-export const Health = defineComponent({ current: Types.ui16, max: Types.ui16 })
+// TODO: Creatures flop around randomly if they can't walk on land -- and vice versa?
+// TODO: Change SeekWater to PreferWater, or something
+
+export const Health = defineComponent({ current: Types.ui16, max: Types.ui16 }, 200)
 export const CanWalk = defineComponent()
 export const CanSwim = defineComponent()
-export const Wander = defineComponent({ chance: Types.ui8, maxChance: Types.ui8 })
-export const Predator = defineComponent({ lungeRange: Types.ui8, senseRange: Types.ui8 })
-export const Stunned = defineComponent({ remaining: Types.ui16 })
-export const SeekWater = defineComponent({ distance: Types.ui8 })
+export const Airborne = defineComponent()
+export const Wander = defineComponent({ chance: Types.ui8, maxChance: Types.ui8 }, 200)
+export const Predator = defineComponent({ lungeRange: Types.ui8, senseRange: Types.ui8, baitStunTurns: Types.ui8 }, 100)
+export const Stunned = defineComponent({ remaining: Types.ui16 }, 20)
+export const SeekWater = defineComponent({ distance: Types.ui8 }, 100)
+export const CanAttack = defineComponent({ damage: Types.ui8 })
 
 export const OnTileType = defineComponent({ current: Types.ui8, previous: Types.ui8 })
 
-export const Fish = defineComponent()
+export const WaterCreature = defineComponent({ type: Types.ui8 }, 200)
 export const Bait = defineComponent()
 export const Chest = defineComponent()
-export const Exit = defineComponent()
+export const Exit = defineComponent({}, 10)
 
 export const Scent = defineComponent({ range: Types.ui8 })
 export const Wetness = defineComponent({ factor: Types.f32 })

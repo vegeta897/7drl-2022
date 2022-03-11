@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@gamestdio/easing": "^1.0.0",
-    "bitecs": "^0.3.35",
+    "bitecs": "^0.3.36",
     "core-js": "^3.21.1",
     "pixi-viewport": "^4.34.4",
     "pixi.js": "^6.2.2",

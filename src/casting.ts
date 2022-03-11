@@ -145,7 +145,6 @@ export function drawFishingLine() {
 }
 
 export function cutLine() {
-  // Should cutting line take a turn?
   BaitEntity = null
   fishingLineGraphics.cacheAsBitmap = false
   fishingLineGraphics.clear()

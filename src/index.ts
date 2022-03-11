@@ -3,7 +3,17 @@ import { resetNonPlayerEntities, World } from './ecs'
 import { addComponent, addEntity, resetWorld } from 'bitecs'
 import { Sprite } from 'pixi.js'
 import { initPixi, OverlaySprites, PixiViewport, resetPixi, startPixi } from './pixi'
-import { DisplayObject, GridPosition, Health, CanSwim, CanWalk, OnTileType, Scent, initEntGrid } from './ecs/components'
+import {
+  DisplayObject,
+  GridPosition,
+  Health,
+  CanSwim,
+  CanWalk,
+  OnTileType,
+  Scent,
+  initEntGrid,
+  CanAttack,
+} from './ecs/components'
 import { addSprite, getTexture, resetSprites } from './sprites'
 import { createLevel } from './level'
 import { drawHud, initHud, clearLog, updateHud, defaultHud, bigHud, logMessage, Colors } from './hud'
@@ -43,6 +53,8 @@ async function startGame() {
   addComponent(World, GridPosition, PlayerEntity)
   addComponent(World, CanWalk, PlayerEntity)
   addComponent(World, CanSwim, PlayerEntity)
+  addComponent(World, CanAttack, PlayerEntity)
+  CanAttack.damage[PlayerEntity] = 1
   addComponent(World, Scent, PlayerEntity)
   Scent.range[PlayerEntity] = 3
   addComponent(World, Health, PlayerEntity)

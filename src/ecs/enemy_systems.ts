@@ -6,11 +6,12 @@ import {
   Predator,
   SeekWater,
   Stunned,
-  CanWalk,
   Wander,
   Scent,
   Wetness,
   Spotting,
+  Airborne,
+  CanWalk,
 } from './components'
 import { RNG } from 'rot-js'
 import {
@@ -22,32 +23,39 @@ import {
   vectorsAreInline,
 } from '../vector2'
 import { EntityMap, findPath, Level } from '../level'
-import { Colors, logMessage } from '../hud'
-import { isWet, Tile } from '../map'
+import { logLunge } from '../hud'
+import { isWet } from '../map'
 import { PlayerEntity } from '../'
 import { RecalcEntities } from '../fov'
 
-const predators = defineQuery([GridPosition, Predator, Not(Stunned), Not(SeekWater)])
+const predators = defineQuery([GridPosition, Predator, Not(Stunned)])
 const scents = defineQuery([Scent])
 export const predatorSystem: System = (world) => {
   for (const eid of predators(world)) {
     const myGrid = getEntGrid(eid)
-    if (!isWet(Level.get(myGrid).type)) continue
+    if (!isWet(Level.get(myGrid).type) && !hasComponent(world, CanWalk, eid) && hasComponent(world, Wander, eid)) {
+      Wander.chance[eid] = 100 // Floundering
+      addComponent(world, Airborne, eid)
+      continue
+    }
     for (const scentEnt of scents(world)) {
       const scentGrid = getEntGrid(scentEnt)
       const distance = getDistance(myGrid, scentGrid)
+      // TODO: Lunge with pathfinding instead of just straight lines?
+      // And their aim might not be perfect?
       if (distance <= Predator.lungeRange[eid] && vectorsAreInline(myGrid, scentGrid)) {
-        if (getStraightLine(myGrid, scentGrid, false).some((t) => Level.get(t).type === Tile.Wall || EntityMap.get(t)))
-          continue
+        if (getStraightLine(myGrid, scentGrid, false).some((t) => Level.get(t).solid || EntityMap.get(t))) continue
         const move = diffVector2(myGrid, scentGrid)
         addComponent(world, MoveAction, eid)
         MoveAction.x[eid] = move.x
         MoveAction.y[eid] = move.y
         MoveAction.noclip[eid] = 0
-        addComponent(world, CanWalk, eid)
         Spotting.current[eid] = 2
         RecalcEntities.add(eid)
-        if (distance > 1 && scentEnt === PlayerEntity) logMessage('The fish lunges at you!', Colors.Danger)
+        if (distance > 1) {
+          addComponent(world, Airborne, eid)
+          if (scentEnt === PlayerEntity) logLunge(eid)
+        }
         break
       }
       const senseRange = Predator.senseRange[eid]
@@ -79,7 +87,7 @@ export const predatorSystem: System = (world) => {
   return world
 }
 
-const wanderers = defineQuery([Wander, GridPosition, Not(Stunned), Not(SeekWater), Not(MoveAction)])
+const wanderers = defineQuery([Wander, GridPosition, Not(Stunned), Not(MoveAction)])
 export const wanderSystem: System = (world) => {
   for (const eid of wanderers(world)) {
     if (RNG.getUniform() > Wander.chance[eid] / Wander.maxChance[eid]) {
@@ -88,21 +96,16 @@ export const wanderSystem: System = (world) => {
     }
     Wander.chance[eid] = 0
     const myGrid = getEntGrid(eid)
-    const choices = Level.get4Neighbors(myGrid).filter((t) => isWet(t.type))
+    const inWater = isWet(Level.get(myGrid).type)
+    const choices = Level.get4Neighbors(myGrid).filter(
+      (t) => isWet(t.type) || inWater || hasComponent(world, Airborne, eid)
+    )
     if (choices.length === 0) continue
     const dir = diffVector2(myGrid, RNG.getItem(choices)!)
     addComponent(world, MoveAction, eid)
     MoveAction.x[eid] = dir.x
     MoveAction.y[eid] = dir.y
     MoveAction.noclip[eid] = 0
-  }
-  return world
-}
-
-const stunned = defineQuery([Stunned])
-export const stunnedSystem: System = (world) => {
-  for (const eid of stunned(world)) {
-    if (--Stunned.remaining[eid] === 0) removeComponent(world, Stunned, eid)
   }
   return world
 }
@@ -126,6 +129,14 @@ export const seekWaterSystem: System = (world) => {
         break
       }
     }
+  }
+  return world
+}
+
+const stunned = defineQuery([Stunned])
+export const stunnedSystem: System = (world) => {
+  for (const eid of stunned(world)) {
+    if (--Stunned.remaining[eid] === 0) removeComponent(world, Stunned, eid)
   }
   return world
 }

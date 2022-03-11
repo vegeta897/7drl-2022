@@ -3,7 +3,7 @@ import {
   AnimateMovement,
   Bait,
   DisplayObject,
-  Fish,
+  WaterCreature,
   GridPosition,
   Health,
   MoveAction,
@@ -20,24 +20,34 @@ import {
   CalculateFOV,
   Chest,
   Exit,
+  Airborne,
+  CanAttack,
+  AttackAction,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
-import { wanderSystem, predatorSystem, stunnedSystem, seekWaterSystem } from './enemy_systems'
-import { fishSystem, gameSystem, moveSystem, wetnessSystem } from './action_systems'
+import { wanderSystem, predatorSystem, seekWaterSystem, stunnedSystem } from './enemy_systems'
+import {
+  waterCreatureSystem,
+  gameSystem,
+  moveSystem,
+  wetnessSystem,
+  playerActionSystem,
+  attackSystem,
+  enemyActionSystem,
+} from './action_systems'
 import { runAnimations } from './anim_systems'
 import { cameraSystem, fadeSystem, fovSystem, spriteRemoveSystem } from './render_systems'
 import { drawHud } from '../hud'
 import { updateEntityVisibility, updateVisibility } from '../fov'
 import { GameState, PlayerEntity } from '../index'
 
-// @ts-ignore
 export const World = createWorld(5000)
 
 const systemGroups = {
   input: inputSystem,
   enemyTurn: pipe(predatorSystem, wanderSystem, stunnedSystem, seekWaterSystem),
-  enemyActions: pipe(moveSystem, fishSystem, gameSystem),
-  playerActions: pipe(moveSystem, wetnessSystem, gameSystem),
+  enemyActions: pipe(enemyActionSystem, moveSystem, attackSystem, waterCreatureSystem, gameSystem),
+  playerActions: pipe(playerActionSystem, moveSystem, attackSystem, wetnessSystem, gameSystem),
   render: pipe(spriteRemoveSystem, fovSystem, cameraSystem, fadeSystem),
 }
 
@@ -83,7 +93,7 @@ registerComponents(World, [
   Predator,
   CanWalk,
   Health,
-  Fish,
+  WaterCreature,
   Stunned,
   SeekWater,
   Bait,
@@ -94,4 +104,7 @@ registerComponents(World, [
   CalculateFOV,
   Chest,
   Exit,
+  CanAttack,
+  Airborne,
+  AttackAction,
 ])

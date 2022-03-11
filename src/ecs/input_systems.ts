@@ -29,6 +29,7 @@ export const inputSystem: System = (world) => {
     case 'cast':
       if (previousState === 'Idle') beginCast()
       if (previousState === 'Casting') confirmCast()
+      // Should cutting line take a turn?
       if (previousState === 'Angling') cutLine()
       break
     case 'wait':

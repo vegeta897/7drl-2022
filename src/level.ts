@@ -7,28 +7,15 @@ import { RNG } from 'rot-js'
 import { addSprite, createMapSprites, getTexture } from './sprites'
 import { addComponent, addEntity } from 'bitecs'
 import { World } from './ecs'
-import {
-  CalculateFOV,
-  CanSwim,
-  Chest,
-  DisplayObject,
-  Exit,
-  Fish,
-  GridPosition,
-  Health,
-  initEntGrid,
-  OnTileType,
-  Predator,
-  Spotting,
-  Wander,
-} from './ecs/components'
+import { CalculateFOV, Chest, DisplayObject, Exit, GridPosition, initEntGrid } from './ecs/components'
 import { OverlaySprites, promisedFrame } from './pixi'
 import { showLevelGen } from './hud'
+import { createWaterCreature } from './creatures'
 
 export const ALL_VISIBLE = 1
 const seed = 0
 const worldRNG = RNG.clone()
-if (seed) worldRNG.setSeed(seed)
+worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())
 
 const levelSizes = [
@@ -48,10 +35,10 @@ export let EntityMap: GridMap<number>
 
 export async function createLevel(levelNumber: number): Promise<Vector2> {
   ;[mapWidth, mapHeight] = levelSizes[levelNumber - 1]
-  const requiredFishCount = (mapWidth * mapHeight) / 180
+  const minWaterCreatures = (mapWidth * mapHeight) / 180
   let attempts = 0
   let enterExitGrids
-  let fishSpawns
+  let waterSpawns
   let chestSpawns
   while (true) {
     attempts++
@@ -63,15 +50,15 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     enterExitGrids = getEnterExitGrids()
     if (!enterExitGrids) continue
     const ponds = getPonds()
-    fishSpawns = getFishSpawns(ponds, enterExitGrids.enter)
-    if (fishSpawns.size >= requiredFishCount) break
-    console.log('too few fish', fishSpawns.size)
+    waterSpawns = getWaterSpawns(ponds, enterExitGrids.enter)
+    if (waterSpawns.size >= minWaterCreatures) break
+    console.log('too few water creatures', waterSpawns.size)
   }
   console.log('success after', attempts)
   Level.removeRedundantWalls()
   createMapSprites(worldRNG)
   EntityMap = new GridMap()
-  fishSpawns.forEach(createFish)
+  waterSpawns.forEach((tile) => createWaterCreature(tile, worldRNG))
   chestSpawns.forEach(createChest)
   createExit(enterExitGrids.exit)
   return enterExitGrids.enter
@@ -149,7 +136,7 @@ function generateMap(): Vector2[] {
   // Create stalactites
   Level.data.forEach((tile) => {
     if (tile.type === Tile.Wall) {
-      if (Level.isOnBorder(tile)) return
+      if (Level.isOutOfBounds(tile)) return
       const neighbors4 = Level.get4Neighbors(tile)
       if (neighbors4.every((n) => n.type === Tile.Wall)) return
       if (worldRNG.getUniform() > 0.9) Level.createTile(tile, Tile.Stalagmite)
@@ -172,8 +159,8 @@ function generateMap(): Vector2[] {
 const between = (val: number, min: number, max: number) => val > min && val < max
 
 function getEnterExitGrids(): { enter: Vector2; exit: Vector2 } | false {
-  const outer = 4
-  const inner = 10
+  const outer = 3
+  const inner = 12
   const validSpawns: Vector2[] = []
   Level.data.forEach((tile) => {
     if (!isWalkable(tile.type)) return
@@ -207,7 +194,7 @@ function getPonds() {
   })
 }
 
-function getFishSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
+function getWaterSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
   const spawns: Set<Vector2> = new Set()
   for (const pond of ponds) {
     const tilesPerFish = Math.max(7, worldRNG.getNormal(16, 5))
@@ -223,33 +210,6 @@ function getFishSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
     }
   }
   return spawns
-}
-
-function createFish(grid: Vector2): boolean {
-  const fish = addEntity(World)
-  const fishSprite = new Sprite(getTexture('fishSwim'))
-  if (!ALL_VISIBLE) fishSprite.alpha = 0
-  addSprite(fish, fishSprite)
-  addComponent(World, DisplayObject, fish)
-  addComponent(World, OnTileType, fish)
-  addComponent(World, GridPosition, fish)
-  initEntGrid(fish, grid)
-  addComponent(World, Wander, fish)
-  Wander.maxChance[fish] = 10
-  Wander.chance[fish] = worldRNG.getUniformInt(0, 10)
-  addComponent(World, CanSwim, fish)
-  addComponent(World, Predator, fish)
-  Predator.lungeRange[fish] = 4
-  Predator.senseRange[fish] = 8
-  addComponent(World, Health, fish)
-  Health.max[fish] = 4
-  Health.current[fish] = 4
-  addComponent(World, Fish, fish)
-  addComponent(World, CalculateFOV, fish)
-  addComponent(World, Spotting, fish)
-  Spotting.current[fish] = 0
-  Spotting.increaseBy[fish] = 0.15
-  return true
 }
 
 function createChest(grid: Vector2) {

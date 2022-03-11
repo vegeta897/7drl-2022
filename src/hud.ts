@@ -1,10 +1,11 @@
 import { Display } from 'rot-js'
-import { Fish, Health, Wetness } from './ecs/components'
+import { Health, WaterCreature, Wetness } from './ecs/components'
 import { GameState, PlayerEntity } from './index'
 import { PlayerState } from './ecs/input_systems'
 import { hasComponent } from 'bitecs'
 import { World } from './ecs'
 import { promisedFrame } from './pixi'
+import { Creature, CreatureProps } from './creatures'
 
 let HUD: Display
 let log: string[]
@@ -42,22 +43,42 @@ export function showLevelGen(attempt: number) {
   HUD.drawText(8, 8, `%c{${Colors.Dim}}Level generation attempt #${attempt}`)
 }
 
-function getEntityName(entity: number, _capitalize = false) {
+function getEntityName(eid: number, _capitalize = false) {
   let name = 'unknown'
-  if (entity === PlayerEntity) name = 'you'
-  if (hasComponent(World, Fish, entity)) name = 'the fish'
+  if (eid === PlayerEntity) name = 'you'
+  if (hasComponent(World, WaterCreature, eid)) name = 'the ' + CreatureProps[WaterCreature.type[eid]].texture
   return _capitalize ? capitalize(name) : name
 }
 
+function getEntityAttack(eid: number) {
+  let verb = 'hit'
+  if (hasComponent(World, WaterCreature, eid)) {
+    if (WaterCreature.type[eid] === Creature.Fish) verb = 'bit'
+    if (WaterCreature.type[eid] === Creature.Alligator) verb = 'chomped'
+  }
+  return verb
+}
+
 export function logAttack(attacker: number, victim: number, damage: number) {
-  let color = attacker === PlayerEntity ? Colors.Good : Colors.White
+  let color = Colors.White
   if (victim === PlayerEntity) color = Colors.Bad
-  logMessage(`${getEntityName(attacker, true)} hit ${getEntityName(victim)}: ${damage} dmg`, color)
+  logMessage(
+    `${getEntityName(attacker, true)} ${getEntityAttack(attacker)} ${getEntityName(victim)} for ${damage} damage`,
+    color
+  )
 }
 
 export function logKill(victim: number) {
-  if (hasComponent(World, Fish, victim)) killedFish++
+  if (hasComponent(World, WaterCreature, victim) && WaterCreature.type[victim] === Creature.Fish) killedFish++
   logMessage(`You killed ${getEntityName(victim)}`)
+}
+
+export function logLunge(attacker: number) {
+  logMessage(`The ${getEntityName(attacker)} lunges at you!`, Colors.Danger)
+}
+
+export function logBaiting(baited: number) {
+  logMessage(`The ${getEntityName(baited)} took the bait`, Colors.GoodWater)
 }
 
 export function logMessage(message: string, color: Colors = Colors.White) {
@@ -94,7 +115,7 @@ export async function drawHud() {
   if (GameState === 'Losing') return
   if (GameState === 'Lost') {
     HUD.setOptions({ ...bigHudDefaults, fontStyle: 'bold', bg: Colors.DeepestBlood })
-    HUD.drawText(20, 7, `%c{${Colors.Blood}}GAME\nOVER`)
+    HUD.drawText(17, 7, `%c{${Colors.Blood}}GAME OVER`)
     return
   }
   if (GameState === 'Won') {
@@ -124,8 +145,8 @@ export async function drawHud() {
   if (PlayerState === 'Casting') HUD.drawText(3, 3, 'CASTING ⟆\n\n[C] to confirm\n[Esc] to cancel')
   if (PlayerState === 'Angling') HUD.drawText(3, 3, 'ANGLING ⟆\n\n[C] to cut line')
   if (log.length > 0) {
-    HUD.drawText(1, 8, '=========== LOG ===========')
-    let y = 9
+    HUD.drawText(1, 8, `%c{${Colors.Dim}}=========== LOG ===========`)
+    let y = 10
     for (let i = 0; i < log.length; i++) {
       y += HUD.drawText(
         2,
