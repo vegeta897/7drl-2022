@@ -1,4 +1,4 @@
-import { createWorld, defineQuery, hasComponent, pipe, registerComponents, removeEntity } from 'bitecs'
+import { createWorld, defineQuery, pipe, registerComponents, removeEntity } from 'bitecs'
 import {
   AnimateMovement,
   Bait,
@@ -9,7 +9,7 @@ import {
   MoveAction,
   Predator,
   SeekWater,
-  Stunned,
+  NoAction,
   CanSwim,
   CanWalk,
   Wander,
@@ -26,11 +26,10 @@ import {
   NonPlayer,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
-import { wanderSystem, predatorSystem, seekWaterSystem, stunnedSystem } from './enemy_systems'
+import { wanderSystem, predatorSystem, seekWaterSystem, noActionSystem } from './enemy_systems'
 import {
   waterCreatureSystem,
   gameSystem,
-  moveSystem,
   wetnessSystem,
   playerActionSystem,
   attackSystem,
@@ -40,15 +39,15 @@ import { runAnimations } from './anim_systems'
 import { cameraSystem, fadeSystem, fovSystem, spriteRemoveSystem } from './render_systems'
 import { drawHud } from '../hud'
 import { updateEntityVisibility, updateVisibility } from '../fov'
-import { GameState, PlayerEntity } from '../index'
+import { GameState } from '../'
 
 export const World = createWorld(5000)
 
 const systemGroups = {
   input: inputSystem,
-  enemyTurn: pipe(predatorSystem, wanderSystem, stunnedSystem, seekWaterSystem),
-  enemyActions: pipe(enemyActionSystem, moveSystem, attackSystem, waterCreatureSystem, gameSystem),
-  playerActions: pipe(playerActionSystem, moveSystem, attackSystem, wetnessSystem, gameSystem),
+  enemyTurn: pipe(predatorSystem, wanderSystem, noActionSystem, seekWaterSystem),
+  enemyActions: pipe(enemyActionSystem, attackSystem, waterCreatureSystem, gameSystem),
+  playerActions: pipe(playerActionSystem, attackSystem, wetnessSystem, gameSystem),
   render: pipe(spriteRemoveSystem, fovSystem, cameraSystem, fadeSystem),
 }
 
@@ -95,7 +94,7 @@ registerComponents(World, [
   CanWalk,
   Health,
   WaterCreature,
-  Stunned,
+  NoAction,
   SeekWater,
   Bait,
   OnTileType,

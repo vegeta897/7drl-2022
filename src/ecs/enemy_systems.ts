@@ -5,7 +5,7 @@ import {
   MoveAction,
   Predator,
   SeekWater,
-  Stunned,
+  NoAction,
   Wander,
   Scent,
   Wetness,
@@ -13,6 +13,7 @@ import {
   Airborne,
   CanWalk,
   WaterCreature,
+  Statuses,
 } from './components'
 import { RNG } from 'rot-js'
 import {
@@ -24,13 +25,13 @@ import {
   vectorsAreInline,
 } from '../vector2'
 import { EntityMap, findPath, Level } from '../level'
-import { logLunge } from '../hud'
-import { isWet } from '../map'
+import { logLunge, logCreatureStatus } from '../hud'
+import { isWalkable, isWet } from '../map'
 import { PlayerEntity } from '../'
 import { RecalcEntities } from '../fov'
 import { Creature } from '../creatures'
 
-const predators = defineQuery([GridPosition, Predator, Not(Stunned)])
+const predators = defineQuery([GridPosition, Predator, Not(NoAction)])
 const scents = defineQuery([Scent])
 export const predatorSystem: System = (world) => {
   for (const eid of predators(world)) {
@@ -45,8 +46,11 @@ export const predatorSystem: System = (world) => {
       const distance = getDistance(myGrid, scentGrid)
       // TODO: Lunge with pathfinding instead of just straight lines?
       // And their aim might not be perfect?
-      if (distance <= Predator.lungeRange[eid] && vectorsAreInline(myGrid, scentGrid)) {
-        if (getStraightLine(myGrid, scentGrid, false).some((t) => Level.get(t).solid || EntityMap.get(t))) continue
+      if (
+        distance <= Predator.lungeRange[eid] &&
+        vectorsAreInline(myGrid, scentGrid) &&
+        !getStraightLine(myGrid, scentGrid, false).some((t) => Level.get(t).solid || EntityMap.get(t))
+      ) {
         const move = diffVector2(myGrid, scentGrid)
         addComponent(world, MoveAction, eid)
         MoveAction.x[eid] = move.x
@@ -54,10 +58,8 @@ export const predatorSystem: System = (world) => {
         MoveAction.noclip[eid] = 0
         Spotting.current[eid] = 2
         RecalcEntities.add(eid)
-        if (distance > 1) {
-          addComponent(world, Airborne, eid)
-          if (scentEnt === PlayerEntity) logLunge(eid)
-        }
+        addComponent(world, Airborne, eid)
+        if (distance > 1 && scentEnt === PlayerEntity) logLunge(eid)
         break
       }
       const senseRange = Predator.senseRange[eid]
@@ -70,7 +72,14 @@ export const predatorSystem: System = (world) => {
         .map((g) => ({ ...g, d: getDistance(scentGrid, g) }))
         .sort((a, b) => a.d - b.d)
       for (const lingerGrid of lingerArea) {
-        const towardScent = findPath(myGrid, lingerGrid, eid, (g) => isWet(Level.get(g).type) && !EntityMap.get(g))[0]
+        const towardScent = findPath(
+          myGrid,
+          lingerGrid,
+          eid,
+          (g) =>
+            ((hasComponent(world, CanWalk, eid) && isWalkable(Level.get(g).type)) || isWet(Level.get(g).type)) &&
+            !EntityMap.get(g)
+        )[0]
         if (!towardScent) continue
         const lingerStrength = (1 + scentRange - lingerGrid.d) / scentRange
         const lingerDistanceFromMe = getDistance(myGrid, lingerGrid)
@@ -89,7 +98,7 @@ export const predatorSystem: System = (world) => {
   return world
 }
 
-const wanderers = defineQuery([Wander, GridPosition, Not(Stunned), Not(MoveAction)])
+const wanderers = defineQuery([Wander, GridPosition, Not(NoAction), Not(MoveAction)])
 export const wanderSystem: System = (world) => {
   for (const eid of wanderers(world)) {
     if (RNG.getUniform() > Wander.chance[eid] / Wander.maxChance[eid]) {
@@ -115,7 +124,7 @@ export const wanderSystem: System = (world) => {
   return world
 }
 
-const waterSeekers = defineQuery([SeekWater, Not(Stunned)])
+const waterSeekers = defineQuery([SeekWater, Not(NoAction)])
 export const seekWaterSystem: System = (world) => {
   for (const eid of waterSeekers(world)) {
     const myGrid = getEntGrid(eid)
@@ -138,10 +147,13 @@ export const seekWaterSystem: System = (world) => {
   return world
 }
 
-const stunned = defineQuery([Stunned])
-export const stunnedSystem: System = (world) => {
-  for (const eid of stunned(world)) {
-    if (--Stunned.remaining[eid] === 0) removeComponent(world, Stunned, eid)
+const nonActors = defineQuery([NoAction])
+export const noActionSystem: System = (world) => {
+  for (const eid of nonActors(world)) {
+    if (--NoAction.remaining[eid] === 0) {
+      if (NoAction.status[eid] === Statuses.Eating) logCreatureStatus(eid, NoAction.status[eid], true)
+      removeComponent(world, NoAction, eid)
+    }
   }
   return world
 }

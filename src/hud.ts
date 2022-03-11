@@ -1,5 +1,5 @@
 import { Display } from 'rot-js'
-import { Health, WaterCreature, Wetness } from './ecs/components'
+import { Health, Statuses, WaterCreature, Wetness } from './ecs/components'
 import { CurrentLevel, GameState, LastLevel, PlayerEntity } from './index'
 import { PlayerState } from './ecs/input_systems'
 import { hasComponent } from 'bitecs'
@@ -47,7 +47,7 @@ export function showLevelGen(attempt: number) {
 function getEntityName(eid: number, _capitalize = false) {
   let name = 'unknown'
   if (eid === PlayerEntity) name = 'you'
-  if (hasComponent(World, WaterCreature, eid)) name = 'the ' + CreatureProps[WaterCreature.type[eid]].texture
+  if (hasComponent(World, WaterCreature, eid)) name = `the ${CreatureProps[WaterCreature.type[eid]].texture}`
   return _capitalize ? capitalize(name) : name
 }
 
@@ -60,11 +60,13 @@ function getEntityAttack(eid: number) {
   return verb
 }
 
-export function logAttack(attacker: number, victim: number, damage: number) {
+export function logAttack(attacker: number, victim: number, damage: number, extra = '') {
   let color = Colors.White
   if (victim === PlayerEntity) color = Colors.Bad
   logMessage(
-    `${getEntityName(attacker, true)} ${getEntityAttack(attacker)} ${getEntityName(victim)} for ${damage} damage`,
+    `${getEntityName(attacker, true)} ${getEntityAttack(attacker)} ${getEntityName(
+      victim
+    )} for ${damage} damage${extra}`,
     color
   )
 }
@@ -79,12 +81,20 @@ export function logLunge(attacker: number) {
 }
 
 export function logBaiting(baited: number) {
-  logMessage(`The ${getEntityName(baited)} took the bait`, Colors.GoodWater)
+  logMessage(`The ${getEntityName(baited)} is eating the bait`, Colors.GoodWater)
 }
 
 export function logPetting() {
   turtlePetLevels.add(CurrentLevel)
   logMessage(`You pet the turtle`, Colors.Good)
+}
+
+const statusNames = ['eating', 'stunned']
+export function logCreatureStatus(eid: number, status: Statuses, ended = false) {
+  logMessage(
+    `${getEntityName(eid, true)} is ${ended ? 'no longer ' : ''}${statusNames[status]}${ended ? '' : '!'}`,
+    ended ? Colors.Dim : Colors.White
+  )
 }
 
 export function logMessage(message: string, color: Colors = Colors.White) {

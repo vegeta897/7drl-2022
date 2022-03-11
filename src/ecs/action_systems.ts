@@ -18,9 +18,10 @@ import {
   OnTileType,
   Predator,
   Spotting,
-  Stunned,
+  NoAction,
   WaterCreature,
   Wetness,
+  Statuses,
 } from './components'
 import {
   addComponent,
@@ -44,6 +45,7 @@ import { clamp } from 'rot-js/lib/util'
 import { PixiViewport } from '../pixi'
 import { filters } from 'pixi.js'
 import { Creature, CreatureProps } from '../creatures'
+import { World } from './index'
 
 export const playerActionSystem: System = (world) => {
   if (!hasComponent(world, MoveAction, PlayerEntity)) return world
@@ -83,6 +85,7 @@ export const playerActionSystem: System = (world) => {
   }
   if (MoveAction.noclip[PlayerEntity] === 0 && Level.get(targetGrid).solid)
     removeComponent(world, MoveAction, PlayerEntity)
+  if (hasComponent(World, MoveAction, PlayerEntity)) moveEntity(PlayerEntity, move)
   return world
 }
 
@@ -110,9 +113,10 @@ export const enemyActionSystem: System = (world) => {
             Health.current[eid] = Math.min(Health.max[eid], Health.current[eid] + 1)
           }
           if (hasComponent(world, Predator, eid)) {
-            addComponent(world, Stunned, eid)
-            Stunned.remaining[eid] = Predator.baitStunTurns[eid]
             logBaiting(eid)
+            addComponent(world, NoAction, eid)
+            NoAction.status[eid] = Statuses.Eating
+            NoAction.remaining[eid] = Predator.eatingTurns[eid]
           }
           cutLine()
           deleteEntGrid(targetEntity)
@@ -135,33 +139,27 @@ export const enemyActionSystem: System = (world) => {
     if (vectorsAreEqual(startGrid, currentGrid)) {
       removeComponent(world, MoveAction, eid)
     } else {
-      const newMove = diffVector2(startGrid, currentGrid)
-      MoveAction.x[eid] = newMove.x
-      MoveAction.y[eid] = newMove.y
+      moveEntity(eid, diffVector2(startGrid, currentGrid))
     }
   }
   return world
 }
 
-export const moveSystem: System = (world) => {
-  for (const eid of moveQuery(world)) {
-    const move = { x: MoveAction.x[eid], y: MoveAction.y[eid] }
-    const myGrid = getEntGrid(eid)
-    const targetGrid = addVector2(myGrid, move)
-    changeEntGrid(eid, targetGrid)
-    if (hasComponent(world, OnTileType, eid)) {
-      OnTileType.previous[eid] = OnTileType.current[eid]
-      OnTileType.current[eid] = Level.get(targetGrid).type
-    }
-    removeComponent(world, MoveAction, eid, false)
-    if ((!VisibilityMap.has(myGrid) && !VisibilityMap.has(targetGrid)) || MoveAction.noclip[eid]) continue
-    addComponent(world, AnimateMovement, eid)
-    AnimateMovement.x[eid] = MoveAction.x[eid]
-    AnimateMovement.y[eid] = MoveAction.y[eid]
-    AnimateMovement.elapsed[eid] = 0
-    AnimateMovement.length[eid] = 90 + 30 * getDistance(move)
+function moveEntity(eid: number, move: Vector2) {
+  const myGrid = getEntGrid(eid)
+  const targetGrid = addVector2(myGrid, move)
+  changeEntGrid(eid, targetGrid)
+  if (hasComponent(World, OnTileType, eid)) {
+    OnTileType.previous[eid] = OnTileType.current[eid]
+    OnTileType.current[eid] = Level.get(targetGrid).type
   }
-  return world
+  removeComponent(World, MoveAction, eid, false)
+  if ((!VisibilityMap.has(myGrid) && !VisibilityMap.has(targetGrid)) || MoveAction.noclip[eid]) return
+  addComponent(World, AnimateMovement, eid)
+  AnimateMovement.x[eid] = MoveAction.x[eid]
+  AnimateMovement.y[eid] = MoveAction.y[eid]
+  AnimateMovement.elapsed[eid] = 0
+  AnimateMovement.length[eid] = 90 + 30 * getDistance(move)
 }
 
 const attackQuery = defineQuery([AttackAction])
@@ -169,11 +167,17 @@ export const attackSystem: System = (world) => {
   for (const eid of attackQuery(world)) {
     const target = AttackAction.target[eid]
     let damage = CanAttack.damage[eid]
-    if (hasComponent(world, Stunned, target)) {
-      damage = 5
-      removeComponent(world, Stunned, target)
+    let stunnedByAttack = false
+    if (hasComponent(world, NoAction, target)) {
+      const status = NoAction.status[target]
+      damage = 3
+      if (status === Statuses.Eating) {
+        stunnedByAttack = true
+        NoAction.status[target] = Statuses.Stunned
+        NoAction.remaining[target] = 1
+      }
     }
-    logAttack(eid, target, damage)
+    logAttack(eid, target, damage, stunnedByAttack ? ', stunning it' : '')
     const healthLeft = (Health.current[target] -= damage)
     if (healthLeft <= 0) {
       logKill(target)

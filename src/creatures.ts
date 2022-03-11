@@ -34,7 +34,7 @@ export const CreatureProps: {
   wanderChance: number
   canWalk: boolean
   senseRange?: number
-  baitStunTurns?: number
+  eatingTurns?: number
   damage?: number
   health?: number
   spotting?: number
@@ -44,7 +44,7 @@ CreatureProps[Creature.Fish] = {
   wanderChance: 10,
   canWalk: false,
   senseRange: 8,
-  baitStunTurns: 6,
+  eatingTurns: 6,
   damage: 1,
   health: 4,
   spotting: 0.15,
@@ -54,9 +54,9 @@ CreatureProps[Creature.Alligator] = {
   wanderChance: 100,
   canWalk: true,
   senseRange: 6,
-  baitStunTurns: 3,
+  eatingTurns: 3,
   damage: 2,
-  health: 6,
+  health: 7,
   spotting: 0.5,
 }
 CreatureProps[Creature.Turtle] = {
@@ -85,7 +85,7 @@ export function createWaterCreature(grid: Vector2, rng: typeof RNG) {
   addComponent(World, Predator, creature)
   Predator.lungeRange[creature] = 4
   Predator.senseRange[creature] = creatureProps.senseRange!
-  Predator.baitStunTurns[creature] = creatureProps.baitStunTurns!
+  Predator.eatingTurns[creature] = creatureProps.eatingTurns!
   addComponent(World, CanAttack, creature)
   CanAttack.damage[creature] = creatureProps.damage!
   addComponent(World, Health, creature)

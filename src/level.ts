@@ -13,7 +13,7 @@ import { showLevelGen } from './hud'
 import { createTurtle, createWaterCreature } from './creatures'
 
 export const ALL_VISIBLE = 1
-const seed = 0
+const seed = 1646974179720
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())

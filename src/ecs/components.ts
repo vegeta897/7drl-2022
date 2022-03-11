@@ -35,8 +35,8 @@ export const CanWalk = defineComponent()
 export const CanSwim = defineComponent()
 export const Airborne = defineComponent()
 export const Wander = defineComponent({ chance: Types.ui16, maxChance: Types.ui16 }, 200)
-export const Predator = defineComponent({ lungeRange: Types.ui8, senseRange: Types.ui8, baitStunTurns: Types.ui8 }, 100)
-export const Stunned = defineComponent({ remaining: Types.ui8 }, 20)
+export const Predator = defineComponent({ lungeRange: Types.ui8, senseRange: Types.ui8, eatingTurns: Types.ui8 }, 100)
+export const NoAction = defineComponent({ status: Types.ui8, remaining: Types.ui8 }, 20)
 export const SeekWater = defineComponent({ distance: Types.ui8 }, 100)
 export const CanAttack = defineComponent({ damage: Types.ui8 })
 
@@ -91,4 +91,9 @@ export function setEntGrid(eid: number, grid: Vector2) {
 
 export function deleteEntGrid(eid: number) {
   EntityMap.delete(getEntGrid(eid))
+}
+
+export enum Statuses {
+  Eating,
+  Stunned,
 }

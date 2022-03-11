@@ -51,7 +51,7 @@ export function moveCastTarget(move: Vector2) {
   for (const mod of [GridZero, Up, Down, Left, Right]) {
     if (vectorsAreParallel(mod, move)) continue
     const moddedCastTo = addVector2(castTo, mod)
-    if (getDistance(moddedCastTo) <= 4 && Level.get(addVector2(playerGrid, moddedCastTo)).type !== Tile.Wall) {
+    if (getDistance(moddedCastTo) <= 4 && !Level.get(addVector2(playerGrid, moddedCastTo)).solid) {
       CastVector.x = moddedCastTo.x
       CastVector.y = moddedCastTo.y
       castTargetSprite.x = CastVector.x * TILE_SIZE
@@ -113,6 +113,7 @@ export function angleBait(move: Vector2) {
         BaitEntity = null
         setPlayerState('Idle')
         logMessage('You reeled in the bait', Colors.Dim)
+        fishingLineGraphics.cacheAsBitmap = false
         fishingLineGraphics.clear()
       } else {
         if (EntityMap.get(moddedAbsolute)) continue
