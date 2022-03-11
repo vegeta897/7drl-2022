@@ -15,13 +15,13 @@ import {
   getEntGrid,
   Health,
   MoveAction,
+  NoAction,
   OnTileType,
   Predator,
   Spotting,
-  NoAction,
+  Statuses,
   WaterCreature,
   Wetness,
-  Statuses,
 } from './components'
 import {
   addComponent,
@@ -35,7 +35,7 @@ import {
 } from 'bitecs'
 import { EntityMap, Level } from '../level'
 import { CurrentLevel, GameState, LastLevel, nextLevel, PlayerEntity, PlayerSprite, setGameState } from '../'
-import { Colors, logAttack, logBaiting, logKill, logMessage, logPetting, updateHud } from '../hud'
+import { Colors, logAttack, logBaitEat, logKill, logMessage, logPetting, updateHud } from '../hud'
 import { addVector2, diffVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { cutLine } from '../casting'
 import { isWalkable, isWet, Tile } from '../map'
@@ -46,6 +46,7 @@ import { PixiViewport } from '../pixi'
 import { filters } from 'pixi.js'
 import { Creature, CreatureProps } from '../creatures'
 import { World } from './index'
+import { Artifact, Inventory, openChest } from '../artifacts'
 
 export const playerActionSystem: System = (world) => {
   if (!hasComponent(world, MoveAction, PlayerEntity)) return world
@@ -64,14 +65,13 @@ export const playerActionSystem: System = (world) => {
       addComponent(world, AttackAction, PlayerEntity)
       AttackAction.target[PlayerEntity] = targetEntity
     } else if (hasComponent(world, Bait, targetEntity)) {
-      logMessage('You ate the bait')
-      Health.current[PlayerEntity] = Math.min(Health.max[PlayerEntity], Health.current[PlayerEntity] + 1)
+      const healed = Health.current[PlayerEntity] < Health.max[PlayerEntity]
+      if (healed) Health.current[PlayerEntity]++
+      logBaitEat(PlayerEntity, healed)
       deleteEntGrid(targetEntity)
       removeEntity(world, targetEntity)
     } else if (hasComponent(world, Chest, targetEntity)) {
-      logMessage('You got the chest!', Colors.Gold)
-      deleteEntGrid(targetEntity)
-      removeEntity(world, targetEntity)
+      openChest(targetEntity)
     } else if (hasComponent(world, Exit, targetEntity)) {
       setGameState('EndLevel')
       removeComponent(world, MoveAction, PlayerEntity)
@@ -83,8 +83,12 @@ export const playerActionSystem: System = (world) => {
       removeComponent(world, MoveAction, PlayerEntity)
     }
   }
-  if (MoveAction.noclip[PlayerEntity] === 0 && Level.get(targetGrid).solid)
+  if (MoveAction.noclip[PlayerEntity] === 0 && Level.get(targetGrid).solid) {
+    if (Inventory.has(Artifact.Pickaxe)) {
+      Level.mineTile(targetGrid)
+    }
     removeComponent(world, MoveAction, PlayerEntity)
+  }
   if (hasComponent(World, MoveAction, PlayerEntity)) moveEntity(PlayerEntity, move)
   return world
 }
@@ -109,11 +113,13 @@ export const enemyActionSystem: System = (world) => {
           AttackAction.target[eid] = targetEntity
           break
         } else if (hasComponent(world, Bait, targetEntity)) {
-          if (hasComponent(world, Health, eid)) {
-            Health.current[eid] = Math.min(Health.max[eid], Health.current[eid] + 1)
+          let healed = false
+          if (hasComponent(world, Health, eid) && Health.current[eid] < Health.max[eid]) {
+            Health.current[eid]++
+            healed = true
           }
           if (hasComponent(world, Predator, eid)) {
-            logBaiting(eid)
+            logBaitEat(eid, healed)
             addComponent(world, NoAction, eid)
             NoAction.status[eid] = Statuses.Eating
             NoAction.remaining[eid] = Predator.eatingTurns[eid]

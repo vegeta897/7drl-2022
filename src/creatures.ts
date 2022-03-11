@@ -24,7 +24,7 @@ import { RNG } from 'rot-js'
 import { isWet, TileData } from './map'
 
 export enum Creature {
-  Fish,
+  Fish = 1,
   Alligator,
   Turtle,
 }
@@ -56,7 +56,7 @@ CreatureProps[Creature.Alligator] = {
   senseRange: 6,
   eatingTurns: 3,
   damage: 2,
-  health: 7,
+  health: 6,
   spotting: 0.5,
 }
 CreatureProps[Creature.Turtle] = {

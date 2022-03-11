@@ -6,6 +6,7 @@ import { hasComponent } from 'bitecs'
 import { World } from './ecs'
 import { promisedFrame } from './pixi'
 import { Creature, CreatureProps } from './creatures'
+import { Inventory } from './artifacts'
 
 let HUD: Display
 let log: string[]
@@ -80,8 +81,13 @@ export function logLunge(attacker: number) {
   logMessage(`The ${getEntityName(attacker)} lunges at you!`, Colors.Danger)
 }
 
-export function logBaiting(baited: number) {
-  logMessage(`The ${getEntityName(baited)} is eating the bait`, Colors.GoodWater)
+export function logBaitEat(baited: number, healed = false) {
+  logMessage(
+    baited === PlayerEntity
+      ? `You ate the bait${healed ? ' (+1 hp)' : ''}`
+      : `The ${getEntityName(baited)} is eating the bait${healed ? ' (+1 hp)' : ''}`,
+    Colors.GoodWater
+  )
 }
 
 export function logPetting() {
@@ -162,7 +168,12 @@ export async function drawHud() {
   HUD.drawText(3, 1, `Health: %c{${health <= 3 ? Colors.Bad : ''}}${health.toString().padStart(3)}`)
   const wet = hasComponent(World, Wetness, PlayerEntity)
   HUD.drawText(24, 1, `%c{${wet ? Colors.StrongWater : Colors.Dim}}${wet ? 'Wet' : 'Dry'}`)
-  if (PlayerState === 'Idle') HUD.drawText(3, 3, '[C] to cast')
+  if (PlayerState === 'Idle') {
+    HUD.drawText(3, 3, '[C] to cast')
+    for (const artifact of Inventory) {
+      HUD.drawText(3, 5, `%c{${Colors.Gold}}Pickaxe`)
+    }
+  }
   if (PlayerState === 'Casting') HUD.drawText(3, 3, 'CASTING ⟆\n\n[C] to confirm\n[Esc] to cancel')
   if (PlayerState === 'Angling') HUD.drawText(3, 3, 'ANGLING ⟆\n\n[C] to cut line')
   if (log.length > 0) {

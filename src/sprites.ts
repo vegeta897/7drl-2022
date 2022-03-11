@@ -1,7 +1,7 @@
 import { Sprite, Texture } from 'pixi.js'
 import spriteData from '../assets/sprites.json'
 import { EntitySprites, WorldSprites } from './pixi'
-import { Tile } from './map'
+import { Tile, TileData } from './map'
 import { RNG } from 'rot-js'
 import { TILE_SIZE } from './index'
 import { ALL_VISIBLE, Level } from './level'
@@ -26,34 +26,37 @@ export function addSprite(eid: number, sprite: Sprite, container = EntitySprites
   else container.addChild(sprite)
 }
 
-export function createMapSprites(rng: typeof RNG) {
-  const getTileTexture = (tile: Tile): string => {
-    switch (tile) {
-      case Tile.Floor:
-        return rng.getItem(['floor1', 'floor2', 'floor3', 'floor4'])!
-      case Tile.Wall:
-        return 'wall'
-      case Tile.Water:
-        return 'water'
-      case Tile.Shallows:
-        return 'waterReeds'
-      case Tile.Path:
-        return 'floorBricks'
-      case Tile.Stalagmite:
-        return 'stalagmites1'
-    }
-    throw `No texture found for tile type ${tile}`
+export const getTileTexture = (tile: Tile, rng = RNG): string => {
+  switch (tile) {
+    case Tile.Floor:
+      return rng.getItem(['floor1', 'floor2', 'floor3', 'floor4'])!
+    case Tile.Wall:
+      return 'wall'
+    case Tile.Water:
+      return 'water'
+    case Tile.Shallows:
+      return 'waterReeds'
+    case Tile.Path:
+      return 'floorBricks'
+    case Tile.Stalagmite:
+      return 'stalagmites1'
   }
+  throw `No texture found for tile type ${tile}`
+}
+
+export function createMapSprites(rng: typeof RNG) {
   while (WorldSprites.children[0]) {
     WorldSprites.children[0].destroy({ children: true })
   }
-  Level.data.forEach((tile) => {
-    tile.sprite = new Sprite(getTexture(getTileTexture(tile.type)))
-    tile.sprite.x = tile.x * TILE_SIZE
-    tile.sprite.y = tile.y * TILE_SIZE
-    if (!ALL_VISIBLE) tile.sprite.alpha = 0
-    WorldSprites.addChild(tile.sprite)
-  })
+  Level.data.forEach((tile) => createTileSprite(tile, rng))
+}
+
+export function createTileSprite(tile: TileData, rng = RNG) {
+  tile.sprite = new Sprite(getTexture(getTileTexture(tile.type, rng)))
+  tile.sprite.x = tile.x * TILE_SIZE
+  tile.sprite.y = tile.y * TILE_SIZE
+  if (!ALL_VISIBLE) tile.sprite.alpha = 0
+  WorldSprites.addChild(tile.sprite)
 }
 
 export function resetSprites() {

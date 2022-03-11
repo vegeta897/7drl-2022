@@ -94,6 +94,6 @@ export function deleteEntGrid(eid: number) {
 }
 
 export enum Statuses {
-  Eating,
+  Eating = 1,
   Stunned,
 }
