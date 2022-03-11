@@ -154,7 +154,7 @@ export async function drawHud() {
     HUD.drawText(
       9,
       6,
-      `%c{${Colors.Blood}}Level generation failed\n after 1000 attempts\n\nReload the page to try again`
+      `%c{${Colors.Blood}}Level generation failed\n after 10000 attempts\n\nReload the page to try again`
     )
     return
   }

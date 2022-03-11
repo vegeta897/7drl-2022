@@ -13,7 +13,7 @@ import { showLevelGen } from './hud'
 import { createTurtle, createWaterCreature } from './creatures'
 
 export const ALL_VISIBLE = 1
-const seed = 1646974179720
+const seed = 0
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())
@@ -42,9 +42,9 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   let chestSpawns
   while (true) {
     attempts++
-    if (attempts > 1000) throw 'Level generation failed!'
-    await promisedFrame()
+    if (attempts > 10000) throw 'Level generation failed!'
     showLevelGen(attempts)
+    if (attempts % 10 === 0) await promisedFrame()
     chestSpawns = generateMap()
     // TODO: Change chest spawns to look for tiles with many surrounding walls/waters in a 5x5 area? Sort by most secluded to least, cutoff at X number of open tiles
     enterExitGrids = getEnterExitGrids()

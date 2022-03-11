@@ -80,11 +80,12 @@ export class TileMap extends GridMap<TileData> {
     return x < 0 || y < 0 || x >= this.width || y >= this.height
   }
   loadRotJSMap(map: (0 | 1 | 2)[][]) {
-    for (let y = -1; y < this.height + 1; y++) {
-      for (let x = -1; x < this.width + 1; x++) {
+    // rot.js uses x-first 2D arrays!
+    for (let x = -1; x < this.width + 1; x++) {
+      for (let y = -1; y < this.height + 1; y++) {
         let tileType
-        if (this.isOutOfBounds({ x, y }) || map[y][x] === 0) tileType = Tile.Wall
-        else tileType = map[y][x] === 1 ? Tile.Floor : Tile.Path
+        if (this.isOutOfBounds({ x, y }) || map[x][y] === 0) tileType = Tile.Wall
+        else tileType = map[x][y] === 1 ? Tile.Floor : Tile.Path
         Level.createTile({ x, y }, tileType)
       }
     }
