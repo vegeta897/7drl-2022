@@ -278,6 +278,7 @@ export const waterCreatureSystem: System = (world) => {
 
 const desaturated = new filters.ColorMatrixFilter()
 desaturated.desaturate()
+desaturated.alpha = 0.5
 
 export const gameSystem: System = (world) => {
   if (GameState !== 'Losing' && !entityExists(world, PlayerEntity)) {

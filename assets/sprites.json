@@ -11,11 +11,21 @@
       "sourceSize": { "w": 16, "h": 32 }
     },
     "player": {
-      "frame": { "x": 0, "y": 16, "w": 16, "h": 16 },
+      "frame": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "sourceSize": { "w": 16, "h": 16 }
     },
     "playerSwim": {
+      "frame": { "x": 16, "y": 0, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "playerCast": {
+      "frame": { "x": 0, "y": 16, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "playerCastSwim": {
       "frame": { "x": 16, "y": 16, "w": 16, "h": 16 },
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "sourceSize": { "w": 16, "h": 16 }

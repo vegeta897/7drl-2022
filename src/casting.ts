@@ -83,6 +83,7 @@ export function confirmCast() {
     triggerTileUpdate()
   }
   Supplies.bait--
+  PlayerSprite.texture = getTexture(isWet(OnTileType.current[PlayerEntity]) ? 'playerCastSwim' : 'playerCast')
   BaitEntity = addEntity(World)
   addSprite(BaitEntity, new Sprite(getTexture('bait')), WorldSprites)
   addComponent(World, NonPlayer, BaitEntity)
@@ -159,15 +160,15 @@ export function angleBait(move: Vector2) {
 export function drawFishingLine() {
   fishingLineGraphics.cacheAsBitmap = false
   fishingLineGraphics.clear()
-  fishingLineGraphics.lineStyle(1, 0xb3b9d1)
-  fishingLineGraphics.moveTo(13, 0)
+  fishingLineGraphics.lineStyle(1, 0xa1d1d4)
+  fishingLineGraphics.moveTo(12.5, isWet(OnTileType.current[PlayerEntity]) ? 4 : 0)
   fishingLineGraphics.bezierCurveTo(
-    13 + (CastVector.x / 3) * TILE_SIZE,
-    TILE_SIZE / 2 + Math.max(0, CastVector.y / 2 + 1) * TILE_SIZE,
+    12.5 + (CastVector.x / 3) * TILE_SIZE,
+    (isWet(OnTileType.current[PlayerEntity]) ? 4 : 0) + TILE_SIZE / 2 + Math.max(0, CastVector.y / 2 + 1) * TILE_SIZE,
     TILE_SIZE / 2 + CastVector.x * TILE_SIZE,
     (CastVector.y + 0.5) * TILE_SIZE,
     (CastVector.x + 0.5) * TILE_SIZE,
-    (CastVector.y + 0.5) * TILE_SIZE
+    (CastVector.y + 0.5) * TILE_SIZE - 3
   )
   fishingLineGraphics.cacheAsBitmap = true
 }
@@ -177,6 +178,7 @@ export function cutLine() {
   fishingLineGraphics.cacheAsBitmap = false
   fishingLineGraphics.clear()
   setPlayerState('Idle')
+  PlayerSprite.texture = getTexture(isWet(OnTileType.current[PlayerEntity]) ? 'playerSwim' : 'player')
 }
 
 export function resetCasting() {
