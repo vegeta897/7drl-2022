@@ -49,6 +49,11 @@ async function startGame() {
   CurrentLevel = 1
   clearInventory()
   PlayerEntity = addEntity(World)
+  // TODO: Animate as much as possible! Make the caves feel so alive!
+  // PlayerSprite = new AnimatedSprite([
+  //   { texture: getTexture('player'), time: 300 },
+  //   { texture: getTexture('playerSwim'), time: 100 },
+  // ])
   PlayerSprite = new Sprite(getTexture('player'))
   addSprite(PlayerEntity, PlayerSprite, OverlaySprites, true)
   addComponent(World, DisplayObject, PlayerEntity)

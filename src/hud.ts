@@ -147,6 +147,9 @@ export async function drawHud() {
   if (GameState === 'Lost') {
     HUD.setOptions({ ...bigHudDefaults, fontStyle: 'bold', bg: Colors.DeepestBlood })
     HUD.drawText(19, 7, `%c{${Colors.Blood}}GAME OVER`)
+    setTimeout(() => {
+      HUD.drawText(14, 11, `%c{${Colors.Bad}}[enter] to restart`)
+    }, 2500)
     return
   }
   if (GameState === 'Won') {

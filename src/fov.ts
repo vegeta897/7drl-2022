@@ -10,7 +10,7 @@ import { SpritesByEID } from './sprites'
 import { defineQuery, hasComponent, Query } from 'bitecs'
 import { World } from './ecs'
 
-export const FOV_RADIUS = 10
+export const FOV_RADIUS = 8
 const FOG_VISIBILITY = 0.5 // Max visibility of previously seen tiles
 const TWEEN_TIME = 150 // Milliseconds
 

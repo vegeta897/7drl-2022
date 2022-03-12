@@ -1,7 +1,7 @@
 import { get4Neighbors, get8Neighbors, getDiamondAround, getDistance, NESWDirection, Vector2 } from './vector2'
 import { Sprite } from 'pixi.js'
 import { Level } from './level'
-import { createTileSprite, getTexture, getTileTexture } from './sprites'
+import { createTileSprite, getTexture, getTileSprite, getTileTexture } from './sprites'
 
 export class GridMap<T> {
   data: Map<string, T> = new Map()
@@ -135,7 +135,8 @@ export class TileMap extends GridMap<TileData> {
         createTileSprite(this.get(neighbor))
       } else if (getDistance(tile, neighbor) === 1) {
         const neighborTile = this.get(neighbor)
-        neighborTile.sprite!.texture = getTexture(getTileTexture(neighborTile))
+        if (neighborTile.type === Tile.Floor || neighborTile.type === Tile.Wall)
+          neighborTile.sprite!.texture = getTexture(getTileTexture(neighborTile))
       }
     }
   }
@@ -145,6 +146,11 @@ export class TileMap extends GridMap<TileData> {
     tile.sprite!.texture = getTexture(getTileTexture(tile))
     tile.solid = false
     tile.seeThrough = true
+    for (const neighbor of get4Neighbors(grid)) {
+      const neighborTile = this.get(neighbor)
+      if (neighborTile.type === Tile.Shallows || neighborTile.type === Tile.Water)
+        neighborTile.sprite!.texture = getTexture(getTileTexture({ ...neighborTile, type: Tile.Water }))
+    }
   }
 }
 
