@@ -1,7 +1,7 @@
 // Do player or enemy actions
 import {
   Airborne,
-  AnimateMovement,
+  Animate,
   AttackAction,
   Bait,
   CalculateFOV,
@@ -47,6 +47,7 @@ import { filters } from 'pixi.js'
 import { Creature, CreatureProps } from '../creatures'
 import { World } from './index'
 import { getPlayerDamage, openChest, Supplies } from '../inventory'
+import { AnimationType } from '../animation'
 
 export const playerActionSystem: System = (world) => {
   if (!hasComponent(world, MoveAction, PlayerEntity)) return world
@@ -64,6 +65,8 @@ export const playerActionSystem: System = (world) => {
       }
       addComponent(world, AttackAction, PlayerEntity)
       AttackAction.target[PlayerEntity] = targetEntity
+      AttackAction.x[PlayerEntity] = move.x
+      AttackAction.y[PlayerEntity] = move.y
     } else if (hasComponent(world, Bait, targetEntity)) {
       Supplies.bait++
       logMessage('You picked up the bait', Colors.Dim)
@@ -109,6 +112,8 @@ export const enemyActionSystem: System = (world) => {
         if (targetEntity === PlayerEntity) {
           addComponent(world, AttackAction, eid)
           AttackAction.target[eid] = targetEntity
+          AttackAction.x[eid] = move.x
+          AttackAction.y[eid] = move.y
           break
         } else if (hasComponent(world, Bait, targetEntity)) {
           if (hasComponent(world, Predator, eid)) {
@@ -151,18 +156,27 @@ function moveEntity(eid: number, move: Vector2) {
   const myGrid = getEntGrid(eid)
   const targetGrid = addVector2(myGrid, move)
   changeEntGrid(eid, targetGrid)
+  let swimming = false
   if (hasComponent(World, OnTileType, eid)) {
     OnTileType.previous[eid] = OnTileType.current[eid]
     OnTileType.current[eid] = Level.get(targetGrid).type
+    if (isWet(OnTileType.previous[eid]) && isWet(OnTileType.current[eid])) swimming = true
   }
   removeComponent(World, MoveAction, eid, false)
   if ((eid !== PlayerEntity && !VisibilityMap.has(myGrid) && !VisibilityMap.has(targetGrid)) || MoveAction.noclip[eid])
     return
-  addComponent(World, AnimateMovement, eid)
-  AnimateMovement.x[eid] = MoveAction.x[eid]
-  AnimateMovement.y[eid] = MoveAction.y[eid]
-  AnimateMovement.elapsed[eid] = 0
-  AnimateMovement.length[eid] = 90 + 30 * getDistance(move)
+  const distance = getDistance(move)
+  addComponent(World, Animate, eid)
+  if (hasComponent(World, AttackAction, eid) || distance > 1) {
+    Animate.type[eid] = hasComponent(World, AttackAction, eid) ? AnimationType.LungeAttack : AnimationType.Lunge
+  } else {
+    Animate.type[eid] = swimming ? AnimationType.Swim : AnimationType.Hop
+  }
+  Animate.x[eid] = move.x
+  Animate.y[eid] = move.y
+  Animate.isMovement[eid] = 1
+  Animate.elapsed[eid] = 0
+  Animate.length[eid] = (swimming ? 200 : 100) + 40 * distance
 }
 
 const attackQuery = defineQuery([AttackAction])
@@ -190,6 +204,15 @@ export const attackSystem: System = (world) => {
     } else {
       logAttack(eid, target, damage, stunnedByAttack ? `, %c{${Colors.Warning}}stunning it` : '')
     }
+    if (!hasComponent(world, Animate, eid)) {
+      addComponent(World, Animate, eid)
+      Animate.type[eid] = AnimationType.Attack
+      Animate.isMovement[eid] = 0
+      Animate.x[eid] = AttackAction.x[eid]
+      Animate.y[eid] = AttackAction.y[eid]
+      Animate.elapsed[eid] = 0
+      Animate.length[eid] = 180
+    }
     removeComponent(world, AttackAction, eid)
   }
   return world
@@ -212,7 +235,7 @@ export const wetnessSystem: System = (world) => {
     } else if (nowWet && !prevWet) {
       if (eid === PlayerEntity) {
         if (!hasComponent(world, Wetness, eid)) updateHud()
-        PlayerSprite.texture = getTexture('playerSwim')
+        if (!hasComponent(world, Animate, eid)) PlayerSprite.texture = getTexture('playerSwim')
       }
       addComponent(world, Wetness, eid)
       Wetness.factor[eid] = 1
@@ -245,7 +268,7 @@ export const waterCreatureSystem: System = (world) => {
     if (isWet(OnTileType.previous[eid]) === onWater) continue
     const texture = CreatureProps[WaterCreature.type[eid]].texture
     if (onWater) {
-      SpritesByEID[eid].texture = getTexture(texture + 'Swim')
+      if (!hasComponent(world, Animate, eid)) SpritesByEID[eid].texture = getTexture(texture + 'Swim')
     } else {
       SpritesByEID[eid].texture = getTexture(texture)
     }

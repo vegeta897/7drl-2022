@@ -17,11 +17,13 @@ const GridC = {
 export const GridPosition = defineComponent({ ...GridC, dirty: Types.ui8 })
 
 export const MoveAction = defineComponent({ ...GridC, noclip: Types.ui8 }, 100)
-export const AttackAction = defineComponent({ target: Types.eid }, 50)
+export const AttackAction = defineComponent({ ...GridC, target: Types.eid }, 50)
 
-export const AnimateMovement = defineComponent(
+export const Animate = defineComponent(
   {
     ...GridC,
+    type: Types.ui8,
+    isMovement: Types.ui8, // Movements need to subtract animation grid from GridPosition first
     elapsed: Types.f32,
     length: Types.f32,
   },

@@ -5,7 +5,7 @@ import { runRender } from './ecs'
 import { initTextures } from './sprites'
 
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST
-// PIXI.settings.ROUND_PIXELS = true
+PIXI.settings.ROUND_PIXELS = true
 Ticker.shared.autoStart = false
 
 const gameWidth = 640

@@ -8,12 +8,12 @@ import { addSprite, createMapSprites, getTexture } from './sprites'
 import { addComponent, addEntity } from 'bitecs'
 import { World } from './ecs'
 import { CalculateFOV, Chest, DisplayObject, Exit, GridPosition, initEntGrid, NonPlayer } from './ecs/components'
-import { OverlaySprites, promisedFrame } from './pixi'
+import { EntitySprites, OverlaySprites, promisedFrame, WorldSprites } from './pixi'
 import { showLevelGen } from './hud'
 import { createLandCreatures, createTurtle, createWaterCreature } from './creatures'
 
 export const ALL_VISIBLE = 0
-const seed = 0
+const seed = 1647056756828
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())
@@ -232,7 +232,7 @@ function createChest(grid: Vector2) {
   const chest = addEntity(World)
   const chestSprite = new Sprite(getTexture('chest'))
   if (!ALL_VISIBLE) chestSprite.alpha = 0
-  addSprite(chest, chestSprite)
+  addSprite(chest, chestSprite, WorldSprites)
   addComponent(World, NonPlayer, chest)
   addComponent(World, DisplayObject, chest)
   addComponent(World, GridPosition, chest)

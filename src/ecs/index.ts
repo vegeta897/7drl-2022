@@ -1,6 +1,6 @@
 import { createWorld, defineQuery, pipe, registerComponents, removeEntity } from 'bitecs'
 import {
-  AnimateMovement,
+  Animate,
   Bait,
   DisplayObject,
   WaterCreature,
@@ -87,7 +87,7 @@ registerComponents(World, [
   DisplayObject,
   GridPosition,
   MoveAction,
-  AnimateMovement,
+  Animate,
   CanSwim,
   Wander,
   Predator,

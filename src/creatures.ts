@@ -146,8 +146,10 @@ function createCreature(grid: Vector2, creatureType: Creature, spawnInWater = fa
     Health.max[creature] = creatureProps.health
     Health.current[creature] = creatureProps.health
   }
-  addComponent(World, WaterCreature, creature)
-  WaterCreature.type[creature] = creatureType
+  if (creatureProps.canSwim) {
+    addComponent(World, WaterCreature, creature)
+    WaterCreature.type[creature] = creatureType
+  }
   addComponent(World, CalculateFOV, creature)
   if (creatureProps.spotting) {
     addComponent(World, Spotting, creature)

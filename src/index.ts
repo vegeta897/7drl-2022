@@ -20,7 +20,7 @@ import { drawHud, initHud, clearLog, updateHud, defaultHud, bigHud, logMessage, 
 import { resetFOV, updateEntityVisibility, updateVisibility } from './fov'
 import { initCasting, resetCasting } from './casting'
 import { setPlayerState, waitForInput } from './ecs/input_systems'
-import { clearInventory, Inventory, Supplies } from './inventory'
+import { clearInventory } from './inventory'
 
 export const TILE_SIZE = 16
 

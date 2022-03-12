@@ -18,7 +18,7 @@ const exitedSpriteQuery = exitQuery(spriteQuery)
 
 export const spriteRemoveSystem: System = (world) => {
   for (const eid of exitedSpriteQuery(world)) {
-    SpritesByEID[eid].destroy()
+    if (!SpritesByEID[eid].destroyed) SpritesByEID[eid].destroy()
     delete SpritesByEID[eid]
   }
   return world
