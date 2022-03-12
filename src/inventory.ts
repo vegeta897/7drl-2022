@@ -1,8 +1,9 @@
 import { Colors, logMessage, updateHud } from './hud'
-import { deleteEntGrid } from './ecs/components'
+import { deleteEntGrid, Health } from './ecs/components'
 import { removeEntity } from 'bitecs'
 import { World } from './ecs'
 import { RNG } from 'rot-js'
+import { PlayerEntity } from './index'
 
 export const Supplies = {
   bait: 0,
@@ -63,6 +64,17 @@ export function toggleLure(lure: number) {
   if (ActiveLures.has(toToggle)) ActiveLures.delete(toToggle)
   else ActiveLures.add(toToggle)
   updateHud()
+}
+
+export function eatBait() {
+  if (Supplies.bait === 0) return
+  if (Health.current[PlayerEntity] === Health.max[PlayerEntity]) {
+    logMessage(`You already have max health`)
+    return
+  }
+  Supplies.bait--
+  logMessage('You ate 1 bait (+1 hp)', Colors.GoodWater)
+  Health.current[PlayerEntity]++
 }
 
 export function getPlayerDamage() {

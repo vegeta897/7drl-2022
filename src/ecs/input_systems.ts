@@ -5,7 +5,7 @@ import { MoveAction } from './components'
 import { DirectionGrids, DirectionNames } from '../vector2'
 import { drawHud, updateHud } from '../hud'
 import { angleBait, beginCast, cancelCast, confirmCast, cutLine, moveCastTarget } from '../casting'
-import { toggleLure } from '../inventory'
+import { eatBait, toggleLure } from '../inventory'
 
 export const waitForInput = () => {
   WaitingForInput = true
@@ -33,6 +33,12 @@ export const inputSystem: System = (world) => {
       // Should cutting line take a turn?
       if (previousState === 'Angling') cutLine()
       break
+    case 'eat':
+      if (previousState === 'Idle') {
+        eatBait()
+        WaitingForInput = false
+      }
+      break
     case 'wait':
       WaitingForInput = false
       break
@@ -43,7 +49,7 @@ export const inputSystem: System = (world) => {
         return world
       }
       break
-    case 'exit':
+    case 'cancel':
       PlayerState = 'Idle'
       if (previousState === 'Casting') cancelCast()
       if (previousState === 'Angling') cutLine()
@@ -94,7 +100,15 @@ window.addEventListener('keyup', (e) => {
   Keys.delete(e.code)
 })
 
-type Button = typeof DirectionNames[number] | 'wait' | 'cast' | 'exit' | 'confirm' | typeof numbers[number] | null
+type Button =
+  | typeof DirectionNames[number]
+  | 'wait'
+  | 'cast'
+  | 'eat'
+  | 'cancel'
+  | 'confirm'
+  | typeof numbers[number]
+  | null
 function getButton(keyCode: GameKey): Button {
   switch (keyCode) {
     case 'KeyW':
@@ -115,8 +129,10 @@ function getButton(keyCode: GameKey): Button {
       return 'right'
     case 'KeyC':
       return 'cast'
+    case 'KeyE':
+      return 'eat'
     case 'Escape':
-      return 'exit'
+      return 'cancel'
     case 'Space':
       return 'wait'
     case 'Enter':
@@ -166,6 +182,7 @@ const gameKeys = [
   'KeyJ',
   'KeyH',
   'KeyL',
+  'KeyE',
   'ArrowUp',
   'ArrowDown',
   'ArrowLeft',

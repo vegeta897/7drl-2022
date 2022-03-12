@@ -76,24 +76,28 @@ export function confirmCast() {
   }
   setPlayerState('Idle')
   castTargetSprite.visible = false
-  if (getDistance(CastVector) > 0) {
-    Supplies.bait--
-    BaitEntity = addEntity(World)
-    addSprite(BaitEntity, new Sprite(getTexture('bait')), WorldSprites)
-    addComponent(World, NonPlayer, BaitEntity)
-    addComponent(World, Bait, BaitEntity)
-    addComponent(World, DisplayObject, BaitEntity)
-    addComponent(World, Scent, BaitEntity)
-    Scent.range[BaitEntity] = 5
-    addComponent(World, GridPosition, BaitEntity)
-    setEntGrid(BaitEntity, castGrid)
-    addComponent(World, OnTileType, BaitEntity)
-    addComponent(World, CalculateFOV, BaitEntity)
-    OnTileType.current[BaitEntity] = Level.get(castGrid).type
-    processInput()
-    setPlayerState('Angling')
-    drawFishingLine()
+  if (getDistance(CastVector) === 0) return
+  if (isWet(Level.get(castGrid).type) && ActiveLures.has(Lure.MagicSponge)) {
+    // Soak it up!
+    Level.dryTile(castGrid)
+    triggerTileUpdate()
   }
+  Supplies.bait--
+  BaitEntity = addEntity(World)
+  addSprite(BaitEntity, new Sprite(getTexture('bait')), WorldSprites)
+  addComponent(World, NonPlayer, BaitEntity)
+  addComponent(World, Bait, BaitEntity)
+  addComponent(World, DisplayObject, BaitEntity)
+  addComponent(World, Scent, BaitEntity)
+  Scent.range[BaitEntity] = 5
+  addComponent(World, GridPosition, BaitEntity)
+  setEntGrid(BaitEntity, castGrid)
+  addComponent(World, OnTileType, BaitEntity)
+  addComponent(World, CalculateFOV, BaitEntity)
+  OnTileType.current[BaitEntity] = Level.get(castGrid).type
+  processInput()
+  setPlayerState('Angling')
+  drawFishingLine()
 }
 
 export function cancelCast() {
@@ -116,17 +120,6 @@ export function angleBait(move: Vector2) {
       const moddedDistance = getDistance(moddedCastTo)
       const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
       if (moddedDistance > maxAngleDistance) continue
-      if (Level.get(moddedAbsolute).solid) {
-        if (!ActiveLures.has(Lure.WreckingBall)) continue
-        // Knock it down!
-        Level.mineTile(moddedAbsolute)
-        triggerTileUpdate()
-      }
-      if (isWet(Level.get(moddedAbsolute).type) && ActiveLures.has(Lure.MagicSponge)) {
-        // Soak it up!
-        Level.dryTile(moddedAbsolute)
-        triggerTileUpdate()
-      }
       if (moddedDistance === 0) {
         deleteEntGrid(BaitEntity!)
         removeEntity(World, BaitEntity!)
@@ -138,6 +131,17 @@ export function angleBait(move: Vector2) {
         fishingLineGraphics.clear()
       } else {
         if (EntityMap.get(moddedAbsolute)) continue
+        if (Level.get(moddedAbsolute).solid) {
+          if (!ActiveLures.has(Lure.WreckingBall)) continue
+          // Knock it down!
+          Level.mineTile(moddedAbsolute)
+          triggerTileUpdate()
+        }
+        if (isWet(Level.get(moddedAbsolute).type) && ActiveLures.has(Lure.MagicSponge)) {
+          // Soak it up!
+          Level.dryTile(moddedAbsolute)
+          triggerTileUpdate()
+        }
         CastVector.x = moddedCastTo.x
         CastVector.y = moddedCastTo.y
         drawFishingLine()

@@ -31,8 +31,8 @@ export enum Colors {
   Sky = '#6bb9e1',
 }
 
-const hudDefaults = { width: 30, height: 32, fontSize: 20, fg: Colors.Default, bg: Colors.DeepWater }
-const bigHudDefaults = { ...hudDefaults, width: 44, height: 16, fontSize: 40 }
+const hudDefaults = { width: 34, height: 32, fontSize: 20, fg: Colors.Default, bg: Colors.DeepWater }
+const bigHudDefaults = { ...hudDefaults, width: 47, height: 16, fontSize: 40 }
 
 export function initHud() {
   HUD = new Display({ ...bigHudDefaults, fontStyle: 'bold' })
@@ -49,7 +49,8 @@ export function showLevelGen(attempt: number) {
 function getEntityName(eid: number, _capitalize = false) {
   let name = 'unknown'
   if (eid === PlayerEntity) name = 'you'
-  if (hasComponent(World, WaterCreature, eid)) name = `the ${CreatureProps[WaterCreature.type[eid]].texture}`
+  if (hasComponent(World, WaterCreature, eid))
+    name = `the ${CreatureProps[WaterCreature.type[eid]].name || CreatureProps[WaterCreature.type[eid]].texture}`
   return _capitalize ? capitalize(name) : name
 }
 
@@ -103,6 +104,7 @@ export function logCreatureStatus(eid: number, status: Statuses, ended = false, 
   )
 }
 
+const maxLogLines = 23
 export function logMessage(message: string, color: Colors = Colors.Default) {
   log.unshift(`%c{${color ?? ''}}${message}`)
   if (log.length > maxLogLines) log.length = maxLogLines
@@ -125,9 +127,7 @@ export function bigHud() {
   updateHud()
 }
 
-const maxLogLines = 20
 const lowestY = 32
-
 let dirty = true
 
 export async function drawHud() {
@@ -138,7 +138,7 @@ export async function drawHud() {
   if (GameState === 'Losing') return
   if (GameState === 'Lost') {
     HUD.setOptions({ ...bigHudDefaults, fontStyle: 'bold', bg: Colors.DeepestBlood })
-    HUD.drawText(17, 7, `%c{${Colors.Blood}}GAME OVER`)
+    HUD.drawText(19, 7, `%c{${Colors.Blood}}GAME OVER`)
     return
   }
   if (GameState === 'Won') {
@@ -149,7 +149,7 @@ export async function drawHud() {
     if (turtlePetLevels.size === LastLevel)
       turtlePetResult = `%c{${Colors.Good}}You pet all ${turtlePetLevels.size} turtles!`
     HUD.drawText(
-      7,
+      9,
       4,
       `%c{${Colors.Sky}}At last, you made it back up to the dry, daylit surface\n\n\n\n\n%c{${Colors.GoodWater}}You killed ${killedFish} fish\n\n${turtlePetResult}`,
       30
@@ -159,9 +159,9 @@ export async function drawHud() {
   if (GameState === 'CriticalFailure') {
     HUD.setOptions(bigHudDefaults)
     HUD.drawText(
-      9,
+      10,
       6,
-      `%c{${Colors.Blood}}Level generation failed\n after 10000 attempts\n\nReload the page to try again`
+      `%c{${Colors.Blood}}Level generation failed\nafter 10000 attempts\n\nReload the page to try again`
     )
     return
   }
@@ -172,7 +172,7 @@ export async function drawHud() {
     `%c{${Colors.Dim}}Health %c{${health <= 3 ? Colors.Bad : Colors.Default}}${health.toString().padStart(4)}`
   )
   const wet = hasComponent(World, Wetness, PlayerEntity)
-  HUD.drawText(24, 1, `%c{${wet ? Colors.StrongWater : Colors.Dim}}${wet ? 'Wet' : 'Dry'}`)
+  HUD.drawText(28, 1, `%c{${wet ? Colors.StrongWater : Colors.Dim}}${wet ? 'Wet' : 'Dry'}`)
   HUD.drawText(
     3,
     2,
@@ -188,18 +188,23 @@ export async function drawHud() {
       const { color, name } = getLureInfo(lure)
       HUD.drawText(3, nextY++, `[${number}] %c{${active ? color : Colors.Dim}}${name} lure`)
     }
-    HUD.drawText(3, nextY, '[C] Cast')
-    nextY++
+    HUD.drawText(3, nextY++, '[C] Cast')
+    HUD.drawText(
+      3,
+      nextY++,
+      `%c{${Health.current[PlayerEntity] < Health.max[PlayerEntity] ? Colors.Default : Colors.Dim}}[E] Eat`
+    )
   }
   if (PlayerState === 'Casting') {
-    nextY += HUD.drawText(3, nextY, 'CASTING ⟆\n\n[C] to confirm\n[Esc] to cancel')
+    nextY += HUD.drawText(3, nextY, 'CASTING ⟆\n\n[C] Confirm cast\n[Esc] Cancel')
   }
   if (PlayerState === 'Angling') {
-    nextY += HUD.drawText(3, nextY, 'ANGLING ⟆\n\n[C] to cut line')
+    nextY += HUD.drawText(3, nextY, 'ANGLING ⟆\n\n[C] Cut line')
   }
   if (log.length > 0) {
     nextY += 1
-    HUD.drawText(1, nextY, `%c{${Colors.Dim}}=========== LOG ===========`)
+    const logStartY = nextY
+    HUD.drawText(1, nextY, `%c{${Colors.Dim}}------------- LOG -------------`)
     nextY += 2
     for (let i = 0; i < log.length; i++) {
       nextY += HUD.drawText(
@@ -208,11 +213,11 @@ export async function drawHud() {
         log[i].replaceAll(
           /%c{#[a-z0-9]+/gi,
           '$&' +
-            Math.round(((maxLogLines - i) / maxLogLines) * 255)
+            Math.round((1 - (nextY - logStartY) / (lowestY - logStartY)) * 255)
               .toString(16)
               .padStart(2, '0')
         ),
-        25
+        29
       )
       if (i >= lowestY) {
         log = log.slice(0, i + 1)

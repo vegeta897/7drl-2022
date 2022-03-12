@@ -80,6 +80,8 @@ export const playerActionSystem: System = (world) => {
     ) {
       logPetting()
       removeComponent(world, MoveAction, PlayerEntity)
+    } else {
+      removeComponent(world, MoveAction, PlayerEntity)
     }
   }
   if (MoveAction.noclip[PlayerEntity] === 0 && Level.get(targetGrid).solid) {
@@ -136,6 +138,9 @@ export const enemyActionSystem: System = (world) => {
     if (vectorsAreEqual(startGrid, currentGrid)) {
       removeComponent(world, MoveAction, eid)
     } else {
+      const tileType = Level.get(currentGrid).type
+      if (hasComponent(world, CanSwim, eid) && isWet(tileType)) CanSwim.slowTurns[eid] = CanSwim.slowness[eid]
+      if (hasComponent(world, CanWalk, eid) && isWalkable(tileType)) CanWalk.slowTurns[eid] = CanWalk.slowness[eid]
       moveEntity(eid, diffVector2(startGrid, currentGrid))
     }
   }

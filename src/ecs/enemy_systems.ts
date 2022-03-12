@@ -15,6 +15,7 @@ import {
   WaterCreature,
   Statuses,
   Health,
+  CanSwim,
 } from './components'
 import { RNG } from 'rot-js'
 import {
@@ -36,13 +37,17 @@ const predators = defineQuery([GridPosition, Predator, Not(NoAction)])
 const scents = defineQuery([Scent])
 export const predatorSystem: System = (world) => {
   for (const eid of predators(world)) {
+    Predator.tracking[eid] = 0
     const myGrid = getEntGrid(eid)
+    const canWalk = hasComponent(world, CanWalk, eid) && CanWalk.slowTurns[eid] === 0
+    const canSwim = hasComponent(world, CanSwim, eid) && CanSwim.slowTurns[eid] === 0
     if (!isWet(Level.get(myGrid).type) && !hasComponent(world, CanWalk, eid) && hasComponent(world, Wander, eid)) {
       Wander.chance[eid] = 100 // Floundering
       addComponent(world, Airborne, eid)
       continue
     }
     for (const scentEnt of scents(world)) {
+      if (Predator.eatingTurns[eid] === 0 && scentEnt !== PlayerEntity) continue
       const scentGrid = getEntGrid(scentEnt)
       const distance = getDistance(myGrid, scentGrid)
       // TODO: Lunge with pathfinding instead of just straight lines?
@@ -78,10 +83,14 @@ export const predatorSystem: System = (world) => {
           lingerGrid,
           eid,
           (g) =>
-            ((hasComponent(world, CanWalk, eid) && isWalkable(Level.get(g).type)) || isWet(Level.get(g).type)) &&
+            ((hasComponent(world, CanWalk, eid) && isWalkable(Level.get(g).type)) ||
+              (hasComponent(world, CanSwim, eid) && isWet(Level.get(g).type))) &&
             !EntityMap.get(g)
         )[0]
         if (!towardScent) continue
+        const tileType = Level.get(towardScent).type
+        if (CanWalk.slowTurns[eid] > 0 && isWalkable(tileType)) break
+        if (CanSwim.slowTurns[eid] > 0 && isWet(tileType)) break
         const lingerStrength = (1 + scentRange - lingerGrid.d) / scentRange
         const lingerDistanceFromMe = getDistance(myGrid, lingerGrid)
         const attractChance = 1 - lingerDistanceFromMe / senseRange + lingerStrength
@@ -91,6 +100,7 @@ export const predatorSystem: System = (world) => {
           MoveAction.x[eid] = move.x
           MoveAction.y[eid] = move.y
           MoveAction.noclip[eid] = 0
+          Predator.tracking[eid] = 1
           break
         }
       }
@@ -102,6 +112,7 @@ export const predatorSystem: System = (world) => {
 const wanderers = defineQuery([Wander, GridPosition, Not(NoAction), Not(MoveAction)])
 export const wanderSystem: System = (world) => {
   for (const eid of wanderers(world)) {
+    if (Predator.tracking[eid] > 0) continue
     if (RNG.getUniform() > Wander.chance[eid] / Wander.maxChance[eid]) {
       Wander.chance[eid]++
       continue
@@ -113,6 +124,7 @@ export const wanderSystem: System = (world) => {
     const choices = Level.get4Neighbors(myGrid).filter((t) => {
       if (creatureType === Creature.Fish) return isWet(t.type) || hasComponent(world, Airborne, eid)
       if (creatureType === Creature.Alligator) return inWater || isWet(t.type)
+      if (creatureType === Creature.GiantSnail) return isWalkable(t.type)
       return true // Turtles can walk anywhere
     })
     if (choices.length === 0) continue
@@ -162,6 +174,18 @@ export const noActionSystem: System = (world) => {
       }
       removeComponent(world, NoAction, eid)
     }
+  }
+  return world
+}
+
+const walkers = defineQuery([CanWalk])
+const swimmers = defineQuery([CanSwim])
+export const slowSystem: System = (world) => {
+  for (const eid of walkers(world)) {
+    if (CanWalk.slowTurns[eid] > 0) CanWalk.slowTurns[eid]--
+  }
+  for (const eid of swimmers(world)) {
+    if (CanSwim.slowTurns[eid] > 0) CanSwim.slowTurns[eid]--
   }
   return world
 }

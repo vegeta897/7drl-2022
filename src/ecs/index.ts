@@ -26,7 +26,7 @@ import {
   NonPlayer,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
-import { wanderSystem, predatorSystem, seekWaterSystem, noActionSystem } from './enemy_systems'
+import { wanderSystem, predatorSystem, seekWaterSystem, noActionSystem, slowSystem } from './enemy_systems'
 import {
   waterCreatureSystem,
   gameSystem,
@@ -45,7 +45,7 @@ export const World = createWorld(5000)
 
 const systemGroups = {
   input: inputSystem,
-  enemyTurn: pipe(predatorSystem, wanderSystem, noActionSystem, seekWaterSystem),
+  enemyTurn: pipe(predatorSystem, wanderSystem, seekWaterSystem, noActionSystem, slowSystem),
   enemyActions: pipe(enemyActionSystem, attackSystem, waterCreatureSystem, gameSystem),
   playerActions: pipe(playerActionSystem, attackSystem, wetnessSystem, gameSystem),
   render: pipe(spriteRemoveSystem, fovSystem, cameraSystem, fadeSystem),

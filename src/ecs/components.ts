@@ -31,11 +31,14 @@ export const AnimateMovement = defineComponent(
 // TODO: Change SeekWater to PreferWater, or something
 
 export const Health = defineComponent({ current: Types.ui16, max: Types.ui16 }, 200)
-export const CanWalk = defineComponent()
-export const CanSwim = defineComponent()
+export const CanWalk = defineComponent({ slowness: Types.ui8, slowTurns: Types.ui8 })
+export const CanSwim = defineComponent({ slowness: Types.ui8, slowTurns: Types.ui8 })
 export const Airborne = defineComponent()
 export const Wander = defineComponent({ chance: Types.ui16, maxChance: Types.ui16 }, 200)
-export const Predator = defineComponent({ lungeRange: Types.ui8, senseRange: Types.ui8, eatingTurns: Types.ui8 }, 100)
+export const Predator = defineComponent(
+  { lungeRange: Types.ui8, senseRange: Types.ui8, eatingTurns: Types.ui8, tracking: Types.ui8 },
+  100
+)
 export const NoAction = defineComponent({ status: Types.ui8, remaining: Types.ui8 }, 20)
 export const SeekWater = defineComponent({ distance: Types.ui8 }, 100)
 export const CanAttack = defineComponent({ damage: Types.ui8 })

@@ -27,13 +27,19 @@ export enum Creature {
   Fish = 1,
   Alligator,
   Turtle,
+  GiantSnail,
 }
 
 export const CreatureProps: {
   texture: string
-  wanderChance: number
-  canWalk: boolean
+  name?: string
+  wanderChance?: number
+  canWalk?: boolean
+  walkSlowness?: number
+  canSwim?: boolean
+  swimSlowness?: number
   senseRange?: number
+  lungeRange?: number
   eatingTurns?: number
   damage?: number
   health?: number
@@ -42,8 +48,9 @@ export const CreatureProps: {
 CreatureProps[Creature.Fish] = {
   texture: 'fish',
   wanderChance: 10,
-  canWalk: false,
+  canSwim: true,
   senseRange: 8,
+  lungeRange: 4,
   eatingTurns: 6,
   damage: 1,
   health: 4,
@@ -53,7 +60,10 @@ CreatureProps[Creature.Alligator] = {
   texture: 'alligator',
   wanderChance: 100,
   canWalk: true,
+  canSwim: true,
+  swimSlowness: 1,
   senseRange: 6,
+  lungeRange: 3,
   eatingTurns: 3,
   damage: 2,
   health: 6,
@@ -63,13 +73,48 @@ CreatureProps[Creature.Turtle] = {
   texture: 'turtle',
   wanderChance: 400,
   canWalk: true,
+  canSwim: true,
+}
+CreatureProps[Creature.GiantSnail] = {
+  texture: 'giantSnail',
+  name: 'giant snail',
+  wanderChance: 300,
+  canWalk: true,
+  walkSlowness: 2,
+  senseRange: 2,
+  damage: 1,
+  health: 12,
 }
 
 export function createWaterCreature(grid: Vector2, rng: typeof RNG) {
-  let creatureType = <Creature>(<unknown>rng.getWeightedValue({ [Creature.Alligator]: 1, [Creature.Fish]: 3 }))
+  createCreature(grid, <Creature>(<unknown>rng.getWeightedValue({ [Creature.Alligator]: 2, [Creature.Fish]: 5 })), true)
+}
+
+export function createLandCreatures(playerSpawn: Vector2, rng: typeof RNG) {
+  const openTiles = [...Level.data.values()].filter((t) => !t.solid)
+  const landCreatureCount = Math.ceil(openTiles.length / rng.getUniformInt(600, 900))
+  for (let i = 0; i < landCreatureCount; i++) {
+    let tile: TileData
+    do {
+      tile = rng.getItem(openTiles)!
+    } while (isWet(tile.type) || tile.solid || EntityMap.has(tile) || getDistance(tile, playerSpawn) < 12)
+    createCreature(tile, Creature.GiantSnail)
+  }
+}
+
+export function createTurtle(playerSpawn: Vector2, minimumDistance: number, rng: typeof RNG) {
+  const openTiles = [...Level.data.values()].filter((t) => !t.solid)
+  let tile: TileData
+  do {
+    tile = rng.getItem(openTiles)!
+  } while (EntityMap.has(tile) || getDistance(tile, playerSpawn) < minimumDistance)
+  createCreature(tile, Creature.Turtle, isWet(tile.type))
+}
+
+function createCreature(grid: Vector2, creatureType: Creature, spawnInWater = false) {
   const creature = addEntity(World)
   const creatureProps = CreatureProps[creatureType]
-  const creatureSprite = new Sprite(getTexture(creatureProps.texture + 'Swim'))
+  const creatureSprite = new Sprite(getTexture(creatureProps.texture + (spawnInWater ? 'Swim' : '')))
   if (!ALL_VISIBLE) creatureSprite.alpha = 0
   addSprite(creature, creatureSprite)
   addComponent(World, NonPlayer, creature)
@@ -77,52 +122,36 @@ export function createWaterCreature(grid: Vector2, rng: typeof RNG) {
   addComponent(World, OnTileType, creature)
   addComponent(World, GridPosition, creature)
   initEntGrid(creature, grid)
-  addComponent(World, Wander, creature)
-  Wander.maxChance[creature] = creatureProps.wanderChance
-  Wander.chance[creature] = rng.getUniformInt(0, creatureProps.wanderChance)
-  addComponent(World, CanSwim, creature)
+  if (creatureProps.wanderChance) {
+    addComponent(World, Wander, creature)
+    Wander.maxChance[creature] = creatureProps.wanderChance
+    Wander.chance[creature] = RNG.getUniformInt(0, creatureProps.wanderChance)
+  }
+  if (creatureProps.canSwim) addComponent(World, CanSwim, creature)
+  if (creatureProps.swimSlowness) CanSwim.slowness[creature] = creatureProps.swimSlowness
   if (creatureProps.canWalk) addComponent(World, CanWalk, creature)
-  addComponent(World, Predator, creature)
-  Predator.lungeRange[creature] = 4
-  Predator.senseRange[creature] = creatureProps.senseRange!
-  Predator.eatingTurns[creature] = creatureProps.eatingTurns!
-  addComponent(World, CanAttack, creature)
-  CanAttack.damage[creature] = creatureProps.damage!
-  addComponent(World, Health, creature)
-  Health.max[creature] = creatureProps.health!
-  Health.current[creature] = creatureProps.health!
+  if (creatureProps.walkSlowness) CanWalk.slowness[creature] = creatureProps.walkSlowness
+  if (creatureProps.senseRange) {
+    addComponent(World, Predator, creature)
+    Predator.lungeRange[creature] = creatureProps.lungeRange || 0
+    Predator.senseRange[creature] = creatureProps.senseRange
+    if (creatureProps.eatingTurns) Predator.eatingTurns[creature] = creatureProps.eatingTurns
+  }
+  if (creatureProps.damage) {
+    addComponent(World, CanAttack, creature)
+    CanAttack.damage[creature] = creatureProps.damage
+  }
+  if (creatureProps.health) {
+    addComponent(World, Health, creature)
+    Health.max[creature] = creatureProps.health
+    Health.current[creature] = creatureProps.health
+  }
   addComponent(World, WaterCreature, creature)
   WaterCreature.type[creature] = creatureType
   addComponent(World, CalculateFOV, creature)
-  addComponent(World, Spotting, creature)
-  Spotting.current[creature] = 0
-  Spotting.increaseBy[creature] = creatureProps.spotting!
-}
-
-export function createTurtle(playerSpawn: Vector2, minimumDistance: number, rng: typeof RNG) {
-  const allOpenTiles = [...Level.data.values()]
-  let turtleGrid: TileData
-  do {
-    turtleGrid = rng.getItem(allOpenTiles)!
-  } while (turtleGrid.solid || EntityMap.has(turtleGrid) || getDistance(turtleGrid, playerSpawn) < minimumDistance)
-  const turtle = addEntity(World)
-  const turtleProps = CreatureProps[Creature.Turtle]
-  let textureName = turtleProps.texture
-  if (isWet(turtleGrid.type)) textureName += 'Swim'
-  const turtleSprite = new Sprite(getTexture(textureName))
-  if (!ALL_VISIBLE) turtleSprite.alpha = 0
-  addSprite(turtle, turtleSprite)
-  addComponent(World, NonPlayer, turtle)
-  addComponent(World, DisplayObject, turtle)
-  addComponent(World, OnTileType, turtle)
-  addComponent(World, GridPosition, turtle)
-  initEntGrid(turtle, turtleGrid)
-  addComponent(World, Wander, turtle)
-  Wander.maxChance[turtle] = turtleProps.wanderChance
-  Wander.chance[turtle] = 0
-  addComponent(World, CanSwim, turtle)
-  addComponent(World, CanWalk, turtle)
-  addComponent(World, WaterCreature, turtle)
-  WaterCreature.type[turtle] = Creature.Turtle
-  addComponent(World, CalculateFOV, turtle)
+  if (creatureProps.spotting) {
+    addComponent(World, Spotting, creature)
+    Spotting.current[creature] = 0
+    Spotting.increaseBy[creature] = creatureProps.spotting
+  }
 }
