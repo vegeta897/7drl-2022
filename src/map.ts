@@ -1,8 +1,7 @@
-import { get4Neighbors, get8Neighbors, getDiamondAround, Vector2 } from './vector2'
+import { get4Neighbors, get8Neighbors, getDiamondAround, getDistance, NESWDirection, Vector2 } from './vector2'
 import { Sprite } from 'pixi.js'
 import { Level } from './level'
 import { createTileSprite, getTexture, getTileTexture } from './sprites'
-import { logMessage } from './hud'
 
 export class GridMap<T> {
   data: Map<string, T> = new Map()
@@ -126,21 +125,24 @@ export class TileMap extends GridMap<TileData> {
   }
   mineTile(grid: Vector2) {
     const tile = this.get(grid)
-    tile.sprite!.texture = getTexture(getTileTexture(Tile.Floor))
     tile.type = Tile.Floor
+    tile.sprite!.texture = getTexture(getTileTexture(tile))
     tile.solid = false
     tile.seeThrough = true
     for (const neighbor of get8Neighbors(grid)) {
       if (!this.has(neighbor)) {
         this.createTile(neighbor, Tile.Wall)
         createTileSprite(this.get(neighbor))
+      } else if (getDistance(tile, neighbor) === 1) {
+        const neighborTile = this.get(neighbor)
+        neighborTile.sprite!.texture = getTexture(getTileTexture(neighborTile))
       }
     }
   }
   dryTile(grid: Vector2) {
     const tile = this.get(grid)
-    tile.sprite!.texture = getTexture(getTileTexture(Tile.Floor))
     tile.type = Tile.Floor
+    tile.sprite!.texture = getTexture(getTileTexture(tile))
     tile.solid = false
     tile.seeThrough = true
   }

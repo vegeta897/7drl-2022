@@ -48,8 +48,14 @@ export const scaleVector2 = (v: Vector2, scalar: number): Vector2 => ({ x: v.x *
 export const invertVector2 = (v: Vector2): Vector2 => ({ x: -v.x, y: -v.y })
 export const getUnitVector2 = (v: Vector2): Vector2 => DirectionGrids[getCardinalDirection(GridZero, v)]
 
-export const get4Neighbors = (grid: Vector2): Vector2[] => {
-  return [Up, Down, Left, Right].map((d) => addVector2(grid, d))
+export type NESWDirection = { d: 'N' | 'E' | 'S' | 'W' }
+const NESW = new Map()
+NESW.set(Up, 'N')
+NESW.set(Right, 'E')
+NESW.set(Down, 'S')
+NESW.set(Left, 'W')
+export const get4Neighbors = (grid: Vector2): (Vector2 & NESWDirection)[] => {
+  return DirectionGrids.map((d) => ({ ...addVector2(grid, d), d: NESW.get(d) }))
 }
 export const get8Neighbors = (grid: Vector2): Vector2[] => {
   return [Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight].map((d) => addVector2(grid, d))

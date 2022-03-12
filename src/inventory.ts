@@ -24,7 +24,7 @@ export function getLureInfo(lure: Lure): { name: string; color: Colors } {
     case Lure.WreckingBall:
       return { name: 'Wrecking Ball', color: Colors.Danger }
     case Lure.MagicSponge:
-      return { name: 'Magic Sponge', color: Colors.Gold }
+      return { name: 'Magic Sponge', color: Colors.Sponge }
   }
 }
 

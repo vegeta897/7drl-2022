@@ -12,7 +12,7 @@ import { OverlaySprites, promisedFrame } from './pixi'
 import { showLevelGen } from './hud'
 import { createLandCreatures, createTurtle, createWaterCreature } from './creatures'
 
-export const ALL_VISIBLE = 1
+export const ALL_VISIBLE = 0
 const seed = 0
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
@@ -59,7 +59,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   }
   console.log('success after', attempts)
   Level.removeRedundantWalls()
-  createMapSprites(worldRNG)
+  createMapSprites()
   EntityMap = new GridMap()
   waterSpawns.forEach((tile) => createWaterCreature(tile, worldRNG))
   chestSpawns.forEach(createChest)

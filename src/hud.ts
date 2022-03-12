@@ -26,12 +26,20 @@ export enum Colors {
   GoodWater = '#5daf8d',
   DeepWater = '#102b3b',
   Gold = '#ffd541',
+  Sponge = '#f5c96c',
   Blood = '#d01e2a',
   DeepestBlood = '#25141c',
   Sky = '#6bb9e1',
 }
 
-const hudDefaults = { width: 34, height: 32, fontSize: 20, fg: Colors.Default, bg: Colors.DeepWater }
+const hudDefaults = {
+  width: 34,
+  height: 32,
+  fontSize: 20,
+  fontFamily: 'Consolas,monospace',
+  fg: Colors.Default,
+  bg: Colors.DeepWater,
+}
 const bigHudDefaults = { ...hudDefaults, width: 47, height: 16, fontSize: 40 }
 
 export function initHud() {

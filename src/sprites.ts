@@ -5,6 +5,7 @@ import { Tile, TileData } from './map'
 import { RNG } from 'rot-js'
 import { TILE_SIZE } from './index'
 import { ALL_VISIBLE, Level } from './level'
+import { get4Neighbors } from './vector2'
 
 export const SpritesByEID: Sprite[] = []
 
@@ -26,14 +27,22 @@ export function addSprite(eid: number, sprite: Sprite, container = EntitySprites
   else container.addChild(sprite)
 }
 
-export const getTileTexture = (tile: Tile, rng = RNG): string => {
-  switch (tile) {
+const getNeighborString = (tile: TileData, neighborTypes: Tile[]): string => {
+  return get4Neighbors(tile)
+    .filter((g) => neighborTypes.includes(Level.get(g).type))
+    .map((g) => g.d)
+    .sort((a, b) => 'NESW'.indexOf(a) - 'NESW'.indexOf(b))
+    .join('')
+}
+
+export const getTileTexture = (tile: TileData): string => {
+  switch (tile.type) {
     case Tile.Floor:
-      return rng.getItem(['floor1', 'floor2', 'floor3', 'floor4'])!
+      return RNG.getItem(['floor1', 'floor2', 'floor3', 'floor4'])!
     case Tile.Wall:
-      return 'wall'
+      return 'caveWall' + getNeighborString(tile, [Tile.Wall, Tile.Empty])
     case Tile.Water:
-      return 'water'
+      return 'water' + getNeighborString(tile, [Tile.Water, Tile.Shallows])
     case Tile.Shallows:
       return 'waterReeds'
     case Tile.Path:
@@ -44,15 +53,26 @@ export const getTileTexture = (tile: Tile, rng = RNG): string => {
   throw `No texture found for tile type ${tile}`
 }
 
-export function createMapSprites(rng: typeof RNG) {
+export const getTileSprite = (tile: TileData): Sprite => {
+  let baseTile = tile
+  if (tile.type === Tile.Shallows) baseTile = { ...tile, type: Tile.Water }
+  const sprite = new Sprite(getTexture(getTileTexture(baseTile)))
+  if (tile.type === Tile.Shallows) {
+    const reeds = new Sprite(getTexture(getTileTexture(tile)))
+    sprite.addChild(reeds)
+  }
+  return sprite
+}
+
+export function createMapSprites() {
   while (WorldSprites.children[0]) {
     WorldSprites.children[0].destroy({ children: true })
   }
-  Level.data.forEach((tile) => createTileSprite(tile, rng))
+  Level.data.forEach((tile) => createTileSprite(tile))
 }
 
-export function createTileSprite(tile: TileData, rng = RNG) {
-  tile.sprite = new Sprite(getTexture(getTileTexture(tile.type, rng)))
+export function createTileSprite(tile: TileData) {
+  tile.sprite = getTileSprite(tile)
   tile.sprite.x = tile.x * TILE_SIZE
   tile.sprite.y = tile.y * TILE_SIZE
   if (!ALL_VISIBLE) tile.sprite.alpha = 0

@@ -156,7 +156,8 @@ function moveEntity(eid: number, move: Vector2) {
     OnTileType.current[eid] = Level.get(targetGrid).type
   }
   removeComponent(World, MoveAction, eid, false)
-  if ((!VisibilityMap.has(myGrid) && !VisibilityMap.has(targetGrid)) || MoveAction.noclip[eid]) return
+  if ((eid !== PlayerEntity && !VisibilityMap.has(myGrid) && !VisibilityMap.has(targetGrid)) || MoveAction.noclip[eid])
+    return
   addComponent(World, AnimateMovement, eid)
   AnimateMovement.x[eid] = MoveAction.x[eid]
   AnimateMovement.y[eid] = MoveAction.y[eid]
