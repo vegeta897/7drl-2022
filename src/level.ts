@@ -14,8 +14,8 @@ import { createLandCreatures, createTurtle, createWaterCreature } from './creatu
 import { LootType } from './inventory'
 import { CurrentLevel, setGameState } from './index'
 
-export const ALL_VISIBLE = 0
-const seed = 0
+export const ALL_VISIBLE = 1
+const seed = 1647143379095
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())
@@ -155,6 +155,7 @@ function generateMap(): Vector2[] {
       if (Level.isOutOfBounds(tile)) return
       const neighbors4 = Level.get4Neighbors(tile)
       if (neighbors4.every((n) => n.type === Tile.Wall)) return
+      if (Level.get8Neighbors(tile).some((n) => n.type === Tile.Path)) return
       if (worldRNG.getUniform() > 0.9) Level.createTile(tile, Tile.Stalagmite)
     } else if (tile.type === Tile.Floor) {
       const neighbors8 = Level.get8Neighbors(tile)

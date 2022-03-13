@@ -24,6 +24,7 @@ import {
   CanAttack,
   AttackAction,
   NonPlayer,
+  Snail,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { wanderSystem, predatorSystem, seekWaterSystem, noActionSystem, slowSystem } from './enemy_systems'
@@ -45,9 +46,9 @@ export const World = createWorld(5000)
 
 const systemGroups = {
   input: inputSystem,
+  playerActions: pipe(playerActionSystem, attackSystem, wetnessSystem, gameSystem),
   enemyTurn: pipe(predatorSystem, wanderSystem, seekWaterSystem, noActionSystem, slowSystem),
   enemyActions: pipe(enemyActionSystem, attackSystem, waterCreatureSystem, gameSystem),
-  playerActions: pipe(playerActionSystem, attackSystem, wetnessSystem, gameSystem),
   render: pipe(spriteRemoveSystem, fovSystem, cameraSystem, fadeSystem),
 }
 
@@ -108,4 +109,5 @@ registerComponents(World, [
   Airborne,
   AttackAction,
   NonPlayer,
+  Snail,
 ])

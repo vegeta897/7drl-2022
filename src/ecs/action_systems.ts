@@ -22,6 +22,7 @@ import {
   Statuses,
   WaterCreature,
   Wetness,
+  Snail,
 } from './components'
 import {
   addComponent,
@@ -44,7 +45,7 @@ import { FOV_RADIUS, RecalcEntities, VisibilityMap } from '../fov'
 import { clamp } from 'rot-js/lib/util'
 import { PixiViewport } from '../pixi'
 import { AnimatedSprite, filters } from 'pixi.js'
-import { changeAnimation, Creature, CreatureProps } from '../creatures'
+import { changeAnimation, Creature } from '../creatures'
 import { World } from './index'
 import { getPlayerDamage, getLoot, Supplies } from '../inventory'
 import { AnimationType } from '../animation'
@@ -59,7 +60,7 @@ export const playerActionSystem: System = (world) => {
     const targetHasHealth = hasComponent(world, Health, targetEntity)
     if (targetHasHealth) {
       removeComponent(world, MoveAction, PlayerEntity)
-      if (OnTileType.current[PlayerEntity] === Tile.Water) {
+      if (Level.get(myGrid).type === Tile.Water) {
         logMessage(`You can't attack while swimming!`, Colors.Warning)
         return world
       }
@@ -70,6 +71,7 @@ export const playerActionSystem: System = (world) => {
     } else if (hasComponent(world, Bait, targetEntity)) {
       Supplies.bait++
       logMessage('You picked up the bait', Colors.Dim)
+      if (Bait.waterVolume[targetEntity!] > 0) Level.floodTile(targetGrid, Bait.waterVolume[targetEntity!])
       deleteEntGrid(targetEntity)
       removeEntity(world, targetEntity)
     } else if (hasComponent(world, Loot, targetEntity)) {
@@ -122,6 +124,7 @@ export const enemyActionSystem: System = (world) => {
             NoAction.status[eid] = Statuses.Eating
             NoAction.remaining[eid] = Predator.eatingTurns[eid]
           }
+          if (Bait.waterVolume[targetEntity!] > 0) Level.floodTile(targetGrid, Bait.waterVolume[targetEntity!])
           cutLine()
           deleteEntGrid(targetEntity)
           removeEntity(world, targetEntity)
@@ -157,11 +160,8 @@ function moveEntity(eid: number, move: Vector2) {
   const targetGrid = addVector2(myGrid, move)
   changeEntGrid(eid, targetGrid)
   let swimming = false
-  if (hasComponent(World, OnTileType, eid)) {
-    OnTileType.previous[eid] = OnTileType.current[eid]
-    OnTileType.current[eid] = Level.get(targetGrid).type
-    if (isWet(OnTileType.previous[eid]) && isWet(OnTileType.current[eid])) swimming = true
-  }
+  if (isWet(Level.get(myGrid).type) && isWet(Level.get(targetGrid).type)) swimming = true
+
   removeComponent(World, MoveAction, eid, false)
   if ((eid !== PlayerEntity && !VisibilityMap.has(myGrid) && !VisibilityMap.has(targetGrid)) || MoveAction.noclip[eid])
     return
@@ -221,8 +221,11 @@ export const attackSystem: System = (world) => {
 const onTileTypeQuery = defineQuery([OnTileType, Not(WaterCreature)])
 export const wetnessSystem: System = (world) => {
   for (const eid of onTileTypeQuery(world)) {
+    const currentTile = Level.get(getEntGrid(eid)).type
+    OnTileType.previous[eid] = OnTileType.current[eid]
+    OnTileType.current[eid] = currentTile
     const prevWet = isWet(OnTileType.previous[eid])
-    const nowWet = isWet(OnTileType.current[eid])
+    const nowWet = isWet(currentTile)
     if (!nowWet) {
       if (hasComponent(world, Wetness, eid)) {
         Wetness.factor[eid] -= 0.1
@@ -239,6 +242,11 @@ export const wetnessSystem: System = (world) => {
       }
       addComponent(world, Wetness, eid)
       Wetness.factor[eid] = 1
+      if (hasComponent(world, Snail, eid) && Level.get(getEntGrid(eid)).type === Tile.Water) {
+        logMessage('The giant snail has drowned!', Colors.GoodWater)
+        deleteEntGrid(eid)
+        removeEntity(world, eid)
+      }
     }
   }
   return world
@@ -247,15 +255,19 @@ export const wetnessSystem: System = (world) => {
 const waterCreatures = defineQuery([WaterCreature, OnTileType])
 export const waterCreatureSystem: System = (world) => {
   for (const eid of waterCreatures(world)) {
-    const onWater = isWet(OnTileType.current[eid])
+    const currentTile = Level.get(getEntGrid(eid)).type
+    OnTileType.previous[eid] = OnTileType.current[eid]
+    OnTileType.current[eid] = currentTile
+    const prevWet = isWet(OnTileType.previous[eid])
+    const nowWet = isWet(currentTile)
     const currentSpotting = Spotting.current[eid]
     let spotChange
     const fovDistance = CalculateFOV.distance[eid]
     if (fovDistance >= 0) {
       spotChange = (1 - fovDistance / FOV_RADIUS) * Spotting.increaseBy[eid]
-      if (!onWater) spotChange = 1
+      if (!nowWet) spotChange = 1
     } else {
-      spotChange = onWater ? -0.25 : 0
+      spotChange = nowWet ? -0.25 : 0
     }
     const newSpotting = clamp(currentSpotting + spotChange, 0, 2)
     if (newSpotting !== currentSpotting) {
@@ -265,8 +277,8 @@ export const waterCreatureSystem: System = (world) => {
       Spotting.current[eid] = newSpotting
       RecalcEntities.add(eid)
     }
-    if (isWet(OnTileType.previous[eid]) === onWater) continue
-    if (onWater && !isWet(OnTileType.previous[eid])) {
+    if (prevWet === nowWet) continue
+    if (nowWet && !prevWet) {
       if (!hasComponent(world, Animate, eid))
         changeAnimation(<AnimatedSprite>SpritesByEID[eid], WaterCreature.type[eid], true)
     } else {
@@ -278,7 +290,7 @@ export const waterCreatureSystem: System = (world) => {
 
 const desaturated = new filters.ColorMatrixFilter()
 desaturated.desaturate()
-desaturated.alpha = 0.5
+desaturated.alpha = 0.3
 
 export const gameSystem: System = (world) => {
   if (GameState !== 'Losing' && !entityExists(world, PlayerEntity)) {

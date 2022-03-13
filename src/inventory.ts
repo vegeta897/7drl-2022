@@ -63,8 +63,8 @@ export function getLoot(eid: number) {
     const lure = RNG.getItem([Lure.WreckingBall, Lure.MagicSponge].filter((l) => !Inventory.has(l)))!
     Inventory.add(lure)
     const { color, name } = getLureInfo(lure)
-    let info = Inventory.size === 1 ? ' Use the number keys to activate lures' : ''
-    info = Inventory.size === 2 ? ' Tip: Multiple lures can be activated at once!' : info
+    let info = Inventory.size === 1 ? ' Use the number keys to attach lures' : ''
+    info = Inventory.size === 2 ? ' Tip: Multiple lures can be attached at once!' : info
     logMessage(`You got the %c{${color}}${name} lure!%c{${Colors.White}}${info}`, Colors.White)
   }
   deleteEntGrid(eid)

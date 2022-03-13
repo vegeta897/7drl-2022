@@ -48,9 +48,10 @@ export const CanAttack = defineComponent({ damage: Types.ui8 })
 export const OnTileType = defineComponent({ current: Types.ui8, previous: Types.ui8 })
 
 export const WaterCreature = defineComponent({ type: Types.ui8 }, 200)
-export const Bait = defineComponent()
+export const Bait = defineComponent({ waterVolume: Types.ui16 }, 300)
 export const Loot = defineComponent({ type: Types.ui8 })
 export const Exit = defineComponent({}, 10)
+export const Snail = defineComponent()
 
 export const Scent = defineComponent({ range: Types.ui8 })
 export const Wetness = defineComponent({ factor: Types.f32 })

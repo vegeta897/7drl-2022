@@ -2,7 +2,7 @@ import { PlayerEntity, PlayerSprite, TILE_SIZE } from './'
 import { addVector2, Down, getDistance, GridZero, Left, Right, Up, Vector2, vectorsAreParallel } from './vector2'
 import { World } from './ecs'
 import { Graphics, Sprite } from 'pixi.js'
-import { addSprite, getTexture } from './sprites'
+import { addSprite, getTexture, SpritesByEID } from './sprites'
 import { WorldSprites } from './pixi'
 import {
   Bait,
@@ -23,7 +23,7 @@ import { EntityMap, Level } from './level'
 import { Colors, logMessage } from './hud'
 import { ActiveLures, Lure, Supplies } from './inventory'
 import { triggerTileUpdate } from './fov'
-import { isWet } from './map'
+import { isWet, Tile } from './map'
 
 export const CastVector = { x: 0, y: 0 }
 let castTargetSprite: Sprite
@@ -77,15 +77,16 @@ export function confirmCast() {
   setPlayerState('Idle')
   castTargetSprite.visible = false
   if (getDistance(CastVector) === 0) return
-  if (isWet(Level.get(castGrid).type) && ActiveLures.has(Lure.MagicSponge)) {
-    // Soak it up!
-    Level.dryTile(castGrid)
-    triggerTileUpdate()
-  }
   Supplies.bait--
   PlayerSprite.texture = getTexture(isWet(OnTileType.current[PlayerEntity]) ? 'playerCastSwim' : 'playerCast')
   BaitEntity = addEntity(World)
-  addSprite(BaitEntity, new Sprite(getTexture('bait')), WorldSprites)
+  if (isWet(Level.get(castGrid).type) && ActiveLures.has(Lure.MagicSponge)) {
+    // Soak it up!
+    Level.dryTile(castGrid)
+    Bait.waterVolume[BaitEntity] = 1
+    triggerTileUpdate()
+  }
+  addSprite(BaitEntity, new Sprite(getTexture(isWet(Level.get(castGrid).type) ? 'baitWater' : 'bait')), WorldSprites)
   addComponent(World, NonPlayer, BaitEntity)
   addComponent(World, Bait, BaitEntity)
   addComponent(World, DisplayObject, BaitEntity)
@@ -122,6 +123,8 @@ export function angleBait(move: Vector2) {
       const moddedAbsolute = addVector2(playerGrid, moddedCastTo)
       if (moddedDistance > maxAngleDistance) continue
       if (moddedDistance === 0) {
+        if (Bait.waterVolume[BaitEntity!] > 0) Level.floodTile(playerGrid, Bait.waterVolume[BaitEntity!])
+
         deleteEntGrid(BaitEntity!)
         removeEntity(World, BaitEntity!)
         BaitEntity = null
@@ -141,6 +144,7 @@ export function angleBait(move: Vector2) {
         if (isWet(Level.get(moddedAbsolute).type) && ActiveLures.has(Lure.MagicSponge)) {
           // Soak it up!
           Level.dryTile(moddedAbsolute)
+          Bait.waterVolume[BaitEntity!]++
           triggerTileUpdate()
         }
         CastVector.x = moddedCastTo.x
@@ -150,6 +154,9 @@ export function angleBait(move: Vector2) {
         changeEntGrid(BaitEntity!, moveTo)
         OnTileType.previous[BaitEntity!] = OnTileType.current[BaitEntity!]
         OnTileType.current[BaitEntity!] = Level.get(moveTo).type
+        if (OnTileType.previous[BaitEntity!] !== OnTileType.current[BaitEntity!]) {
+          SpritesByEID[BaitEntity!].texture = getTexture(isWet(OnTileType.current[BaitEntity!]) ? 'baitWater' : 'bait')
+        }
       }
       processInput()
       break

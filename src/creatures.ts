@@ -14,6 +14,7 @@ import {
   NonPlayer,
   OnTileType,
   Predator,
+  Snail,
   Spotting,
   Wander,
   WaterCreature,
@@ -81,7 +82,7 @@ CreatureProps[Creature.GiantSnail] = {
   wanderChance: 300,
   canWalk: true,
   walkSlowness: 2,
-  senseRange: 2,
+  senseRange: 4,
   damage: 1,
   health: 12,
 }
@@ -156,6 +157,7 @@ function createCreature(grid: Vector2, creatureType: Creature, spawnInWater = fa
     Spotting.current[creature] = 0
     Spotting.increaseBy[creature] = creatureProps.spotting
   }
+  if (creatureType === Creature.GiantSnail) addComponent(World, Snail, creature)
 }
 
 export function changeAnimation(sprite: AnimatedSprite | null, creatureType: Creature, swim = false): AnimatedSprite {

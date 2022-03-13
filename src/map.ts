@@ -1,7 +1,8 @@
-import { get4Neighbors, get8Neighbors, getDiamondAround, getDistance, NESWDirection, Vector2 } from './vector2'
+import { get4Neighbors, get8Neighbors, getDiamondAround, getDistance, Vector2 } from './vector2'
 import { Sprite } from 'pixi.js'
 import { Level } from './level'
-import { createTileSprite, getTexture, getTileSprite, getTileTexture } from './sprites'
+import { createTileSprite, getTexture, getTileTexture } from './sprites'
+import { RNG } from 'rot-js'
 
 export class GridMap<T> {
   data: Map<string, T> = new Map()
@@ -144,12 +145,52 @@ export class TileMap extends GridMap<TileData> {
     const tile = this.get(grid)
     tile.type = Tile.Floor
     tile.sprite!.texture = getTexture(getTileTexture(tile))
-    tile.solid = false
-    tile.seeThrough = true
     for (const neighbor of get4Neighbors(grid)) {
       const neighborTile = this.get(neighbor)
       if (neighborTile.type === Tile.Shallows || neighborTile.type === Tile.Water)
         neighborTile.sprite!.texture = getTexture(getTileTexture({ ...neighborTile, type: Tile.Water }))
+    }
+  }
+  floodTile(grid: Vector2, volume: number) {
+    // This is one of the coolest things I've put in a game
+    const checkedTiles: Set<TileData> = new Set()
+    const floodedTiles: Set<TileData> = new Set()
+    const unfloodedTiles: TileData[] = [this.get(grid)]
+    do {
+      if (checkedTiles.size > 80) break // Let's not get crazy
+      const toFlood = unfloodedTiles.shift()!
+      checkedTiles.add(toFlood)
+      if (toFlood.type !== Tile.Water && toFlood.type !== Tile.Shallows) {
+        toFlood.type = Tile.Water
+        floodedTiles.add(toFlood)
+        volume--
+        if (volume === 0) break
+      }
+      RNG.shuffle(this.get4Neighbors(toFlood)).forEach((neighbor) => {
+        if (
+          !checkedTiles.has(neighbor) &&
+          !floodedTiles.has(neighbor) &&
+          (neighbor.type === Tile.Water ||
+            neighbor.type === Tile.Shallows ||
+            neighbor.type === Tile.Floor ||
+            neighbor.type === Tile.Path ||
+            neighbor.type === Tile.Rubble)
+        )
+          unfloodedTiles.push(neighbor)
+      })
+    } while (unfloodedTiles.length > 0)
+    for (const flooded of floodedTiles) {
+      const distance = getDistance(flooded, grid)
+      setTimeout(() => {
+        flooded.sprite!.texture = getTexture(getTileTexture(flooded))
+        for (const neighbor of get4Neighbors(flooded)) {
+          const neighborTile = this.get(neighbor)
+          if (floodedTiles.has(neighborTile)) continue
+          if (neighborTile.type === Tile.Shallows || neighborTile.type === Tile.Water) {
+            neighborTile.sprite!.texture = getTexture(getTileTexture({ ...neighborTile, type: Tile.Water }))
+          }
+        }
+      }, 150 * (distance + 1)) // So hacky!
     }
   }
 }
@@ -173,5 +214,6 @@ export function isWet(tile: Tile): boolean {
 export function isWalkable(tile: Tile): boolean {
   if (tile === Tile.Floor) return true
   if (tile === Tile.Path) return true
+  if (tile === Tile.Rubble) return true
   return tile === Tile.Shallows
 }
