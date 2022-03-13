@@ -39,7 +39,7 @@ import { EntityMap, Level } from '../level'
 import { CurrentLevel, GameState, LastLevel, nextLevel, PlayerEntity, PlayerSprite, setGameState } from '../'
 import { Colors, logAttack, logBaitEat, logKill, logMessage, logPetting, updateHud } from '../hud'
 import { addVector2, diffVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
-import { BaitEntity, cutLine } from '../casting'
+import { BaitEntity, cutLine, spawnBait } from '../casting'
 import { isWalkable, isWet, Tile } from '../map'
 import { getTexture, SpritesByEID } from '../sprites'
 import { FOV_RADIUS, RecalcEntities, VisibilityMap } from '../fov'
@@ -50,6 +50,7 @@ import { changeAnimation, Creature } from '../creatures'
 import { World } from './index'
 import { getPlayerDamage, getLoot, Supplies } from '../inventory'
 import { AnimationType } from '../animation'
+import { RNG } from 'rot-js'
 
 export const playerActionSystem: System = (world) => {
   if (!hasComponent(world, MoveAction, PlayerEntity)) return world
@@ -193,10 +194,10 @@ export const attackSystem: System = (world) => {
     let damage = CanAttack.damage[eid]
     if (eid === PlayerEntity) damage = getPlayerDamage()
     let stunnedByAttack = false
+    const wasEating = NoAction.status[target] === Statuses.Eating
     if (hasComponent(world, NoAction, target)) {
-      const status = NoAction.status[target]
       damage += 3
-      if (status === Statuses.Eating) {
+      if (wasEating) {
         stunnedByAttack = true
         NoAction.status[target] = Statuses.Stunned
         NoAction.remaining[target] = 1
@@ -206,8 +207,13 @@ export const attackSystem: System = (world) => {
     if (healthLeft <= 0) {
       logAttack(eid, target, damage)
       logKill(target)
+      const targetGrid = getEntGrid(target)
       deleteEntGrid(target)
       removeEntity(world, target)
+      if (wasEating && RNG.getUniform() > 0.5) {
+        logMessage('The bait can be used again!', Colors.GoodWater)
+        spawnBait(targetGrid)
+      }
     } else {
       logAttack(eid, target, damage, stunnedByAttack ? `, %c{${Colors.Warning}}stunning it` : '')
     }

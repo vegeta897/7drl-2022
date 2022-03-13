@@ -79,26 +79,31 @@ export function confirmCast() {
   if (getDistance(CastVector) === 0) return
   Supplies.bait--
   PlayerSprite.texture = getTexture(isWet(OnTileType.current[PlayerEntity]) ? 'playerCastSwim' : 'playerCast')
-  BaitEntity = addEntity(World)
+  BaitEntity = spawnBait(castGrid)
   if (isWet(Level.get(castGrid).type) && ActiveLures.has(Lure.MagicSponge)) {
     // Soak it up!
     Level.dryTile(castGrid)
     Bait.waterVolume[BaitEntity] = 1
     triggerTileUpdate()
   }
-  addSprite(BaitEntity, new Sprite(getTexture('bait')), WorldSprites)
-  addComponent(World, NonPlayer, BaitEntity)
-  addComponent(World, Bait, BaitEntity)
-  addComponent(World, DisplayObject, BaitEntity)
-  addComponent(World, Scent, BaitEntity)
-  Scent.range[BaitEntity] = 5
-  addComponent(World, GridPosition, BaitEntity)
-  setEntGrid(BaitEntity, castGrid)
-  addComponent(World, OnTileType, BaitEntity)
-  addComponent(World, CalculateFOV, BaitEntity)
   processInput()
   setPlayerState('Angling')
   drawFishingLine()
+}
+
+export function spawnBait(grid: Vector2): number {
+  const bait = addEntity(World)
+  addSprite(bait, new Sprite(getTexture('bait')), WorldSprites)
+  addComponent(World, NonPlayer, bait)
+  addComponent(World, Bait, bait)
+  addComponent(World, DisplayObject, bait)
+  addComponent(World, Scent, bait)
+  Scent.range[bait] = 5
+  addComponent(World, GridPosition, bait)
+  setEntGrid(bait, grid)
+  addComponent(World, OnTileType, bait)
+  addComponent(World, CalculateFOV, bait)
+  return bait
 }
 
 export function cancelCast() {
