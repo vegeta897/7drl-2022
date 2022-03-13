@@ -66,7 +66,6 @@ export function updateVisibility() {
     ])
   })
   if (secondSightActive) {
-    console.log('computing fov with 2nd sight')
     fov.compute(baitGrid!.x, baitGrid!.y, FOV_RADIUS, (x, y, radius, directness) => {
       const prevVisibility = VisibilityMap.get({ x, y })
       newVisibilityMap.set({ x, y }, [
@@ -96,7 +95,6 @@ export function updateVisibility() {
   })
   VisibilityMap = newVisibilityMap
   fovEntities = fovEntities || defineQuery([CalculateFOV])
-  console.log('recalculating ents')
   for (const eid of fovEntities(World)) {
     RecalcEntities.add(eid)
   }

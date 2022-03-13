@@ -17,8 +17,9 @@ export enum Lure {
   WreckingBall = 1,
   MagicSponge,
   SecondSight,
+  Telecasting,
 }
-const lures = [Lure.WreckingBall, Lure.MagicSponge, Lure.SecondSight]
+const lures = [Lure.WreckingBall, Lure.MagicSponge, Lure.SecondSight, Lure.Telecasting]
 
 export function getLureInfo(lure: Lure): { name: string; color: Colors } {
   switch (lure) {
@@ -28,6 +29,8 @@ export function getLureInfo(lure: Lure): { name: string; color: Colors } {
       return { name: 'Magic Sponge', color: Colors.Sponge }
     case Lure.SecondSight:
       return { name: 'Second Sight', color: Colors.Mystical }
+    case Lure.Telecasting:
+      return { name: 'Telecasting', color: Colors.Spooky }
   }
 }
 

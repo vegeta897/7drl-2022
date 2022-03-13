@@ -2,7 +2,7 @@ import { PlayerEntity, PlayerSprite, TILE_SIZE } from './'
 import { addVector2, Down, getDistance, GridZero, Left, Right, Up, Vector2, vectorsAreParallel } from './vector2'
 import { World } from './ecs'
 import { Graphics, Sprite } from 'pixi.js'
-import { addSprite, getTexture, SpritesByEID } from './sprites'
+import { addSprite, getTexture } from './sprites'
 import { WorldSprites } from './pixi'
 import {
   Bait,
@@ -12,6 +12,7 @@ import {
   DisplayObject,
   getEntGrid,
   GridPosition,
+  MoveAction,
   NonPlayer,
   OnTileType,
   Scent,
@@ -23,7 +24,7 @@ import { EntityMap, Level } from './level'
 import { Colors, logMessage } from './hud'
 import { ActiveLures, Lure, Supplies } from './inventory'
 import { activateSecondSight, deactivateSecondSight, triggerTileUpdate } from './fov'
-import { isWet, Tile } from './map'
+import { isWet } from './map'
 
 export const CastVector = { x: 0, y: 0 }
 let castTargetSprite: Sprite
@@ -70,26 +71,44 @@ export function moveCastTarget(move: Vector2) {
 
 export function confirmCast() {
   const castGrid = addVector2(getEntGrid(PlayerEntity), CastVector)
+  const distance = getDistance(CastVector)
+  if (distance === 0) {
+    setPlayerState('Idle')
+    castTargetSprite.visible = false
+    return
+  }
   if (EntityMap.has(castGrid)) {
     logMessage("You can't cast there")
     return
   }
+  let baitNeeded = 1
+  if (ActiveLures.has(Lure.Telecasting)) {
+    baitNeeded = distance
+    if (baitNeeded > Supplies.bait) {
+      logMessage(`You need ${baitNeeded} bait to telecast there`, Colors.Spooky)
+      return
+    }
+    addComponent(World, MoveAction, PlayerEntity)
+    MoveAction.x[PlayerEntity] = CastVector.x
+    MoveAction.y[PlayerEntity] = CastVector.y
+    MoveAction.noclip[PlayerEntity] = 1
+  } else {
+    PlayerSprite.texture = getTexture(isWet(OnTileType.current[PlayerEntity]) ? 'playerCastSwim' : 'playerCast')
+    BaitEntity = spawnBait(castGrid)
+    if (isWet(Level.get(castGrid).type) && ActiveLures.has(Lure.MagicSponge)) {
+      // Soak it up!
+      Level.dryTile(castGrid)
+      Bait.waterVolume[BaitEntity] = 1
+      triggerTileUpdate()
+    }
+    if (ActiveLures.has(Lure.SecondSight)) activateSecondSight()
+    setPlayerState('Angling')
+    drawFishingLine()
+  }
+  Supplies.bait -= baitNeeded
   setPlayerState('Idle')
   castTargetSprite.visible = false
-  if (getDistance(CastVector) === 0) return
-  Supplies.bait--
-  PlayerSprite.texture = getTexture(isWet(OnTileType.current[PlayerEntity]) ? 'playerCastSwim' : 'playerCast')
-  BaitEntity = spawnBait(castGrid)
-  if (isWet(Level.get(castGrid).type) && ActiveLures.has(Lure.MagicSponge)) {
-    // Soak it up!
-    Level.dryTile(castGrid)
-    Bait.waterVolume[BaitEntity] = 1
-    triggerTileUpdate()
-  }
-  if (ActiveLures.has(Lure.SecondSight)) activateSecondSight()
   processInput()
-  setPlayerState('Angling')
-  drawFishingLine()
 }
 
 export function spawnBait(grid: Vector2): number {

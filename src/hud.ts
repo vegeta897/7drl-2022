@@ -6,8 +6,10 @@ import { hasComponent } from 'bitecs'
 import { World } from './ecs'
 import { promisedFrame } from './pixi'
 import { Creature, CreatureProps } from './creatures'
-import { ActiveLures, getLureInfo, Inventory, Supplies } from './inventory'
+import { ActiveLures, getLureInfo, Inventory, Lure, Supplies } from './inventory'
 import { sleep } from './util'
+import { getDistance } from './vector2'
+import { CastVector } from './casting'
 
 let HUD: Display
 let log: string[]
@@ -26,6 +28,7 @@ export enum Colors {
   StrongWater = '#328e98',
   GoodWater = '#5daf8d',
   Mystical = '#2ddce3',
+  Spooky = '#9085e8',
   DeepCave = '#221E3A',
   Gold = '#ffd541',
   Sponge = '#f5c96c',
@@ -207,6 +210,7 @@ export async function drawHud() {
       .padStart(4)}`
   )
   let nextY = 4
+  const tele = ActiveLures.has(Lure.Telecasting)
   if (PlayerState === 'Idle') {
     for (const lure of Inventory) {
       const active = ActiveLures.has(lure)
@@ -214,7 +218,7 @@ export async function drawHud() {
       const { color, name } = getLureInfo(lure)
       HUD.drawText(3, nextY++, `[${number}] %c{${active ? color : Colors.Dim}}${name} lure`)
     }
-    HUD.drawText(3, nextY++, '[C] Cast')
+    HUD.drawText(3, nextY++, `[C] ${tele ? 'Telec' : 'C'}ast`)
     HUD.drawText(
       3,
       nextY++,
@@ -222,7 +226,14 @@ export async function drawHud() {
     )
   }
   if (PlayerState === 'Casting') {
-    nextY += HUD.drawText(3, nextY, 'CASTING ⟆\n\n[C] Confirm cast\n[Esc] Cancel')
+    const baitNeeded = (tele && getDistance(CastVector)) || 0
+    nextY += HUD.drawText(
+      3,
+      nextY,
+      `${tele ? 'TELE' : ''}CASTING ⟆\n\n[C] Confirm ${tele ? 'tele' : ''}cast${
+        baitNeeded ? ` (-${baitNeeded} bait)` : ''
+      }\n[Esc] Cancel`
+    )
   }
   if (PlayerState === 'Angling') {
     nextY += HUD.drawText(3, nextY, 'ANGLING ⟆\n\n[C] Cut line')
