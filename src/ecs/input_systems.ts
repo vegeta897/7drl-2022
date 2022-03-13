@@ -7,7 +7,7 @@ import { drawHud, updateHud } from '../hud'
 import { angleBait, beginCast, cancelCast, confirmCast, cutLine, moveCastTarget } from '../casting'
 import { eatBait, toggleLure } from '../inventory'
 
-const DEBUG_MOVEMENT = false
+const DEBUG_MOVEMENT = 0
 
 export const waitForInput = () => {
   WaitingForInput = true

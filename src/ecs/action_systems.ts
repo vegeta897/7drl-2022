@@ -121,7 +121,7 @@ export const enemyActionSystem: System = (world) => {
       targetGrid = addVector2(currentGrid, unitMove)
       const targetEntity = EntityMap.get(targetGrid)
       if (targetEntity !== undefined) {
-        if (targetEntity === PlayerEntity) {
+        if (targetEntity === PlayerEntity && hasComponent(world, CanAttack, eid)) {
           addComponent(world, AttackAction, eid)
           AttackAction.target[eid] = targetEntity
           AttackAction.x[eid] = move.x
