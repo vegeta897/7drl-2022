@@ -37,7 +37,7 @@ export const CanSwim = defineComponent({ slowness: Types.ui8, slowTurns: Types.u
 export const Airborne = defineComponent()
 export const Wander = defineComponent({ chance: Types.ui16, maxChance: Types.ui16 }, 200)
 export const Predator = defineComponent(
-  { lungeRange: Types.ui8, senseRange: Types.ui8, eatingTurns: Types.ui8, tracking: Types.ui8 },
+  { lungeRange: Types.ui8, senseRange: Types.ui8, eatingTurns: Types.ui8, tracking: Types.f32 },
   100
 )
 export const NoAction = defineComponent({ status: Types.ui8, remaining: Types.ui8 }, 20)

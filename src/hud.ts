@@ -82,6 +82,7 @@ export function logAttack(attacker: number, victim: number, damage: number, extr
   let color = Colors.Default
   if (victim === PlayerEntity) color = Colors.Bad
   if (attacker === PlayerEntity) addScore(damage)
+  if (attacker === PlayerEntity) console.log(victim)
   logMessage(
     `${getEntityName(attacker, true)} ${getEntityAttack(attacker)} ${getEntityName(
       victim

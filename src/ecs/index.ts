@@ -48,7 +48,7 @@ export const World = createWorld(5000)
 const systemGroups = {
   input: inputSystem,
   playerActions: pipe(playerActionSystem, attackSystem, wetnessSystem, gameSystem),
-  enemyTurn: pipe(predatorSystem, wanderSystem, seekWaterSystem, noActionSystem, slowSystem),
+  enemyTurn: pipe(predatorSystem, seekWaterSystem, wanderSystem, noActionSystem, slowSystem),
   enemyActions: pipe(enemyActionSystem, attackSystem, waterCreatureSystem, gameSystem),
   render: pipe(spriteRemoveSystem, fovSystem, cameraSystem, fadeSystem),
 }

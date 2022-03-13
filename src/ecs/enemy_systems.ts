@@ -37,10 +37,8 @@ const predators = defineQuery([GridPosition, Predator, Not(NoAction)])
 const scents = defineQuery([Scent])
 export const predatorSystem: System = (world) => {
   for (const eid of predators(world)) {
-    Predator.tracking[eid] = 0
+    Predator.tracking[eid] = Math.max(0, Predator.tracking[eid] - 0.25)
     const myGrid = getEntGrid(eid)
-    const canWalk = hasComponent(world, CanWalk, eid) && CanWalk.slowTurns[eid] === 0
-    const canSwim = hasComponent(world, CanSwim, eid) && CanSwim.slowTurns[eid] === 0
     if (!isWet(Level.get(myGrid).type) && !hasComponent(world, CanWalk, eid) && hasComponent(world, Wander, eid)) {
       Wander.chance[eid] = 100 // Floundering
       addComponent(world, Airborne, eid)
@@ -50,13 +48,15 @@ export const predatorSystem: System = (world) => {
       if (Predator.eatingTurns[eid] === 0 && scentEnt !== PlayerEntity) continue
       const scentGrid = getEntGrid(scentEnt)
       const distance = getDistance(myGrid, scentGrid)
-      // TODO: Lunge with pathfinding instead of just straight lines?
-      // And their aim might not be perfect?
       if (
         distance <= Predator.lungeRange[eid] &&
         vectorsAreInline(myGrid, scentGrid) &&
         !getStraightLine(myGrid, scentGrid, false).some((t) => Level.get(t).solid || EntityMap.get(t))
       ) {
+        Predator.tracking[eid] = 2
+        const tileType = Level.get(scentGrid).type
+        if (CanWalk.slowTurns[eid] > 0 && isWalkable(tileType)) break
+        if (CanSwim.slowTurns[eid] > 0 && isWet(tileType)) break
         const move = diffVector2(myGrid, scentGrid)
         addComponent(world, MoveAction, eid)
         MoveAction.x[eid] = move.x
@@ -88,6 +88,7 @@ export const predatorSystem: System = (world) => {
             !EntityMap.get(g)
         )[0]
         if (!towardScent) continue
+        Predator.tracking[eid] = 1
         const tileType = Level.get(towardScent).type
         if (CanWalk.slowTurns[eid] > 0 && isWalkable(tileType)) break
         if (CanSwim.slowTurns[eid] > 0 && isWet(tileType)) break
@@ -100,9 +101,34 @@ export const predatorSystem: System = (world) => {
           MoveAction.x[eid] = move.x
           MoveAction.y[eid] = move.y
           MoveAction.noclip[eid] = 0
-          Predator.tracking[eid] = 1
+          Predator.tracking[eid] = 2
           break
         }
+      }
+    }
+  }
+  return world
+}
+
+const waterSeekers = defineQuery([SeekWater, Not(NoAction), Not(MoveAction)])
+export const seekWaterSystem: System = (world) => {
+  for (const eid of waterSeekers(world)) {
+    if (Predator.tracking[eid] > 0) continue
+    const myGrid = getEntGrid(eid)
+    if (isWet(Level.get(myGrid).type)) continue
+    const nearestWaterTiles = sortByDistance(
+      myGrid,
+      getDiamondAround(myGrid, SeekWater.distance[eid]).filter((g) => isWet(Level.get(g).type))
+    )
+    for (const tile of nearestWaterTiles) {
+      const towardWater = findPath(myGrid, tile, eid, (g) => !Level.get(g).solid && !EntityMap.get(g))[0]
+      if (towardWater) {
+        const move = diffVector2(myGrid, towardWater)
+        addComponent(world, MoveAction, eid)
+        MoveAction.x[eid] = move.x
+        MoveAction.y[eid] = move.y
+        MoveAction.noclip[eid] = 0
+        break
       }
     }
   }
@@ -112,7 +138,7 @@ export const predatorSystem: System = (world) => {
 const wanderers = defineQuery([Wander, GridPosition, Not(NoAction), Not(MoveAction)])
 export const wanderSystem: System = (world) => {
   for (const eid of wanderers(world)) {
-    if (Predator.tracking[eid] > 0) continue
+    if (Predator.tracking[eid] > 1) continue
     if (RNG.getUniform() > Wander.chance[eid] / Wander.maxChance[eid]) {
       Wander.chance[eid]++
       continue
@@ -133,29 +159,6 @@ export const wanderSystem: System = (world) => {
     MoveAction.x[eid] = dir.x
     MoveAction.y[eid] = dir.y
     MoveAction.noclip[eid] = 0
-  }
-  return world
-}
-
-const waterSeekers = defineQuery([SeekWater, Not(NoAction)])
-export const seekWaterSystem: System = (world) => {
-  for (const eid of waterSeekers(world)) {
-    const myGrid = getEntGrid(eid)
-    const nearestTiles = sortByDistance(
-      myGrid,
-      getDiamondAround(myGrid, SeekWater.distance[eid]).filter((g) => isWet(Level.get(g).type))
-    )
-    for (const tile of nearestTiles) {
-      const towardWater = findPath(myGrid, tile, eid)[0]
-      if (towardWater) {
-        const move = diffVector2(myGrid, towardWater)
-        addComponent(world, MoveAction, eid)
-        MoveAction.x[eid] = move.x
-        MoveAction.y[eid] = move.y
-        MoveAction.noclip[eid] = 0
-        break
-      }
-    }
   }
   return world
 }

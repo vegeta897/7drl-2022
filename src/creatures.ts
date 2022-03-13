@@ -14,6 +14,7 @@ import {
   NonPlayer,
   OnTileType,
   Predator,
+  SeekWater,
   Snail,
   Spotting,
   Wander,
@@ -48,6 +49,7 @@ export const CreatureProps: {
   health?: number
   spotting?: number
   killPoints: number
+  seekWater?: number
 }[] = []
 CreatureProps[Creature.Fish] = {
   texture: 'fish',
@@ -77,6 +79,7 @@ CreatureProps[Creature.Crayfish] = {
   health: 5,
   spotting: 0.2,
   killPoints: 30,
+  seekWater: 8,
 }
 CreatureProps[Creature.Alligator] = {
   texture: 'alligator',
@@ -91,6 +94,7 @@ CreatureProps[Creature.Alligator] = {
   health: 6,
   spotting: 0.5,
   killPoints: 40,
+  seekWater: 8,
 }
 CreatureProps[Creature.Turtle] = {
   texture: 'turtle',
@@ -193,6 +197,10 @@ function createCreature(grid: Vector2, creatureType: Creature, spawnInWater = fa
     Spotting.increaseBy[creature] = creatureProps.spotting
   }
   if (creatureType === Creature.GiantSnail) addComponent(World, Snail, creature)
+  if (creatureProps.seekWater) {
+    addComponent(World, SeekWater, creature)
+    SeekWater.distance[creature] = creatureProps.seekWater
+  }
 }
 
 export function changeAnimation(sprite: AnimatedSprite | null, creatureType: Creature, swim = false): AnimatedSprite {
