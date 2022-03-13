@@ -1,7 +1,8 @@
 body {
   display: flex;
   align-items: flex-start;
+  width: 1014px;
   overflow: hidden;
-  margin: 0;
-  background-color: #131123;
+  margin: 0 auto;
+  background-color: #221e3a;
 }

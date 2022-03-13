@@ -44,7 +44,7 @@ import { isWalkable, isWet, Tile } from '../map'
 import { getTexture, SpritesByEID } from '../sprites'
 import { FOV_RADIUS, RecalcEntities, RevealedTiles, VisibilityMap } from '../fov'
 import { clamp } from 'rot-js/lib/util'
-import { PixiViewport } from '../pixi'
+import { PixiApp, PixiViewport } from '../pixi'
 import { AnimatedSprite, filters } from 'pixi.js'
 import { changeAnimation, Creature } from '../creatures'
 import { World } from './'
@@ -320,7 +320,7 @@ desaturated.alpha = 0.3
 
 export const gameSystem: System = (world) => {
   if (GameState !== 'Losing' && !entityExists(world, PlayerEntity)) {
-    PixiViewport.filters = [desaturated]
+    PixiApp.stage.filters = [desaturated]
     addScore(Math.floor(RevealedTiles.size / 10))
     setGameState('Losing')
   } else if (GameState === 'EndLevel') {
