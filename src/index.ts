@@ -69,6 +69,7 @@ async function startGame() {
   addComponent(World, CanSwim, PlayerEntity)
   addComponent(World, CanAttack, PlayerEntity)
   CanAttack.damage[PlayerEntity] = 1
+  CanAttack.maxAdditional[PlayerEntity] = 1
   addComponent(World, Scent, PlayerEntity)
   Scent.range[PlayerEntity] = 3
   addComponent(World, Health, PlayerEntity)

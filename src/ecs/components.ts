@@ -42,7 +42,7 @@ export const Predator = defineComponent(
 )
 export const NoAction = defineComponent({ status: Types.ui8, remaining: Types.ui8 }, 20)
 export const SeekWater = defineComponent({ distance: Types.ui8 }, 100)
-export const CanAttack = defineComponent({ damage: Types.ui8 })
+export const CanAttack = defineComponent({ damage: Types.ui8, maxAdditional: Types.ui8 })
 export const OnTileType = defineComponent({ current: Types.ui8, previous: Types.ui8 })
 
 export const WaterCreature = defineComponent({ type: Types.ui8 }, 200)

@@ -69,20 +69,19 @@ function getEntityName(eid: number, _capitalize = false) {
   return _capitalize ? capitalize(name) : name
 }
 
-function getEntityAttack(eid: number) {
-  let verb = 'hit'
+function getEntityAttack(eid: number): string {
   if (hasComponent(World, WaterCreature, eid)) {
-    if (WaterCreature.type[eid] === Creature.Fish) verb = 'bit'
-    if (WaterCreature.type[eid] === Creature.Alligator) verb = 'chomped'
+    if (WaterCreature.type[eid] === Creature.Fish) return 'bit'
+    if (WaterCreature.type[eid] === Creature.Alligator) return 'chomped'
   }
-  return verb
+  if (hasComponent(World, Snail, eid)) return 'slugged'
+  return 'hit'
 }
 
 export function logAttack(attacker: number, victim: number, damage: number, extra = '') {
   let color = Colors.Default
   if (victim === PlayerEntity) color = Colors.Bad
   if (attacker === PlayerEntity) addScore(damage)
-  if (attacker === PlayerEntity) console.log(victim)
   logMessage(
     `${getEntityName(attacker, true)} ${getEntityAttack(attacker)} ${getEntityName(
       victim

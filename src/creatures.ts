@@ -24,7 +24,7 @@ import { ALL_VISIBLE, EntityMap, Level } from './level'
 import { addComponent, addEntity, hasComponent } from 'bitecs'
 import { RNG } from 'rot-js'
 import { isWet, TileData } from './map'
-import { CurrentLevel } from './index'
+import { CurrentLevel, PlayerEntity } from './index'
 
 export enum Creature {
   Fish = 1,
@@ -46,6 +46,7 @@ export const CreatureProps: {
   lungeRange?: number
   eatingTurns?: number
   damage?: number
+  maxAdditionalDamage?: number
   health?: number
   spotting?: number
   killPoints: number
@@ -60,7 +61,8 @@ CreatureProps[Creature.Fish] = {
   lungeRange: 4,
   eatingTurns: 5,
   damage: 1,
-  health: 4,
+  maxAdditionalDamage: 1,
+  health: 5,
   spotting: 0.15,
   killPoints: 25,
 }
@@ -76,7 +78,8 @@ CreatureProps[Creature.Crayfish] = {
   lungeRange: 2,
   eatingTurns: 4,
   damage: 1,
-  health: 5,
+  maxAdditionalDamage: 1,
+  health: 7,
   spotting: 0.2,
   killPoints: 30,
   seekWater: 8,
@@ -91,7 +94,8 @@ CreatureProps[Creature.Alligator] = {
   lungeRange: 3,
   eatingTurns: 2,
   damage: 2,
-  health: 6,
+  maxAdditionalDamage: 2,
+  health: 8,
   spotting: 0.5,
   killPoints: 40,
   seekWater: 8,
@@ -111,7 +115,8 @@ CreatureProps[Creature.GiantSnail] = {
   walkSlowness: 2,
   senseRange: 4,
   damage: 1,
-  health: 12,
+  maxAdditionalDamage: 2,
+  health: 15,
   killPoints: 60,
 }
 
@@ -132,7 +137,6 @@ export function createLandCreatures(playerSpawn: Vector2, rng: typeof RNG) {
       [4, 8],
     ][CurrentLevel - 1])
   )
-  console.log('land creature count', landCreatureCount)
   for (let i = 0; i < landCreatureCount; i++) {
     let tile: TileData
     do {
@@ -180,6 +184,7 @@ function createCreature(grid: Vector2, creatureType: Creature, spawnInWater = fa
   if (creatureProps.damage) {
     addComponent(World, CanAttack, creature)
     CanAttack.damage[creature] = creatureProps.damage
+    CanAttack.maxAdditional[creature] = creatureProps.maxAdditionalDamage!
   }
   if (creatureProps.health) {
     addComponent(World, Health, creature)

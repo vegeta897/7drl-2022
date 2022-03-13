@@ -98,12 +98,6 @@ export function eatBait() {
   Health.current[PlayerEntity]++
 }
 
-export function getPlayerDamage() {
-  let damage = 1
-  if (Inventory.has(Lure.WreckingBall)) damage = 2
-  return damage
-}
-
 export function clearInventory() {
   Supplies.bait = 8
   Supplies.lineLength = 4

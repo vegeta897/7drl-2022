@@ -48,7 +48,7 @@ import { PixiViewport } from '../pixi'
 import { AnimatedSprite, filters } from 'pixi.js'
 import { changeAnimation, Creature } from '../creatures'
 import { World } from './index'
-import { getPlayerDamage, getLoot, Supplies } from '../inventory'
+import { getLoot, Supplies } from '../inventory'
 import { AnimationType } from '../animation'
 import { RNG } from 'rot-js'
 
@@ -192,14 +192,17 @@ function moveEntity(eid: number, move: Vector2) {
 const attackQuery = defineQuery([AttackAction])
 export const attackSystem: System = (world) => {
   for (const eid of attackQuery(world)) {
+    const distance = getDistance({ x: AttackAction.x[eid], y: AttackAction.y[eid] })
+    if (distance > 1) console.log('its a lunge')
     const target = AttackAction.target[eid]
     let damage = CanAttack.damage[eid]
-    if (eid === PlayerEntity) damage = getPlayerDamage()
+    if (RNG.getUniform() > (distance > 1 ? 0.3 : 0.8)) damage += RNG.getUniformInt(1, CanAttack.maxAdditional[eid])
     let stunnedByAttack = false
     const wasEating = NoAction.status[target] === Statuses.Eating
     if (hasComponent(world, NoAction, target)) {
-      damage += 3
+      damage += 1
       if (wasEating) {
+        damage += 2
         stunnedByAttack = true
         NoAction.status[target] = Statuses.Stunned
         NoAction.remaining[target] = 1
