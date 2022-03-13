@@ -168,13 +168,18 @@ export async function drawHud() {
     )
     return
   }
-  if (GameState === 'CriticalFailure') {
+  if (GameState === 'LevelGenFailed') {
     HUD.setOptions(bigHudDefaults)
     HUD.drawText(
       10,
       6,
       `%c{${Colors.Blood}}Level generation failed\nafter 10000 attempts\n\nReload the page to try again`
     )
+    return
+  }
+  if (GameState === 'CriticalFailure') {
+    HUD.setOptions(bigHudDefaults)
+    HUD.drawText(10, 6, `%c{${Colors.Blood}}An unknown error occurred while loading, sorry!`, 26)
     return
   }
   const health = Health.current[PlayerEntity]

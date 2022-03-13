@@ -1,6 +1,6 @@
 import { getDistance, Vector2 } from './vector2'
 import { World } from './ecs'
-import { Sprite } from 'pixi.js'
+import { AnimatedSprite, Sprite } from 'pixi.js'
 import { addSprite, getTexture } from './sprites'
 import {
   CalculateFOV,
@@ -114,7 +114,7 @@ export function createTurtle(playerSpawn: Vector2, minimumDistance: number, rng:
 function createCreature(grid: Vector2, creatureType: Creature, spawnInWater = false) {
   const creature = addEntity(World)
   const creatureProps = CreatureProps[creatureType]
-  const creatureSprite = new Sprite(getTexture(creatureProps.texture + (spawnInWater ? 'Swim' : '')))
+  const creatureSprite = changeAnimation(null, creatureType, spawnInWater)
   if (!ALL_VISIBLE) creatureSprite.alpha = 0
   addSprite(creature, creatureSprite)
   addComponent(World, NonPlayer, creature)
@@ -156,4 +156,18 @@ function createCreature(grid: Vector2, creatureType: Creature, spawnInWater = fa
     Spotting.current[creature] = 0
     Spotting.increaseBy[creature] = creatureProps.spotting
   }
+}
+
+export function changeAnimation(sprite: AnimatedSprite | null, creatureType: Creature, swim = false): AnimatedSprite {
+  const creatureProps = CreatureProps[creatureType]
+  const textures = swim
+    ? [1, 2, 3].map((n) => ({ texture: getTexture(creatureProps.texture + 'Swim' + n), time: 400 }))
+    : [getTexture(creatureProps.texture)]
+  if (sprite === null) {
+    sprite = new AnimatedSprite(textures)
+  } else {
+    sprite.textures = textures
+  }
+  if (!sprite.playing) sprite.play()
+  return sprite
 }

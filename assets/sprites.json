@@ -31,37 +31,67 @@
       "sourceSize": { "w": 16, "h": 16 }
     },
     "fish": {
-      "frame": { "x": 0, "y": 32, "w": 16, "h": 16 },
+      "frame": { "x": 64, "y": 0, "w": 16, "h": 16 },
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "sourceSize": { "w": 16, "h": 16 }
     },
-    "fishSwim": {
-      "frame": { "x": 16, "y": 32, "w": 16, "h": 16 },
+    "fishSwim1": {
+      "frame": { "x": 80, "y": 0, "w": 16, "h": 16 },
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "sourceSize": { "w": 16, "h": 16 }
     },
-    "alligator": {
-      "frame": { "x": 32, "y": 32, "w": 16, "h": 16 },
+    "fishSwim2": {
+      "frame": { "x": 80, "y": 16, "w": 16, "h": 16 },
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "sourceSize": { "w": 16, "h": 16 }
     },
-    "alligatorSwim": {
-      "frame": { "x": 48, "y": 32, "w": 16, "h": 16 },
-      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
-      "sourceSize": { "w": 16, "h": 16 }
-    },
-    "turtle": {
-      "frame": { "x": 64, "y": 32, "w": 16, "h": 16 },
-      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
-      "sourceSize": { "w": 16, "h": 16 }
-    },
-    "turtleSwim": {
+    "fishSwim3": {
       "frame": { "x": 80, "y": 32, "w": 16, "h": 16 },
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "sourceSize": { "w": 16, "h": 16 }
     },
+    "alligator": {
+      "frame": { "x": 96, "y": 0, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "alligatorSwim1": {
+      "frame": { "x": 112, "y": 0, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "alligatorSwim2": {
+      "frame": { "x": 112, "y": 16, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "alligatorSwim3": {
+      "frame": { "x": 112, "y": 32, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "turtle": {
+      "frame": { "x": 128, "y": 0, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "turtleSwim1": {
+      "frame": { "x": 144, "y": 0, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "turtleSwim2": {
+      "frame": { "x": 144, "y": 16, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "turtleSwim3": {
+      "frame": { "x": 144, "y": 32, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
     "giantSnail": {
-      "frame": { "x": 96, "y": 32, "w": 16, "h": 16 },
+      "frame": { "x": 160, "y": 0, "w": 16, "h": 16 },
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "sourceSize": { "w": 16, "h": 16 }
     },
@@ -127,6 +157,11 @@
     },
     "stalagmites1": {
       "frame": { "x": 16, "y": 112, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "stalagmites2": {
+      "frame": { "x": 16, "y": 128, "w": 16, "h": 16 },
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "sourceSize": { "w": 16, "h": 16 }
     },

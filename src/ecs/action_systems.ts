@@ -43,8 +43,8 @@ import { getTexture, SpritesByEID } from '../sprites'
 import { FOV_RADIUS, RecalcEntities, VisibilityMap } from '../fov'
 import { clamp } from 'rot-js/lib/util'
 import { PixiViewport } from '../pixi'
-import { filters } from 'pixi.js'
-import { Creature, CreatureProps } from '../creatures'
+import { AnimatedSprite, filters } from 'pixi.js'
+import { changeAnimation, Creature, CreatureProps } from '../creatures'
 import { World } from './index'
 import { getPlayerDamage, getLoot, Supplies } from '../inventory'
 import { AnimationType } from '../animation'
@@ -266,11 +266,11 @@ export const waterCreatureSystem: System = (world) => {
       RecalcEntities.add(eid)
     }
     if (isWet(OnTileType.previous[eid]) === onWater) continue
-    const texture = CreatureProps[WaterCreature.type[eid]].texture
-    if (onWater) {
-      if (!hasComponent(world, Animate, eid)) SpritesByEID[eid].texture = getTexture(texture + 'Swim')
+    if (onWater && !isWet(OnTileType.previous[eid])) {
+      if (!hasComponent(world, Animate, eid))
+        changeAnimation(<AnimatedSprite>SpritesByEID[eid], WaterCreature.type[eid], true)
     } else {
-      SpritesByEID[eid].texture = getTexture(texture)
+      changeAnimation(<AnimatedSprite>SpritesByEID[eid], WaterCreature.type[eid])
     }
   }
   return world

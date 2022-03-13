@@ -27,7 +27,16 @@ export const TILE_SIZE = 16
 export let PlayerEntity: number
 export let PlayerSprite: Sprite
 
-type GameStates = 'Loading' | 'Generating' | 'Playing' | 'EndLevel' | 'Losing' | 'Lost' | 'Won' | 'CriticalFailure'
+type GameStates =
+  | 'Loading'
+  | 'Generating'
+  | 'Playing'
+  | 'EndLevel'
+  | 'Losing'
+  | 'Lost'
+  | 'Won'
+  | 'CriticalFailure'
+  | 'LevelGenFailed'
 export let GameState: GameStates = 'Loading'
 export let CurrentLevel: number
 export const LastLevel = 3
@@ -84,7 +93,8 @@ async function startLevel() {
     playerStart = await createLevel(CurrentLevel)
   } catch (e) {
     console.error(e)
-    GameState = 'CriticalFailure'
+    // @ts-ignore
+    if (GameState !== 'LevelGenFailed') GameState = 'CriticalFailure'
     drawHud()
     return
   }

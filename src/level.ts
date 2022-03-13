@@ -12,7 +12,7 @@ import { OverlaySprites, promisedFrame, WorldSprites } from './pixi'
 import { showLevelGen } from './hud'
 import { createLandCreatures, createTurtle, createWaterCreature } from './creatures'
 import { LootType } from './inventory'
-import { CurrentLevel } from './index'
+import { CurrentLevel, setGameState } from './index'
 
 export const ALL_VISIBLE = 0
 const seed = 1647132135702
@@ -44,7 +44,10 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   let lootSpawns
   while (true) {
     attempts++
-    if (attempts > 10000) throw 'Level generation failed!'
+    if (attempts > 10000) {
+      setGameState('LevelGenFailed')
+      throw 'Level generation failed!'
+    }
     showLevelGen(attempts)
     if (attempts % 10 === 0) await promisedFrame()
     lootSpawns = generateMap()

@@ -3,10 +3,10 @@ import { defineQuery, hasComponent, IWorld, Not, removeComponent, System } from 
 import { getTexture, SpritesByEID } from '../sprites'
 import { PlayerEntity, TILE_SIZE } from '../'
 import { promisedFrame } from '../pixi'
-import { Ticker } from 'pixi.js'
+import { AnimatedSprite, Ticker } from 'pixi.js'
 import { Animations } from '../animation'
 import { isWet } from '../map'
-import { CreatureProps } from '../creatures'
+import { changeAnimation } from '../creatures'
 
 export async function runAnimations(world: IWorld) {
   nonAnimatedSystem(world)
@@ -37,10 +37,12 @@ const animationSystem = (world: IWorld, delta: number): boolean => {
       finishedAnimations++
       removeComponent(world, Animate, eid)
       GridPosition.dirty[eid] = 0
-      if (isWet(OnTileType.current[eid]) && (hasComponent(world, WaterCreature, eid) || eid === PlayerEntity)) {
-        SpritesByEID[eid].texture = getTexture(
-          (eid === PlayerEntity ? 'player' : CreatureProps[WaterCreature.type[eid]].texture) + 'Swim'
-        )
+      if (isWet(OnTileType.current[eid]) && !isWet(OnTileType.previous[eid])) {
+        if (eid === PlayerEntity) {
+          SpritesByEID[eid].texture = getTexture('playerSwim')
+        } else if (hasComponent(world, WaterCreature, eid)) {
+          changeAnimation(<AnimatedSprite>SpritesByEID[eid], WaterCreature.type[eid], true)
+        }
       }
     }
   }
@@ -54,10 +56,12 @@ export const nonAnimatedSystem: System = (world) => {
     GridPosition.dirty[eid] = 0
     SpritesByEID[eid].x = GridPosition.x[eid] * TILE_SIZE
     SpritesByEID[eid].y = GridPosition.y[eid] * TILE_SIZE
-    if (isWet(OnTileType.current[eid]) && (hasComponent(world, WaterCreature, eid) || eid === PlayerEntity)) {
-      SpritesByEID[eid].texture = getTexture(
-        (eid === PlayerEntity ? 'player' : CreatureProps[WaterCreature.type[eid]].texture) + 'Swim'
-      )
+    if (isWet(OnTileType.current[eid]) && !isWet(OnTileType.previous[eid])) {
+      if (eid === PlayerEntity) {
+        SpritesByEID[eid].texture = getTexture('playerSwim')
+      } else if (hasComponent(world, WaterCreature, eid)) {
+        changeAnimation(<AnimatedSprite>SpritesByEID[eid], WaterCreature.type[eid], true)
+      }
     }
   }
   return world
