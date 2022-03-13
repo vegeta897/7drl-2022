@@ -86,6 +86,7 @@ const isGameKey = (key: string): key is GameKey => gameKeys.includes(key as Game
 
 window.addEventListener('keydown', async (e) => {
   if (e.repeat) return
+  if (GameState !== 'Playing' && GameState !== 'Lost') return
   if (!isGameKey(e.code)) return
   e.preventDefault()
   Keys.add(e.code)

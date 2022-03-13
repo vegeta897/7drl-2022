@@ -20,7 +20,7 @@ import {
   WaterCreature,
 } from './ecs/components'
 import { ALL_VISIBLE, EntityMap, Level } from './level'
-import { addComponent, addEntity } from 'bitecs'
+import { addComponent, addEntity, hasComponent } from 'bitecs'
 import { RNG } from 'rot-js'
 import { isWet, TileData } from './map'
 import { CurrentLevel } from './index'
@@ -47,6 +47,7 @@ export const CreatureProps: {
   damage?: number
   health?: number
   spotting?: number
+  killPoints: number
 }[] = []
 CreatureProps[Creature.Fish] = {
   texture: 'fish',
@@ -59,6 +60,7 @@ CreatureProps[Creature.Fish] = {
   damage: 1,
   health: 4,
   spotting: 0.15,
+  killPoints: 25,
 }
 CreatureProps[Creature.Crayfish] = {
   texture: 'crayfish',
@@ -74,6 +76,7 @@ CreatureProps[Creature.Crayfish] = {
   damage: 1,
   health: 5,
   spotting: 0.2,
+  killPoints: 30,
 }
 CreatureProps[Creature.Alligator] = {
   texture: 'alligator',
@@ -87,12 +90,14 @@ CreatureProps[Creature.Alligator] = {
   damage: 2,
   health: 6,
   spotting: 0.5,
+  killPoints: 40,
 }
 CreatureProps[Creature.Turtle] = {
   texture: 'turtle',
   wanderChance: 400,
   canWalk: true,
   canSwim: true,
+  killPoints: 0,
 }
 CreatureProps[Creature.GiantSnail] = {
   texture: 'giantSnail',
@@ -103,6 +108,7 @@ CreatureProps[Creature.GiantSnail] = {
   senseRange: 4,
   damage: 1,
   health: 12,
+  killPoints: 60,
 }
 
 export function createWaterCreature(grid: Vector2, rng: typeof RNG) {
@@ -201,4 +207,10 @@ export function changeAnimation(sprite: AnimatedSprite | null, creatureType: Cre
   }
   if (!sprite.playing) sprite.play()
   return sprite
+}
+
+export function getCreatureKillPoints(eid: number): number {
+  if (hasComponent(World, Snail, eid)) return CreatureProps[Creature.GiantSnail].killPoints
+  else if (hasComponent(World, WaterCreature, eid)) return CreatureProps[WaterCreature.type[eid]].killPoints
+  return 0
 }

@@ -1,4 +1,4 @@
-import { GridMap } from './map'
+import { GridMap, TileData } from './map'
 import { FOV } from 'rot-js'
 import { ALL_VISIBLE, Level } from './level'
 import { CalculateFOV, getEntGrid, Spotting } from './ecs/components'
@@ -26,6 +26,7 @@ export const triggerTileUpdate = () => (needTileUpdate = true)
 type Visibility = [directness: number, radius: number]
 export let VisibilityMap: GridMap<Visibility> = new GridMap()
 export const RecalcEntities: Set<number> = new Set()
+export const RevealedTiles: Set<TileData> = new Set()
 
 const getEasedVisibility = ([d, r]: Visibility): number => d * cubicOut((FOV_RADIUS - r) / FOV_RADIUS)
 
@@ -78,9 +79,9 @@ export function updateVisibility() {
   Level.data.forEach((tile) => {
     if (!tile.sprite) return
     if (tile.ignoreFOV) return
-    if (!VisibilityMap.has(tile) && !newVisibilityMap.has(tile)) return
     const prevVisibility = VisibilityMap.get(tile)
     const newVisibility = newVisibilityMap.get(tile)
+    if (!prevVisibility && !newVisibility) return
     if (prevVisibility && !newVisibility) {
       // Previously visible tile no longer visible
       const alpha = clamp(tile.revealed, prevVisibility[0], FOG_VISIBILITY)
@@ -88,6 +89,7 @@ export function updateVisibility() {
       tweeningSprites.set(tile.sprite, [TWEEN_TIME, tile.sprite.alpha, alpha])
     } else if (newVisibility) {
       // tile.sprite.filters = null
+      if (!prevVisibility) RevealedTiles.add(tile)
       tile.revealed = Math.max(tile.revealed, newVisibility[0])
       const alpha = tile.revealed
       if (tile.sprite.alpha !== alpha) tweeningSprites.set(tile.sprite, [TWEEN_TIME, tile.sprite.alpha, alpha])
@@ -141,5 +143,7 @@ export function tweenVisibility(delta: number) {
 }
 
 export function resetFOV() {
+  RecalcEntities.clear()
+  RevealedTiles.clear()
   VisibilityMap = new GridMap()
 }

@@ -37,12 +37,12 @@ import {
 } from 'bitecs'
 import { EntityMap, Level } from '../level'
 import { CurrentLevel, GameState, LastLevel, nextLevel, PlayerEntity, PlayerSprite, setGameState } from '../'
-import { Colors, logAttack, logBaitEat, logKill, logMessage, logPetting, updateHud } from '../hud'
+import { addScore, Colors, logAttack, logBaitEat, logKill, logMessage, logPetting, updateHud } from '../hud'
 import { addVector2, diffVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
 import { BaitEntity, cutLine, spawnBait } from '../casting'
 import { isWalkable, isWet, Tile } from '../map'
 import { getTexture, SpritesByEID } from '../sprites'
-import { FOV_RADIUS, RecalcEntities, VisibilityMap } from '../fov'
+import { FOV_RADIUS, RecalcEntities, RevealedTiles, VisibilityMap } from '../fov'
 import { clamp } from 'rot-js/lib/util'
 import { PixiViewport } from '../pixi'
 import { AnimatedSprite, filters } from 'pixi.js'
@@ -80,12 +80,14 @@ export const playerActionSystem: System = (world) => {
       getLoot(targetEntity)
     } else if (hasComponent(world, Mushroom, targetEntity)) {
       logMessage('You ate the mushroom (+1 hp)', Colors.GoodWater)
+      addScore(50)
       Health.current[PlayerEntity]++
       Health.max[PlayerEntity] = Math.max(Health.max[PlayerEntity], Health.current[PlayerEntity])
       deleteEntGrid(targetEntity)
       removeEntity(world, targetEntity)
     } else if (hasComponent(world, Exit, targetEntity)) {
       setGameState('EndLevel')
+      addScore(1000 * CurrentLevel)
       removeComponent(world, MoveAction, PlayerEntity)
     } else if (
       hasComponent(world, WaterCreature, targetEntity) &&
@@ -262,6 +264,7 @@ export const wetnessSystem: System = (world) => {
       Wetness.factor[eid] = 1
       if (hasComponent(world, Snail, eid) && Level.get(getEntGrid(eid)).type === Tile.Water) {
         logMessage('The giant snail has drowned!', Colors.GoodWater)
+        addScore(100) // You cruel bastard
         deleteEntGrid(eid)
         removeEntity(world, eid)
       }
@@ -314,8 +317,10 @@ desaturated.alpha = 0.3
 export const gameSystem: System = (world) => {
   if (GameState !== 'Losing' && !entityExists(world, PlayerEntity)) {
     PixiViewport.filters = [desaturated]
+    addScore(Math.floor(RevealedTiles.size / 10))
     setGameState('Losing')
   } else if (GameState === 'EndLevel') {
+    addScore(Math.floor(RevealedTiles.size / 10))
     if (CurrentLevel === LastLevel) {
       setGameState('Won')
     } else {

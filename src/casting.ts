@@ -21,7 +21,7 @@ import {
 import { processInput, setPlayerState } from './ecs/input_systems'
 import { addComponent, addEntity, entityExists, removeEntity } from 'bitecs'
 import { EntityMap, Level } from './level'
-import { Colors, logMessage, updateHud } from './hud'
+import { addScore, Colors, logMessage, updateHud } from './hud'
 import { ActiveLures, Lure, Supplies } from './inventory'
 import { activateSecondSight, deactivateSecondSight, triggerTileUpdate } from './fov'
 import { isWet } from './map'
@@ -165,6 +165,7 @@ export function angleBait(move: Vector2) {
           // Knock it down!
           Level.mineTile(moddedAbsolute)
           triggerTileUpdate()
+          addScore(10)
           Supplies.bait--
           logMessage('Wrecking Ball used 1 bait', Colors.Danger)
         }

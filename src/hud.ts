@@ -5,7 +5,7 @@ import { PlayerState } from './ecs/input_systems'
 import { hasComponent } from 'bitecs'
 import { World } from './ecs'
 import { promisedFrame } from './pixi'
-import { Creature, CreatureProps } from './creatures'
+import { Creature, CreatureProps, getCreatureKillPoints } from './creatures'
 import { ActiveLures, getLureInfo, Inventory, Lure, Supplies } from './inventory'
 import { sleep } from './util'
 import { getDistance } from './vector2'
@@ -13,8 +13,9 @@ import { CastVector } from './casting'
 
 let HUD: Display
 let log: string[]
-let killedFish = 0
 const turtlePetLevels = new Set()
+let score = 0
+export const addScore = (points: number) => (score += points)
 
 export enum Colors {
   White = '#ffffff',
@@ -80,6 +81,7 @@ function getEntityAttack(eid: number) {
 export function logAttack(attacker: number, victim: number, damage: number, extra = '') {
   let color = Colors.Default
   if (victim === PlayerEntity) color = Colors.Bad
+  if (attacker === PlayerEntity) addScore(damage)
   logMessage(
     `${getEntityName(attacker, true)} ${getEntityAttack(attacker)} ${getEntityName(
       victim
@@ -89,7 +91,7 @@ export function logAttack(attacker: number, victim: number, damage: number, extr
 }
 
 export function logKill(victim: number) {
-  if (hasComponent(World, WaterCreature, victim) && WaterCreature.type[victim] === Creature.Fish) killedFish++
+  addScore(getCreatureKillPoints(victim))
   logMessage(`You killed ${getEntityName(victim)}`, Colors.White)
 }
 
@@ -98,11 +100,13 @@ export function logLunge(attacker: number) {
 }
 
 export function logBaitEat(baited: number) {
+  addScore(10)
   logMessage(`The ${getEntityName(baited)} is eating the bait`, Colors.GoodWater)
 }
 
 export function logPetting() {
   turtlePetLevels.add(CurrentLevel)
+  addScore(500)
   logMessage(`You pet the turtle`, Colors.Good)
 }
 
@@ -153,9 +157,12 @@ export async function drawHud() {
   if (GameState === 'Lost') {
     HUD.setOptions({ ...bigHudDefaults, fontStyle: 'bold', bg: Colors.DeepestBlood })
     HUD.drawText(19, 7, `%c{${Colors.Blood}}GAME OVER`)
-    setTimeout(() => {
-      if (GameState === 'Lost') HUD.drawText(14, 11, `%c{${Colors.Bad}}[enter] to restart`)
-    }, 2500)
+    await sleep(2000)
+    if (GameState !== 'Lost') return
+    HUD.drawText(14, 9, `%c{${Colors.Bad}}Final score: %c{${Colors.Blood}}${score.toString().padStart(5)}`, 30)
+    await sleep(2000)
+    if (GameState !== 'Lost') return
+    if (GameState === 'Lost') HUD.drawText(14, 11, `[enter] to restart`)
     return
   }
   if (GameState === 'Won') {
@@ -169,9 +176,9 @@ export async function drawHud() {
     await sleep(3000)
     HUD.drawText(9, 7, `%c{${Colors.Good}}Congratulations!`, 30)
     await sleep(2000)
-    HUD.drawText(9, 9, `%c{${Colors.GoodWater}}You killed ${killedFish} fish`, 30)
+    HUD.drawText(9, 9, `${turtlePetResult}`, 30)
     await sleep(2000)
-    HUD.drawText(9, 11, `${turtlePetResult}`, 30)
+    HUD.drawText(9, 11, `Final score: %c{${Colors.GoodWater}}${score.toString().padStart(5)}`, 30)
     return
   }
   if (GameState === 'LevelGenFailed') {
@@ -266,7 +273,7 @@ export async function drawHud() {
 
 export function clearLog() {
   log = []
-  killedFish = 0
+  score = 0
   turtlePetLevels.clear()
   updateHud()
 }
