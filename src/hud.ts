@@ -25,7 +25,7 @@ export enum Colors {
   Water = '#477d85',
   StrongWater = '#328e98',
   GoodWater = '#5daf8d',
-  DeepWater = '#102b3b',
+  Mystical = '#2ddce3',
   DeepCave = '#221E3A',
   Gold = '#ffd541',
   Sponge = '#f5c96c',

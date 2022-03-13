@@ -3,7 +3,7 @@ import { deleteEntGrid, Health, Loot } from './ecs/components'
 import { removeEntity } from 'bitecs'
 import { World } from './ecs'
 import { RNG } from 'rot-js'
-import { PlayerEntity } from './index'
+import { PlayerEntity } from './'
 
 export const Supplies = {
   bait: 0,
@@ -16,8 +16,9 @@ export const ActiveLures: Set<Lure> = new Set()
 export enum Lure {
   WreckingBall = 1,
   MagicSponge,
+  SecondSight,
 }
-const lures = [Lure.WreckingBall, Lure.MagicSponge]
+const lures = [Lure.WreckingBall, Lure.MagicSponge, Lure.SecondSight]
 
 export function getLureInfo(lure: Lure): { name: string; color: Colors } {
   switch (lure) {
@@ -25,6 +26,8 @@ export function getLureInfo(lure: Lure): { name: string; color: Colors } {
       return { name: 'Wrecking Ball', color: Colors.Danger }
     case Lure.MagicSponge:
       return { name: 'Magic Sponge', color: Colors.Sponge }
+    case Lure.SecondSight:
+      return { name: 'Second Sight', color: Colors.Mystical }
   }
 }
 
@@ -60,7 +63,7 @@ export function getLoot(eid: number) {
     if (lootType === LootType.Chest) Supplies.lineLength++
     logMessage(`You picked up some extra fishing line`, Colors.White)
   } else if (loot === 'lure') {
-    const lure = RNG.getItem([Lure.WreckingBall, Lure.MagicSponge].filter((l) => !Inventory.has(l)))!
+    const lure = RNG.getItem(lures.filter((l) => !Inventory.has(l)))!
     Inventory.add(lure)
     const { color, name } = getLureInfo(lure)
     let info = Inventory.size === 1 ? ' Use the number keys to attach lures' : ''

@@ -23,7 +23,7 @@ import { createLandCreatures, createTurtle, createWaterCreature } from './creatu
 import { LootType } from './inventory'
 import { CurrentLevel, setGameState } from './index'
 
-export const ALL_VISIBLE = 1
+export const ALL_VISIBLE = 0
 const seed = 0
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())

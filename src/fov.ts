@@ -9,6 +9,8 @@ import { clamp } from 'rot-js/lib/util'
 import { SpritesByEID } from './sprites'
 import { defineQuery, hasComponent, Query } from 'bitecs'
 import { World } from './ecs'
+import { vectorsAreEqual } from './vector2'
+import { BaitEntity } from './casting'
 
 export const FOV_RADIUS = 8
 const FOG_VISIBILITY = 0.5 // Max visibility of previously seen tiles
@@ -27,15 +29,31 @@ export const RecalcEntities: Set<number> = new Set()
 
 const getEasedVisibility = ([d, r]: Visibility): number => d * cubicOut((FOV_RADIUS - r) / FOV_RADIUS)
 
-let fovEntities: Query // This file is loaded before component registration
+let fovEntities: Query // Deferred because this file is loaded before component registration
+
+let secondSightActive = false
+
+export function activateSecondSight() {
+  secondSightActive = true
+  triggerTileUpdate()
+}
+export function deactivateSecondSight(updateVisibilityNow = false) {
+  secondSightActive = false
+  triggerTileUpdate()
+  if (updateVisibilityNow) updateVisibility()
+}
 
 export function updateVisibility() {
   if (ALL_VISIBLE) return
   if (!needTileUpdate) return
   const newVisibilityMap: GridMap<Visibility> = new GridMap()
   const playerGrid = getEntGrid(PlayerEntity)
+  const baitGrid = secondSightActive ? getEntGrid(BaitEntity!) : undefined
   const fov = new FOV.PreciseShadowcasting(
-    (x, y) => Level.get({ x, y }).seeThrough || (playerGrid.x === x && playerGrid.y === y)
+    (x, y) =>
+      Level.get({ x, y }).seeThrough ||
+      vectorsAreEqual(playerGrid, { x, y }) ||
+      (secondSightActive && vectorsAreEqual(baitGrid!, { x, y }))
   )
   fov.compute(playerGrid.x, playerGrid.y, FOV_RADIUS, (x, y, radius, directness) => {
     const prevVisibility = VisibilityMap.get({ x, y })
@@ -44,6 +62,15 @@ export function updateVisibility() {
       radius,
     ])
   })
+  if (secondSightActive) {
+    fov.compute(baitGrid!.x, baitGrid!.y, FOV_RADIUS, (x, y, radius, directness) => {
+      const prevVisibility = VisibilityMap.get({ x, y })
+      newVisibilityMap.set({ x, y }, [
+        Math.max(getEasedVisibility([directness, radius]), prevVisibility ? prevVisibility[0] : 0),
+        radius,
+      ])
+    })
+  }
   // Update static tiles
   Level.data.forEach((tile) => {
     if (!tile.sprite) return

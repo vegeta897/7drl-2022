@@ -22,7 +22,7 @@ import { addComponent, addEntity, entityExists, removeEntity } from 'bitecs'
 import { EntityMap, Level } from './level'
 import { Colors, logMessage } from './hud'
 import { ActiveLures, Lure, Supplies } from './inventory'
-import { triggerTileUpdate } from './fov'
+import { activateSecondSight, deactivateSecondSight, triggerTileUpdate } from './fov'
 import { isWet, Tile } from './map'
 
 export const CastVector = { x: 0, y: 0 }
@@ -86,6 +86,7 @@ export function confirmCast() {
     Bait.waterVolume[BaitEntity] = 1
     triggerTileUpdate()
   }
+  if (ActiveLures.has(Lure.SecondSight)) activateSecondSight()
   processInput()
   setPlayerState('Angling')
   drawFishingLine()
@@ -128,10 +129,10 @@ export function angleBait(move: Vector2) {
       if (moddedDistance > maxAngleDistance) continue
       if (moddedDistance === 0) {
         if (Bait.waterVolume[BaitEntity!] > 0) Level.floodTile(playerGrid, Bait.waterVolume[BaitEntity!])
-
         deleteEntGrid(BaitEntity!)
         removeEntity(World, BaitEntity!)
         BaitEntity = null
+        if (ActiveLures.has(Lure.SecondSight)) deactivateSecondSight()
         setPlayerState('Idle')
         Supplies.bait++
         logMessage('You reeled in the bait', Colors.Dim)
@@ -151,6 +152,7 @@ export function angleBait(move: Vector2) {
           Bait.waterVolume[BaitEntity!]++
           triggerTileUpdate()
         }
+        if (ActiveLures.has(Lure.SecondSight)) triggerTileUpdate()
         CastVector.x = moddedCastTo.x
         CastVector.y = moddedCastTo.y
         drawFishingLine()
@@ -181,6 +183,7 @@ export function drawFishingLine() {
 
 export function cutLine() {
   BaitEntity = null
+  if (ActiveLures.has(Lure.SecondSight)) deactivateSecondSight(true)
   fishingLineGraphics.cacheAsBitmap = false
   fishingLineGraphics.clear()
   setPlayerState('Idle')
