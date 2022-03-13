@@ -86,7 +86,7 @@ export function confirmCast() {
     Bait.waterVolume[BaitEntity] = 1
     triggerTileUpdate()
   }
-  addSprite(BaitEntity, new Sprite(getTexture(isWet(Level.get(castGrid).type) ? 'baitWater' : 'bait')), WorldSprites)
+  addSprite(BaitEntity, new Sprite(getTexture('bait')), WorldSprites)
   addComponent(World, NonPlayer, BaitEntity)
   addComponent(World, Bait, BaitEntity)
   addComponent(World, DisplayObject, BaitEntity)
@@ -96,7 +96,6 @@ export function confirmCast() {
   setEntGrid(BaitEntity, castGrid)
   addComponent(World, OnTileType, BaitEntity)
   addComponent(World, CalculateFOV, BaitEntity)
-  OnTileType.current[BaitEntity] = Level.get(castGrid).type
   processInput()
   setPlayerState('Angling')
   drawFishingLine()
@@ -152,11 +151,6 @@ export function angleBait(move: Vector2) {
         drawFishingLine()
         const moveTo = addVector2(playerGrid, CastVector)
         changeEntGrid(BaitEntity!, moveTo)
-        OnTileType.previous[BaitEntity!] = OnTileType.current[BaitEntity!]
-        OnTileType.current[BaitEntity!] = Level.get(moveTo).type
-        if (OnTileType.previous[BaitEntity!] !== OnTileType.current[BaitEntity!]) {
-          SpritesByEID[BaitEntity!].texture = getTexture(isWet(OnTileType.current[BaitEntity!]) ? 'baitWater' : 'bait')
-        }
       }
       processInput()
       break

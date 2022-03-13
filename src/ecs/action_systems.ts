@@ -38,7 +38,7 @@ import { EntityMap, Level } from '../level'
 import { CurrentLevel, GameState, LastLevel, nextLevel, PlayerEntity, PlayerSprite, setGameState } from '../'
 import { Colors, logAttack, logBaitEat, logKill, logMessage, logPetting, updateHud } from '../hud'
 import { addVector2, diffVector2, getDistance, getUnitVector2, Vector2, vectorsAreEqual } from '../vector2'
-import { cutLine } from '../casting'
+import { BaitEntity, cutLine } from '../casting'
 import { isWalkable, isWet, Tile } from '../map'
 import { getTexture, SpritesByEID } from '../sprites'
 import { FOV_RADIUS, RecalcEntities, VisibilityMap } from '../fov'
@@ -234,11 +234,17 @@ export const wetnessSystem: System = (world) => {
           updateHud()
         }
       }
-      if (eid === PlayerEntity && prevWet) PlayerSprite.texture = getTexture('player')
+      if (eid === PlayerEntity && prevWet) {
+        PlayerSprite.texture = getTexture('player')
+      } else if (eid === BaitEntity) {
+        SpritesByEID[eid!].texture = getTexture('bait')
+      }
     } else if (nowWet && !prevWet) {
       if (eid === PlayerEntity) {
         if (!hasComponent(world, Wetness, eid)) updateHud()
         if (!hasComponent(world, Animate, eid)) PlayerSprite.texture = getTexture('playerSwim')
+      } else if (eid === BaitEntity) {
+        SpritesByEID[eid!].texture = getTexture('baitWater')
       }
       addComponent(world, Wetness, eid)
       Wetness.factor[eid] = 1
