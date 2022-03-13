@@ -54,6 +54,11 @@ export const nonAnimatedSystem: System = (world) => {
     GridPosition.dirty[eid] = 0
     SpritesByEID[eid].x = GridPosition.x[eid] * TILE_SIZE
     SpritesByEID[eid].y = GridPosition.y[eid] * TILE_SIZE
+    if (isWet(OnTileType.current[eid]) && (hasComponent(world, WaterCreature, eid) || eid === PlayerEntity)) {
+      SpritesByEID[eid].texture = getTexture(
+        (eid === PlayerEntity ? 'player' : CreatureProps[WaterCreature.type[eid]].texture) + 'Swim'
+      )
+    }
   }
   return world
 }

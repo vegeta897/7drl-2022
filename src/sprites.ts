@@ -35,10 +35,11 @@ const getNeighborString = (tile: TileData, neighborTypes: Tile[]): string => {
     .join('')
 }
 
+const floors = ['floor1', 'floor1', 'floor1', 'floor2', 'floor3', 'floor4', 'floor5', 'floor6']
 export const getTileTexture = (tile: TileData): string => {
   switch (tile.type) {
     case Tile.Floor:
-      return RNG.getItem(['floor1', 'floor2', 'floor3', 'floor4'])!
+      return RNG.getItem(floors)!
     case Tile.Wall:
       return 'caveWall' + getNeighborString(tile, [Tile.Wall, Tile.Empty])
     case Tile.Water:

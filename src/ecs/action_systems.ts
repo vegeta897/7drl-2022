@@ -9,7 +9,7 @@ import {
   CanSwim,
   CanWalk,
   changeEntGrid,
-  Chest,
+  Loot,
   deleteEntGrid,
   Exit,
   getEntGrid,
@@ -46,7 +46,7 @@ import { PixiViewport } from '../pixi'
 import { filters } from 'pixi.js'
 import { Creature, CreatureProps } from '../creatures'
 import { World } from './index'
-import { getPlayerDamage, openChest, Supplies } from '../inventory'
+import { getPlayerDamage, getLoot, Supplies } from '../inventory'
 import { AnimationType } from '../animation'
 
 export const playerActionSystem: System = (world) => {
@@ -72,8 +72,8 @@ export const playerActionSystem: System = (world) => {
       logMessage('You picked up the bait', Colors.Dim)
       deleteEntGrid(targetEntity)
       removeEntity(world, targetEntity)
-    } else if (hasComponent(world, Chest, targetEntity)) {
-      openChest(targetEntity)
+    } else if (hasComponent(world, Loot, targetEntity)) {
+      getLoot(targetEntity)
     } else if (hasComponent(world, Exit, targetEntity)) {
       setGameState('EndLevel')
       removeComponent(world, MoveAction, PlayerEntity)

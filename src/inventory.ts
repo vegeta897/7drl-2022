@@ -1,5 +1,5 @@
 import { Colors, logMessage, updateHud } from './hud'
-import { deleteEntGrid, Health } from './ecs/components'
+import { deleteEntGrid, Health, Loot } from './ecs/components'
 import { removeEntity } from 'bitecs'
 import { World } from './ecs'
 import { RNG } from 'rot-js'
@@ -28,23 +28,36 @@ export function getLureInfo(lure: Lure): { name: string; color: Colors } {
   }
 }
 
-const lootChances = {
-  bait: 4,
-  extraLine: 1,
-  lure: 100,
+export enum LootType {
+  Bag = 1,
+  Chest,
 }
 
-export function openChest(eid: number) {
+const bagLootChances = {
+  bait: 4,
+  extraLine: 1,
+}
+
+const chestLootChances = {
+  bait: 1,
+  extraLine: 1,
+  lure: 8,
+}
+
+export function getLoot(eid: number) {
+  const lootType = Loot.type[eid]
   let loot: string
   do {
-    loot = RNG.getWeightedValue(lootChances)!
+    loot = RNG.getWeightedValue(lootType === LootType.Chest ? chestLootChances : bagLootChances)!
   } while (Inventory.size === lures.length && loot === 'lure')
   if (loot === 'bait') {
-    const baitAmount = Math.max(1, Math.round(RNG.getNormal(7, 2.5)))
+    let baitAmount = Math.max(1, Math.round(RNG.getNormal(7, 2.5)))
+    if (lootType === LootType.Chest) baitAmount *= 2
     Supplies.bait += baitAmount
     logMessage(`You got ${baitAmount} bait`, Colors.White)
   } else if (loot === 'extraLine') {
     Supplies.lineLength++
+    if (lootType === LootType.Chest) Supplies.lineLength++
     logMessage(`You got some extra fishing line`, Colors.White)
   } else if (loot === 'lure') {
     const lure = RNG.getItem([Lure.WreckingBall, Lure.MagicSponge].filter((l) => !Inventory.has(l)))!

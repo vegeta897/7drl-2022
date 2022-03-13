@@ -1,19 +1,21 @@
 import * as ROT from 'rot-js'
+import { RNG } from 'rot-js'
 import { Sprite } from 'pixi.js'
 import { getDistance, getStraightLine, Vector2 } from './vector2'
 import AStar from 'rot-js/lib/path/astar'
 import { GridMap, isWalkable, isWet, Tile, TileMap } from './map'
-import { RNG } from 'rot-js'
 import { addSprite, createMapSprites, getTexture } from './sprites'
 import { addComponent, addEntity } from 'bitecs'
 import { World } from './ecs'
-import { CalculateFOV, Chest, DisplayObject, Exit, GridPosition, initEntGrid, NonPlayer } from './ecs/components'
-import { EntitySprites, OverlaySprites, promisedFrame, WorldSprites } from './pixi'
+import { CalculateFOV, DisplayObject, Exit, GridPosition, initEntGrid, Loot, NonPlayer } from './ecs/components'
+import { OverlaySprites, promisedFrame, WorldSprites } from './pixi'
 import { showLevelGen } from './hud'
 import { createLandCreatures, createTurtle, createWaterCreature } from './creatures'
+import { LootType } from './inventory'
+import { CurrentLevel } from './index'
 
 export const ALL_VISIBLE = 0
-const seed = 1647056756828
+const seed = 1647132135702
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())
@@ -39,13 +41,13 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   let attempts = 0
   let enterExitGrids
   let waterSpawns
-  let chestSpawns
+  let lootSpawns
   while (true) {
     attempts++
     if (attempts > 10000) throw 'Level generation failed!'
     showLevelGen(attempts)
     if (attempts % 10 === 0) await promisedFrame()
-    chestSpawns = generateMap()
+    lootSpawns = generateMap()
     // TODO: Change chest spawns to look for tiles with many surrounding walls/waters in a 5x5 area? Sort by most secluded to least, cutoff at X number of open tiles
 
     // TODO: Crawl map to find furthest tiles from spawn (for exit, or chests)
@@ -62,9 +64,12 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   createMapSprites()
   EntityMap = new GridMap()
   waterSpawns.forEach((tile) => createWaterCreature(tile, worldRNG))
-  chestSpawns.forEach(createChest)
+  lootSpawns.forEach((lootSpawn, i) => createLoot(lootSpawn, i < CurrentLevel * 2 ? LootType.Chest : LootType.Bag))
   for (let i = 0; i < 6; i++) {
-    createChest({ x: enterExitGrids.enter.x - 1 + (i % 3), y: enterExitGrids.enter.y + (i < 3 ? -1 : 1) })
+    createLoot(
+      { x: enterExitGrids.enter.x - 1 + (i % 3), y: enterExitGrids.enter.y + (i < 3 ? -1 : 1) },
+      LootType.Chest
+    )
   }
   createTurtle(enterExitGrids.enter, mapWidth / 2, worldRNG)
   createLandCreatures(enterExitGrids.enter, worldRNG)
@@ -155,21 +160,21 @@ function generateMap(): Vector2[] {
     }
   })
 
-  const chestSpawns: Vector2[] = []
+  const lootSpawns: Vector2[] = []
   const rooms = [...Level.data.values()].filter(
     (tile) => tile.type === Tile.Path && Level.get8Neighbors(tile).filter((n) => n.type === Tile.Path).length >= 4
   )
   rooms.forEach((centerRoomTile) => {
-    if (!chestSpawns.some((c) => getDistance(c, centerRoomTile) < 16)) chestSpawns.push(centerRoomTile)
+    if (!lootSpawns.some((c) => getDistance(c, centerRoomTile) < 16)) lootSpawns.push(centerRoomTile)
   })
   const holes = Level.getContiguousAreas((t) => t.type === Tile.Floor, 9)
   holes.forEach((hole) => {
-    const newChest = worldRNG.getItem(hole)!
-    if (Level.get4Neighbors(newChest).some((t) => isWet(t.type))) return
-    if (chestSpawns.some((c) => getDistance(c, newChest) < 16)) return
-    chestSpawns.push(newChest)
+    const newLoot = worldRNG.getItem(hole)!
+    if (Level.get4Neighbors(newLoot).some((t) => isWet(t.type))) return
+    if (lootSpawns.some((c) => getDistance(c, newLoot) < 16)) return
+    lootSpawns.push(newLoot)
   })
-  return chestSpawns
+  return lootSpawns
 }
 
 const between = (val: number, min: number, max: number) => val > min && val < max
@@ -228,22 +233,24 @@ function getWaterSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
   return spawns
 }
 
-function createChest(grid: Vector2) {
-  const chest = addEntity(World)
-  const chestSprite = new Sprite(getTexture('chest'))
-  if (!ALL_VISIBLE) chestSprite.alpha = 0
-  addSprite(chest, chestSprite, WorldSprites)
-  addComponent(World, NonPlayer, chest)
-  addComponent(World, DisplayObject, chest)
-  addComponent(World, GridPosition, chest)
-  initEntGrid(chest, grid)
-  addComponent(World, CalculateFOV, chest)
-  addComponent(World, Chest, chest)
+function createLoot(grid: Vector2, type: LootType) {
+  const loot = addEntity(World)
+  const lootSprite = new Sprite(getTexture(type === LootType.Chest ? 'chest' : 'bag'))
+  if (!ALL_VISIBLE) lootSprite.alpha = 0
+  addSprite(loot, lootSprite, WorldSprites)
+  addComponent(World, NonPlayer, loot)
+  addComponent(World, DisplayObject, loot)
+  addComponent(World, GridPosition, loot)
+  initEntGrid(loot, grid)
+  addComponent(World, CalculateFOV, loot)
+  addComponent(World, Loot, loot)
+  Loot.type[loot] = type
 }
 
 function createExit(grid: Vector2) {
   const exit = addEntity(World)
   const exitSprite = new Sprite(getTexture('exit'))
+  exitSprite.anchor.x = 0.25
   exitSprite.anchor.y = 0.5
   if (!ALL_VISIBLE) exitSprite.alpha = 0
   addSprite(exit, exitSprite, OverlaySprites)

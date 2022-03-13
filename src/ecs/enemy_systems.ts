@@ -163,7 +163,7 @@ export const seekWaterSystem: System = (world) => {
 const nonActors = defineQuery([NoAction])
 export const noActionSystem: System = (world) => {
   for (const eid of nonActors(world)) {
-    if (--NoAction.remaining[eid] === 0) {
+    if (NoAction.remaining[eid]-- === 0) {
       if (NoAction.status[eid] === Statuses.Eating) {
         let healed = false
         if (hasComponent(world, Health, eid) && Health.current[eid] < Health.max[eid]) {

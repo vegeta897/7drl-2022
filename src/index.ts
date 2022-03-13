@@ -42,6 +42,8 @@ export const setGameState = (state: GameStates) => {
   updateHud()
 }
 
+// TODO: Allow draining of magic sponge to drown snails!
+
 const PLAYER_HEALTH = 10
 
 async function startGame() {
@@ -87,7 +89,10 @@ async function startLevel() {
     return
   }
   initEntGrid(PlayerEntity, playerStart)
-  PixiViewport.moveCenter(PlayerSprite)
+  PixiViewport.moveCenter({
+    x: PlayerSprite.x + TILE_SIZE / 2,
+    y: PlayerSprite.y + TILE_SIZE / 2,
+  })
 
   updateVisibility()
   updateEntityVisibility()

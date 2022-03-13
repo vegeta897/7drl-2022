@@ -49,7 +49,7 @@ export const OnTileType = defineComponent({ current: Types.ui8, previous: Types.
 
 export const WaterCreature = defineComponent({ type: Types.ui8 }, 200)
 export const Bait = defineComponent()
-export const Chest = defineComponent()
+export const Loot = defineComponent({ type: Types.ui8 })
 export const Exit = defineComponent({}, 10)
 
 export const Scent = defineComponent({ range: Types.ui8 })

@@ -25,6 +25,7 @@ export enum Colors {
   StrongWater = '#328e98',
   GoodWater = '#5daf8d',
   DeepWater = '#102b3b',
+  DeepCave = '#221E3A',
   Gold = '#ffd541',
   Sponge = '#f5c96c',
   Blood = '#d01e2a',
@@ -38,7 +39,7 @@ const hudDefaults = {
   fontSize: 20,
   fontFamily: 'Consolas,monospace',
   fg: Colors.Default,
-  bg: Colors.DeepWater,
+  bg: Colors.DeepCave,
 }
 const bigHudDefaults = { ...hudDefaults, width: 47, height: 16, fontSize: 40 }
 
@@ -148,7 +149,7 @@ export async function drawHud() {
     HUD.setOptions({ ...bigHudDefaults, fontStyle: 'bold', bg: Colors.DeepestBlood })
     HUD.drawText(19, 7, `%c{${Colors.Blood}}GAME OVER`)
     setTimeout(() => {
-      HUD.drawText(14, 11, `%c{${Colors.Bad}}[enter] to restart`)
+      if (GameState === 'Lost') HUD.drawText(14, 11, `%c{${Colors.Bad}}[enter] to restart`)
     }, 2500)
     return
   }
@@ -203,7 +204,7 @@ export async function drawHud() {
     HUD.drawText(
       3,
       nextY++,
-      `%c{${Health.current[PlayerEntity] < Health.max[PlayerEntity] ? Colors.Default : Colors.Dim}}[E] Eat`
+      `%c{${Health.current[PlayerEntity] < Health.max[PlayerEntity] ? Colors.Default : Colors.Dim}}[E] Eat bait`
     )
   }
   if (PlayerState === 'Casting') {
