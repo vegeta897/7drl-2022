@@ -48,6 +48,11 @@ const waterCreatureCount: [number, number][] = [
   [12, 20],
   [20, 30],
 ]
+const chestCount: [number, number][] = [
+  [1, 2],
+  [2, 3],
+  [3, 5],
+]
 
 export async function createLevel(levelNumber: number): Promise<Vector2> {
   ;[mapWidth, mapHeight] = levelSizes[levelNumber - 1]
@@ -92,9 +97,8 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   waterSpawns.forEach((tile, i) => i < waterCreaturesToSpawn && createWaterCreature(tile, worldRNG))
   // console.log(lootSpawns.length, 'loot spawns')
   // console.log(mushroomSpawns.length, 'mushroom spawns')
-  lootSpawns.forEach(
-    (lootSpawn, i) => i < levelNumber * 8 && createLoot(lootSpawn, i < levelNumber * 2 ? LootType.Chest : LootType.Bag)
-  )
+  const chests = worldRNG.getUniformInt(...chestCount[levelNumber - 1])
+  lootSpawns.forEach((lootSpawn, i) => createLoot(lootSpawn, i < chests ? LootType.Chest : LootType.Bag))
   // for (let i = 0; i < 6; i++) {
   //   createLoot(
   //     { x: enterExitGrids.enter.x - 1 + (i % 3), y: enterExitGrids.enter.y + (i < 3 ? -1 : 1) },

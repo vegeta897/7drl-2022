@@ -55,8 +55,8 @@ export const predatorSystem: System = (world) => {
       ) {
         Predator.tracking[eid] = 2
         const tileType = Level.get(scentGrid).type
-        if (CanWalk.slowTurns[eid] > 0 && isWalkable(tileType)) break
-        if (CanSwim.slowTurns[eid] > 0 && isWet(tileType)) break
+        if (CanWalk.slowTurns[eid] > 0 && !isWet(tileType)) break
+        if (CanSwim.slowTurns[eid] > 0 && !isWalkable(tileType)) break
         const move = diffVector2(myGrid, scentGrid)
         addComponent(world, MoveAction, eid)
         MoveAction.x[eid] = move.x
@@ -90,8 +90,8 @@ export const predatorSystem: System = (world) => {
         if (!towardScent) continue
         Predator.tracking[eid] = 1
         const tileType = Level.get(towardScent).type
-        if (CanWalk.slowTurns[eid] > 0 && isWalkable(tileType)) break
-        if (CanSwim.slowTurns[eid] > 0 && isWet(tileType)) break
+        if (CanWalk.slowTurns[eid] > 0 && !isWet(tileType)) break
+        if (CanSwim.slowTurns[eid] > 0 && !isWalkable(tileType)) break
         const lingerStrength = (1 + scentRange - lingerGrid.d) / scentRange
         const lingerDistanceFromMe = getDistance(myGrid, lingerGrid)
         const attractChance = 1 - lingerDistanceFromMe / senseRange + lingerStrength

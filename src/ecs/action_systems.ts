@@ -220,6 +220,8 @@ export const attackSystem: System = (world) => {
         spawnBait(targetGrid)
       }
     } else {
+      if (hasComponent(world, CanWalk, target)) CanWalk.slowTurns[eid] = 0
+      if (hasComponent(world, CanSwim, target)) CanSwim.slowTurns[eid] = 0
       logAttack(eid, target, damage, stunnedByAttack ? `, %c{${Colors.Warning}}stunning it` : '')
     }
     if (!hasComponent(world, Animate, eid)) {
@@ -240,7 +242,6 @@ const onTileTypeQuery = defineQuery([OnTileType, Not(WaterCreature)])
 export const wetnessSystem: System = (world) => {
   for (const eid of onTileTypeQuery(world)) {
     const currentTile = Level.get(getEntGrid(eid)).type
-    const noPrevious = OnTileType.previous[eid] === 0
     OnTileType.previous[eid] = OnTileType.current[eid]
     OnTileType.current[eid] = currentTile
     const prevWet = isWet(OnTileType.previous[eid])
@@ -256,9 +257,9 @@ export const wetnessSystem: System = (world) => {
       } else if (eid === BaitEntity) {
         SpritesByEID[eid!].texture = getTexture('bait')
       }
-    } else if (nowWet && (!prevWet || noPrevious)) {
+    } else if (nowWet) {
       if (eid === PlayerEntity) {
-        if (!hasComponent(world, Wetness, eid)) updateHud()
+        updateHud()
         if (!hasComponent(world, Animate, eid)) PlayerSprite.texture = getTexture('playerSwim')
       } else if (eid === BaitEntity) {
         SpritesByEID[eid!].texture = getTexture('baitWater')
