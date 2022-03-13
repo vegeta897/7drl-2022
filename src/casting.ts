@@ -21,7 +21,7 @@ import {
 import { processInput, setPlayerState } from './ecs/input_systems'
 import { addComponent, addEntity, entityExists, removeEntity } from 'bitecs'
 import { EntityMap, Level } from './level'
-import { Colors, logMessage } from './hud'
+import { Colors, logMessage, updateHud } from './hud'
 import { ActiveLures, Lure, Supplies } from './inventory'
 import { activateSecondSight, deactivateSecondSight, triggerTileUpdate } from './fov'
 import { isWet } from './map'
@@ -92,6 +92,7 @@ export function confirmCast() {
     MoveAction.x[PlayerEntity] = CastVector.x
     MoveAction.y[PlayerEntity] = CastVector.y
     MoveAction.noclip[PlayerEntity] = 1
+    setPlayerState('Idle')
   } else {
     PlayerSprite.texture = getTexture(isWet(OnTileType.current[PlayerEntity]) ? 'playerCastSwim' : 'playerCast')
     BaitEntity = spawnBait(castGrid)
@@ -106,7 +107,6 @@ export function confirmCast() {
     drawFishingLine()
   }
   Supplies.bait -= baitNeeded
-  setPlayerState('Idle')
   castTargetSprite.visible = false
   processInput()
 }
@@ -161,9 +161,12 @@ export function angleBait(move: Vector2) {
         if (EntityMap.get(moddedAbsolute)) continue
         if (Level.get(moddedAbsolute).solid) {
           if (!ActiveLures.has(Lure.WreckingBall)) continue
+          if (Supplies.bait === 0) continue
           // Knock it down!
           Level.mineTile(moddedAbsolute)
           triggerTileUpdate()
+          Supplies.bait--
+          logMessage('Wrecking Ball used 1 bait', Colors.Danger)
         }
         if (isWet(Level.get(moddedAbsolute).type) && ActiveLures.has(Lure.MagicSponge)) {
           // Soak it up!
