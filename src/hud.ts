@@ -19,13 +19,12 @@ export const addScore = (points: number) => (score += points)
 
 export enum Colors {
   White = '#ffffff',
-  Default = '#c0c7cc',
-  Good = '#14a02e',
+  Default = '#c1c0cc',
   Bad = '#e86a73',
   Warning = '#f5a097',
   Danger = '#f57221',
-  Dim = '#8098a1',
-  Water = '#477d85',
+  Dim = '#8780a1',
+  Water = '#3c8286',
   StrongWater = '#328e98',
   GoodWater = '#5daf8d',
   Mystical = '#2ddce3',
@@ -35,7 +34,7 @@ export enum Colors {
   Sponge = '#f5c96c',
   Blood = '#d01e2a',
   DeepestBlood = '#25141c',
-  Sky = '#6bb9e1',
+  TheLight = '#a1d1d4',
 }
 
 const hudDefaults = {
@@ -107,7 +106,7 @@ export function logBaitEat(baited: number) {
 export function logPetting() {
   turtlePetLevels.add(CurrentLevel)
   addScore(500)
-  logMessage(`You pet the turtle`, Colors.Good)
+  logMessage(`You pet the turtle`, Colors.GoodWater)
 }
 
 const statusNames = ['', 'eating', 'stunned']
@@ -169,12 +168,12 @@ export async function drawHud() {
     HUD.setOptions(bigHudDefaults)
     let turtlePetResult = `%c{${Colors.Water}}You didn't pet any turtles`
     if (turtlePetLevels.size > 0)
-      turtlePetResult = `%c{${Colors.Good}}You pet ${turtlePetLevels.size} out of ${LastLevel} turtles`
+      turtlePetResult = `%c{${Colors.GoodWater}}You pet ${turtlePetLevels.size} out of ${LastLevel} turtles`
     if (turtlePetLevels.size === LastLevel)
-      turtlePetResult = `%c{${Colors.Good}}You pet all ${turtlePetLevels.size} turtles!`
-    HUD.drawText(9, 4, `%c{${Colors.Sky}}At last, you made it back up to the dry, daylit surface`, 30)
+      turtlePetResult = `%c{${Colors.GoodWater}}You pet all ${turtlePetLevels.size} turtles!`
+    HUD.drawText(9, 4, `%c{${Colors.TheLight}}At last, you made it back up to the dry, daylit surface`, 30)
     await sleep(3000)
-    HUD.drawText(9, 7, `%c{${Colors.Good}}Congratulations!`, 30)
+    HUD.drawText(9, 7, `%c{${Colors.GoodWater}}Congratulations!`, 30)
     await sleep(2000)
     HUD.drawText(9, 9, `${turtlePetResult}`, 30)
     await sleep(2000)

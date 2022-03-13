@@ -67,24 +67,20 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     if (attempts % 10 === 0) await promisedFrame()
     ;({ lootSpawns, mushroomSpawns } = generateMap())
     if (lootSpawns.length < levelNumber * 8) {
-      console.log('too few loot spawns')
+      // console.log('too few loot spawns')
       continue
     }
-    // TODO: Change chest spawns to look for tiles with many surrounding walls/waters in a 5x5 area? Sort by most secluded to least, cutoff at X number of open tiles
-
     // TODO: Crawl map to find furthest tiles from spawn (for exit, or chests)
-
     enterExitGrids = getEnterExitGrids()
-    if (!enterExitGrids) console.log('no valid enter/exit')
+    // if (!enterExitGrids) console.log('no valid enter/exit')
     if (!enterExitGrids) continue
     const ponds = getPonds()
     waterSpawns = getWaterSpawns(ponds, enterExitGrids.enter)
     if (waterSpawns.length >= minWaterCreatures) break
-    console.log('too few water spawns', waterSpawns.length)
+    // console.log('too few water spawns', waterSpawns.length)
   }
-  console.log('success after', attempts)
-  // TODO: Spawn number of loot and water creatures based on level number?
-  console.log('water spawns', waterSpawns.length)
+  // console.log('success after', attempts)
+  // console.log('water spawns', waterSpawns.length)
   Level.removeRedundantWalls()
   createMapSprites()
   EntityMap = new GridMap()
@@ -92,10 +88,10 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     minWaterCreatures,
     worldRNG.getUniformInt(...waterCreatureCount[levelNumber - 1])
   )
-  console.log('water creature count', waterCreaturesToSpawn)
+  // console.log('water creature count', waterCreaturesToSpawn)
   waterSpawns.forEach((tile, i) => i < waterCreaturesToSpawn && createWaterCreature(tile, worldRNG))
-  console.log(lootSpawns.length, 'loot spawns')
-  console.log(mushroomSpawns.length, 'mushroom spawns')
+  // console.log(lootSpawns.length, 'loot spawns')
+  // console.log(mushroomSpawns.length, 'mushroom spawns')
   lootSpawns.forEach(
     (lootSpawn, i) => i < levelNumber * 8 && createLoot(lootSpawn, i < levelNumber * 2 ? LootType.Chest : LootType.Bag)
   )

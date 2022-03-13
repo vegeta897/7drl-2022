@@ -108,9 +108,9 @@ async function startLevel() {
   waitForInput()
   defaultHud()
   if (CurrentLevel === LastLevel) {
-    logMessage('You ascend the ladder, and sense that you are near the surface now...', Colors.Sky)
+    logMessage('You ascend the ladder, and sense that you are near the surface now...', Colors.TheLight)
   } else if (CurrentLevel > 1) {
-    logMessage('You ascend the ladder...', Colors.Sky)
+    logMessage('You ascend the ladder...', Colors.TheLight)
   }
   drawHud()
 }
