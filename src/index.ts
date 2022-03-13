@@ -50,8 +50,6 @@ export const setGameState = (state: GameStates) => {
   updateHud()
 }
 
-// TODO: Allow draining of magic sponge to drown snails!
-
 const PLAYER_HEALTH = 10
 
 async function startGame() {
