@@ -24,7 +24,7 @@ import { createGiantSnails, createTurtle, createWaterCreature } from './creature
 import { LootType } from './inventory'
 import { setGameState } from './'
 
-export const ALL_VISIBLE = 1
+export const ALL_VISIBLE = 0
 const seed = 0
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())

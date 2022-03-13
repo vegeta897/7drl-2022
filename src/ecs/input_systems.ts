@@ -7,6 +7,8 @@ import { drawHud, updateHud } from '../hud'
 import { angleBait, beginCast, cancelCast, confirmCast, cutLine, moveCastTarget } from '../casting'
 import { eatBait, toggleLure } from '../inventory'
 
+const DEBUG_MOVEMENT = false
+
 export const waitForInput = () => {
   WaitingForInput = true
   if (buttonQueued) onInput()
@@ -64,8 +66,8 @@ export const inputSystem: System = (world) => {
         } else if (previousState === 'Angling') {
           angleBait(move)
         } else {
-          const boost = Keys.has('ControlLeft') || Keys.has('ControlRight')
-          const noclip = Keys.has('ShiftLeft') || Keys.has('ShiftRight')
+          const boost = DEBUG_MOVEMENT && (Keys.has('ControlLeft') || Keys.has('ControlRight'))
+          const noclip = DEBUG_MOVEMENT && (Keys.has('ShiftLeft') || Keys.has('ShiftRight'))
           addComponent(World, MoveAction, PlayerEntity)
           MoveAction.x[PlayerEntity] = move.x * (boost ? 10 : 1)
           MoveAction.y[PlayerEntity] = move.y * (boost ? 10 : 1)

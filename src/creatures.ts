@@ -47,7 +47,7 @@ export const CreatureProps: {
   eatingTurns?: number
   damage?: number
   maxAdditionalDamage?: number
-  health?: number
+  health?: [number, number]
   spotting?: number
   killPoints: number
   seekWater?: number
@@ -62,7 +62,7 @@ CreatureProps[Creature.Fish] = {
   eatingTurns: 5,
   damage: 1,
   maxAdditionalDamage: 1,
-  health: 5,
+  health: [4, 6],
   spotting: 0.15,
   killPoints: 25,
 }
@@ -79,7 +79,7 @@ CreatureProps[Creature.Crayfish] = {
   eatingTurns: 4,
   damage: 1,
   maxAdditionalDamage: 1,
-  health: 7,
+  health: [6, 8],
   spotting: 0.2,
   killPoints: 30,
   seekWater: 8,
@@ -95,7 +95,7 @@ CreatureProps[Creature.Alligator] = {
   eatingTurns: 2,
   damage: 2,
   maxAdditionalDamage: 2,
-  health: 8,
+  health: [7, 9],
   spotting: 0.5,
   killPoints: 40,
   seekWater: 8,
@@ -116,7 +116,7 @@ CreatureProps[Creature.GiantSnail] = {
   senseRange: 4,
   damage: 1,
   maxAdditionalDamage: 2,
-  health: 15,
+  health: [14, 18],
   killPoints: 60,
 }
 
@@ -188,8 +188,9 @@ function createCreature(grid: Vector2, creatureType: Creature, spawnInWater = fa
   }
   if (creatureProps.health) {
     addComponent(World, Health, creature)
-    Health.max[creature] = creatureProps.health
-    Health.current[creature] = creatureProps.health
+    const health = RNG.getUniformInt(...creatureProps.health)
+    Health.max[creature] = health
+    Health.current[creature] = health
   }
   if (creatureProps.canSwim) {
     addComponent(World, WaterCreature, creature)
