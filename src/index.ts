@@ -42,7 +42,6 @@ export let CurrentLevel: number
 export const LastLevel = 3
 export const nextLevel = () => {
   CurrentLevel++
-  console.log('moving to level', CurrentLevel)
   resetNonPlayerEntities()
   startLevel()
 }
