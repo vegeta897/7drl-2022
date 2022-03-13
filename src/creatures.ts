@@ -29,6 +29,7 @@ export enum Creature {
   Alligator,
   Turtle,
   GiantSnail,
+  Crayfish,
 }
 
 export const CreatureProps: {
@@ -48,6 +49,7 @@ export const CreatureProps: {
 }[] = []
 CreatureProps[Creature.Fish] = {
   texture: 'fish',
+  name: 'jumbo piranha',
   wanderChance: 10,
   canSwim: true,
   senseRange: 8,
@@ -56,6 +58,21 @@ CreatureProps[Creature.Fish] = {
   damage: 1,
   health: 4,
   spotting: 0.15,
+}
+CreatureProps[Creature.Crayfish] = {
+  texture: 'crayfish',
+  name: 'killer crayfish',
+  wanderChance: 20,
+  canSwim: true,
+  canWalk: true,
+  swimSlowness: 1,
+  walkSlowness: 1,
+  senseRange: 8,
+  lungeRange: 2,
+  eatingTurns: 4,
+  damage: 1,
+  health: 5,
+  spotting: 0.2,
 }
 CreatureProps[Creature.Alligator] = {
   texture: 'alligator',
@@ -88,7 +105,11 @@ CreatureProps[Creature.GiantSnail] = {
 }
 
 export function createWaterCreature(grid: Vector2, rng: typeof RNG) {
-  createCreature(grid, <Creature>(<unknown>rng.getWeightedValue({ [Creature.Alligator]: 2, [Creature.Fish]: 5 })), true)
+  createCreature(
+    grid,
+    <Creature>(<unknown>rng.getWeightedValue({ [Creature.Alligator]: 2, [Creature.Fish]: 5, [Creature.Crayfish]: 3 })),
+    true
+  )
 }
 
 export function createLandCreatures(playerSpawn: Vector2, rng: typeof RNG) {
