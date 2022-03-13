@@ -191,8 +191,14 @@ export async function drawHud() {
     1,
     `%c{${Colors.Dim}}Health %c{${health <= 3 ? Colors.Bad : Colors.Default}}${health.toString().padStart(4)}`
   )
-  const wet = hasComponent(World, Wetness, PlayerEntity)
-  HUD.drawText(28, 1, `%c{${wet ? Colors.StrongWater : Colors.Dim}}${wet ? 'Wet' : 'Dry'}`)
+  const wetness = (hasComponent(World, Wetness, PlayerEntity) && Wetness.factor[PlayerEntity]) || 0
+  HUD.drawText(
+    18,
+    1,
+    `%c{${wetness >= 1 ? Colors.StrongWater : wetness > 0 ? Colors.Water : Colors.Dim}}${
+      wetness >= 1 ? 'Soaked' : wetness >= 0.5 ? 'Dripping' : wetness > 0 ? 'Damp' : 'Dry'
+    }`
+  )
   HUD.drawText(
     3,
     2,

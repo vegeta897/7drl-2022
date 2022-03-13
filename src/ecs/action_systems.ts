@@ -243,10 +243,8 @@ export const wetnessSystem: System = (world) => {
     if (!nowWet) {
       if (hasComponent(world, Wetness, eid)) {
         Wetness.factor[eid] -= 0.1
-        if (Wetness.factor[eid] <= 0) {
-          removeComponent(world, Wetness, eid)
-          updateHud()
-        }
+        updateHud()
+        if (Wetness.factor[eid] <= 0) removeComponent(world, Wetness, eid)
       }
       if (eid === PlayerEntity && prevWet) {
         PlayerSprite.texture = getTexture('player')
