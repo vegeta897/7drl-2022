@@ -1,20 +1,7 @@
 import * as ROT from 'rot-js'
 import { RNG } from 'rot-js'
 import { Sprite } from 'pixi.js'
-import {
-  addVector2,
-  Down,
-  DownLeft,
-  DownRight,
-  getDistance,
-  getStraightLine,
-  Left,
-  Right,
-  Up,
-  UpLeft,
-  UpRight,
-  Vector2,
-} from './vector2'
+import { addVector2, Down, getDistance, getStraightLine, Left, Right, Up, UpLeft, UpRight, Vector2 } from './vector2'
 import AStar from 'rot-js/lib/path/astar'
 import { GridMap, isWalkable, isWet, Tile, TileMap } from './map'
 import { addSprite, createMapSprites, getTexture } from './sprites'
@@ -53,9 +40,7 @@ let mapHeight: number
 export let Level: TileMap
 export let EntityMap: GridMap<number>
 
-// Keep a list of known working seeds to fall back to when max attempts exceeded
-
-// TODO: Entity map doesn't allow more than one entity on a tile, this may cause issues!
+// Keep a list of known working seeds to fall back to when max attempts exceeded?
 
 export async function createLevel(levelNumber: number): Promise<Vector2> {
   ;[mapWidth, mapHeight] = levelSizes[levelNumber - 1]
@@ -79,6 +64,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     // TODO: Crawl map to find furthest tiles from spawn (for exit, or chests)
 
     enterExitGrids = getEnterExitGrids()
+    if (!enterExitGrids) console.log('no valid enter/exit')
     if (!enterExitGrids) continue
     const ponds = getPonds()
     waterSpawns = getWaterSpawns(ponds, enterExitGrids.enter)
@@ -218,7 +204,7 @@ function generateMap(): { lootSpawns: Vector2[]; mushroomSpawns: Vector2[] } {
 const between = (val: number, min: number, max: number) => val > min && val < max
 
 function getEnterExitGrids(): { enter: Vector2; exit: Vector2 } | false {
-  const outer = 3
+  const outer = 1
   const inner = 12
   const validSpawns: Vector2[] = []
   const validExits: Vector2[] = []
@@ -226,7 +212,7 @@ function getEnterExitGrids(): { enter: Vector2; exit: Vector2 } | false {
     if (isWet(tile.type) || !isWalkable(tile.type)) return
     if (!between(tile.x, outer, inner) && !between(tile.x, mapWidth - inner, mapWidth - outer)) return
     if (!between(tile.y, outer, inner) && !between(tile.y, mapHeight - inner, mapHeight - outer)) return
-    if (Level.getDiamondAround(tile, 2).every((t) => isWalkable(t.type))) validSpawns.push(tile)
+    if (Level.getSquareAround(tile, 1).every((t) => isWalkable(t.type))) validSpawns.push(tile)
     if (
       [
         addVector2(tile, Up),
@@ -234,13 +220,7 @@ function getEnterExitGrids(): { enter: Vector2; exit: Vector2 } | false {
         addVector2(tile, UpLeft),
         addVector2(tile, UpRight),
       ].every((n) => Level.get(n).type === Tile.Wall) &&
-      [
-        addVector2(tile, Down),
-        addVector2(tile, Left),
-        addVector2(tile, Right),
-        addVector2(tile, DownLeft),
-        addVector2(tile, DownRight),
-      ].every((n) => !Level.get(n).solid)
+      [addVector2(tile, Down), addVector2(tile, Left), addVector2(tile, Right)].every((n) => !Level.get(n).solid)
     ) {
       validExits.push(tile)
     }

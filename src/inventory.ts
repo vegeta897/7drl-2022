@@ -15,7 +15,7 @@ export const ActiveLures: Set<Lure> = new Set()
 
 export enum Lure {
   WreckingBall = 1,
-  MagicSponge, // TODO: Pour out collected water when reeled in or eaten, use nearest-first crawl to fill tiles
+  MagicSponge,
 }
 const lures = [Lure.WreckingBall, Lure.MagicSponge]
 
@@ -54,18 +54,18 @@ export function getLoot(eid: number) {
     let baitAmount = Math.max(1, Math.round(RNG.getNormal(7, 2.5)))
     if (lootType === LootType.Chest) baitAmount *= 2
     Supplies.bait += baitAmount
-    logMessage(`You got ${baitAmount} bait`, Colors.White)
+    logMessage(`You picked up ${baitAmount} bait`, Colors.White)
   } else if (loot === 'extraLine') {
     Supplies.lineLength++
     if (lootType === LootType.Chest) Supplies.lineLength++
-    logMessage(`You got some extra fishing line`, Colors.White)
+    logMessage(`You picked up some extra fishing line`, Colors.White)
   } else if (loot === 'lure') {
     const lure = RNG.getItem([Lure.WreckingBall, Lure.MagicSponge].filter((l) => !Inventory.has(l)))!
     Inventory.add(lure)
     const { color, name } = getLureInfo(lure)
     let info = Inventory.size === 1 ? ' Use the number keys to attach lures' : ''
     info = Inventory.size === 2 ? ' Tip: Multiple lures can be attached at once!' : info
-    logMessage(`You got the %c{${color}}${name} lure!%c{${Colors.White}}${info}`, Colors.White)
+    logMessage(`You found the %c{${color}}${name} lure!%c{${Colors.White}}${info}`, Colors.White)
   }
   deleteEntGrid(eid)
   removeEntity(World, eid)

@@ -1,4 +1,4 @@
-import { get4Neighbors, get8Neighbors, getDiamondAround, getDistance, Vector2 } from './vector2'
+import { get4Neighbors, get8Neighbors, getDiamondAround, getDistance, getSquareAround, Vector2 } from './vector2'
 import { Sprite } from 'pixi.js'
 import { Level } from './level'
 import { createTileSprite, getTexture, getTileTexture } from './sprites'
@@ -60,6 +60,11 @@ export class TileMap extends GridMap<TileData> {
   }
   getDiamondAround(grid: Vector2, radius: number): TileData[] {
     return getDiamondAround(grid, radius)
+      .filter((g) => this.has(g))
+      .map((g) => this.get(g))
+  }
+  getSquareAround(grid: Vector2, radius: number): TileData[] {
+    return getSquareAround(grid, radius)
       .filter((g) => this.has(g))
       .map((g) => this.get(g))
   }

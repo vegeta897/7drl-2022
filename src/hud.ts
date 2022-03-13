@@ -7,6 +7,7 @@ import { World } from './ecs'
 import { promisedFrame } from './pixi'
 import { Creature, CreatureProps } from './creatures'
 import { ActiveLures, getLureInfo, Inventory, Supplies } from './inventory'
+import { sleep } from './util'
 
 let HUD: Display
 let log: string[]
@@ -161,12 +162,13 @@ export async function drawHud() {
       turtlePetResult = `%c{${Colors.Good}}You pet ${turtlePetLevels.size} out of ${LastLevel} turtles`
     if (turtlePetLevels.size === LastLevel)
       turtlePetResult = `%c{${Colors.Good}}You pet all ${turtlePetLevels.size} turtles!`
-    HUD.drawText(
-      9,
-      4,
-      `%c{${Colors.Sky}}At last, you made it back up to the dry, daylit surface\n\n\n\n\n%c{${Colors.GoodWater}}You killed ${killedFish} fish\n\n${turtlePetResult}`,
-      30
-    )
+    HUD.drawText(9, 4, `%c{${Colors.Sky}}At last, you made it back up to the dry, daylit surface`, 30)
+    await sleep(3000)
+    HUD.drawText(9, 7, `%c{${Colors.Good}}Congratulations!`, 30)
+    await sleep(2000)
+    HUD.drawText(9, 9, `%c{${Colors.GoodWater}}You killed ${killedFish} fish`, 30)
+    await sleep(2000)
+    HUD.drawText(9, 11, `${turtlePetResult}`, 30)
     return
   }
   if (GameState === 'LevelGenFailed') {
