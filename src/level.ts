@@ -23,8 +23,8 @@ import { createLandCreatures, createTurtle, createWaterCreature } from './creatu
 import { LootType } from './inventory'
 import { CurrentLevel, setGameState } from './index'
 
-export const ALL_VISIBLE = 0
-const seed = 1647186668260
+export const ALL_VISIBLE = 1
+const seed = 0
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())
@@ -59,6 +59,10 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     showLevelGen(attempts)
     if (attempts % 10 === 0) await promisedFrame()
     ;({ lootSpawns, mushroomSpawns } = generateMap())
+    if (lootSpawns.length < CurrentLevel * 10) {
+      console.log('too few loot spawns')
+      continue
+    }
     // TODO: Change chest spawns to look for tiles with many surrounding walls/waters in a 5x5 area? Sort by most secluded to least, cutoff at X number of open tiles
 
     // TODO: Crawl map to find furthest tiles from spawn (for exit, or chests)
@@ -81,12 +85,12 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   console.log(lootSpawns.length, 'loot spawns')
   console.log(mushroomSpawns.length, 'mushroom spawns')
   lootSpawns.forEach((lootSpawn, i) => createLoot(lootSpawn, i < CurrentLevel * 2 ? LootType.Chest : LootType.Bag))
-  for (let i = 0; i < 6; i++) {
-    createLoot(
-      { x: enterExitGrids.enter.x - 1 + (i % 3), y: enterExitGrids.enter.y + (i < 3 ? -1 : 1) },
-      LootType.Chest
-    )
-  }
+  // for (let i = 0; i < 6; i++) {
+  //   createLoot(
+  //     { x: enterExitGrids.enter.x - 1 + (i % 3), y: enterExitGrids.enter.y + (i < 3 ? -1 : 1) },
+  //     LootType.Chest
+  //   )
+  // }
   mushroomSpawns.forEach(createMushroom)
   createTurtle(enterExitGrids.enter, mapWidth / 2, worldRNG)
   createLandCreatures(enterExitGrids.enter, worldRNG)

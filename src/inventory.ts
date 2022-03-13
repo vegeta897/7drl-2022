@@ -40,42 +40,41 @@ export enum LootType {
 }
 
 const bagLootChances = {
-  bait: 4,
+  bait: 15,
   extraLine: 1,
 }
 
 const chestLootChances = {
   bait: 1,
-  extraLine: 1,
-  lure: 8,
+  extraLine: 3,
+  lure: 30,
 }
 
 export function getLoot(eid: number) {
   const lootType = Loot.type[eid]
+  const isChest = lootType === LootType.Chest
   let loot: string
   do {
-    loot = RNG.getWeightedValue(lootType === LootType.Chest ? chestLootChances : bagLootChances)!
+    loot = RNG.getWeightedValue(isChest ? chestLootChances : bagLootChances)!
   } while (Inventory.size === lures.length && loot === 'lure')
   if (loot === 'bait') {
     let baitAmount = Math.max(1, Math.round(RNG.getNormal(7, 2.5)))
-    if (lootType === LootType.Chest) baitAmount *= 2
+    if (isChest) baitAmount *= 2
     Supplies.bait += baitAmount
-    addScore(20)
     logMessage(`You picked up ${baitAmount} bait`, Colors.White)
   } else if (loot === 'extraLine') {
     Supplies.lineLength++
-    if (lootType === LootType.Chest) Supplies.lineLength++
-    addScore(30)
+    if (isChest) Supplies.lineLength++
     logMessage(`You picked up some extra fishing line`, Colors.White)
   } else if (loot === 'lure') {
     const lure = RNG.getItem(lures.filter((l) => !Inventory.has(l)))!
     Inventory.add(lure)
     const { color, name } = getLureInfo(lure)
-    addScore(250)
     let info = Inventory.size === 1 ? ' Use the number keys to attach lures' : ''
     info = Inventory.size === 2 ? ' Tip: Multiple lures can be attached at once!' : info
     logMessage(`You found the %c{${color}}${name} lure!%c{${Colors.White}}${info}`, Colors.White)
   }
+  addScore(isChest ? 250 : 25)
   deleteEntGrid(eid)
   removeEntity(World, eid)
 }
