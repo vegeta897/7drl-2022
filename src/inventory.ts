@@ -5,9 +5,11 @@ import { World } from './ecs'
 import { RNG } from 'rot-js'
 import { PlayerEntity } from './'
 
+const START_LINE_LENGTH = 4
+const START_BAIT = 8
 export const Supplies = {
-  bait: 0,
-  lineLength: 0,
+  bait: START_BAIT,
+  lineLength: START_LINE_LENGTH,
 }
 
 export const Inventory: Set<Lure> = new Set()
@@ -21,16 +23,20 @@ export enum Lure {
 }
 const lures = [Lure.WreckingBall, Lure.MagicSponge, Lure.SecondSight, Lure.Telecasting]
 
-export function getLureInfo(lure: Lure): { name: string; color: Colors } {
+export function getLureInfo(lure: Lure): { name: string; color: Colors; hint: string } {
   switch (lure) {
     case Lure.WreckingBall:
-      return { name: 'Wrecking Ball', color: Colors.Danger }
+      return { name: 'Wrecking Ball', color: Colors.Danger, hint: 'Try angling your lure into a wall...' }
     case Lure.MagicSponge:
-      return { name: 'Magic Sponge', color: Colors.Sponge }
+      return { name: 'Magic Sponge', color: Colors.Sponge, hint: 'Try casting onto water...' }
     case Lure.SecondSight:
-      return { name: 'Second Sight', color: Colors.Mystical }
+      return {
+        name: 'Second Sight',
+        color: Colors.Mystical,
+        hint: 'Try casting into the darkness...',
+      }
     case Lure.Telecasting:
-      return { name: 'Telecasting', color: Colors.Spooky }
+      return { name: 'Telecasting', color: Colors.Spooky, hint: 'Try casting somewhere hard to reach...' }
   }
 }
 
@@ -46,8 +52,15 @@ const bagLootChances = {
 
 const chestLootChances = {
   bait: 1,
-  extraLine: 3,
+  extraLine: 1,
   lure: 30,
+}
+
+const getChestLootChances = () => {
+  return {
+    ...chestLootChances,
+    bait: (Supplies.lineLength - 4) * 2,
+  }
 }
 
 export function getLoot(eid: number) {
@@ -55,7 +68,7 @@ export function getLoot(eid: number) {
   const isChest = lootType === LootType.Chest
   let loot: string
   do {
-    loot = RNG.getWeightedValue(isChest ? chestLootChances : bagLootChances)!
+    loot = RNG.getWeightedValue(isChest ? getChestLootChances() : bagLootChances)!
   } while (Inventory.size === lures.length && loot === 'lure')
   if (loot === 'bait') {
     let baitAmount = Math.max(1, Math.round(RNG.getNormal(7, 2.5)))
@@ -79,11 +92,19 @@ export function getLoot(eid: number) {
   removeEntity(World, eid)
 }
 
+const PreviouslyToggled: Set<Lure> = new Set()
 export function toggleLure(lure: number) {
   const toToggle = [...Inventory][lure - 1]
   if (!toToggle) return
   if (ActiveLures.has(toToggle)) ActiveLures.delete(toToggle)
-  else ActiveLures.add(toToggle)
+  else {
+    ActiveLures.add(toToggle)
+    if (!PreviouslyToggled.has(toToggle)) {
+      PreviouslyToggled.add(toToggle)
+      const { hint, color } = getLureInfo(toToggle)
+      logMessage(hint, color)
+    }
+  }
   updateHud()
 }
 
@@ -99,8 +120,9 @@ export function eatBait() {
 }
 
 export function clearInventory() {
-  Supplies.bait = 8
-  Supplies.lineLength = 4
+  Supplies.bait = START_BAIT
+  Supplies.lineLength = START_LINE_LENGTH
   Inventory.clear()
   ActiveLures.clear()
+  PreviouslyToggled.clear()
 }

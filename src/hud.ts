@@ -1,6 +1,6 @@
 import { Display } from 'rot-js'
 import { Health, Snail, Statuses, WaterCreature, Wetness } from './ecs/components'
-import { CurrentLevel, GameState, LastLevel, PlayerEntity } from './index'
+import { CurrentLevel, GameState, LastLevel, PlayerEntity } from './'
 import { PlayerState } from './ecs/input_systems'
 import { hasComponent } from 'bitecs'
 import { World } from './ecs'

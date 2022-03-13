@@ -4,11 +4,12 @@ import { Sprite } from 'pixi.js'
 import { addVector2, Down, getDistance, getStraightLine, Left, Right, Up, UpLeft, UpRight, Vector2 } from './vector2'
 import AStar from 'rot-js/lib/path/astar'
 import { GridMap, isWalkable, isWet, Tile, TileMap } from './map'
-import { addSprite, createMapSprites, getTexture } from './sprites'
-import { addComponent, addEntity } from 'bitecs'
+import { addSprite, createMapSprites, getTexture, SpritesByEID } from './sprites'
+import { addComponent, addEntity, removeEntity } from 'bitecs'
 import { World } from './ecs'
 import {
   CalculateFOV,
+  deleteEntGrid,
   DisplayObject,
   Exit,
   GridPosition,
@@ -19,12 +20,12 @@ import {
 } from './ecs/components'
 import { OverlaySprites, promisedFrame, WorldSprites } from './pixi'
 import { showLevelGen } from './hud'
-import { createLandCreatures, createTurtle, createWaterCreature } from './creatures'
+import { createGiantSnails, createTurtle, createWaterCreature } from './creatures'
 import { LootType } from './inventory'
-import { CurrentLevel, setGameState } from './index'
+import { setGameState } from './'
 
 export const ALL_VISIBLE = 1
-const seed = 1647189893951
+const seed = 0
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())
@@ -42,9 +43,15 @@ export let EntityMap: GridMap<number>
 
 // Keep a list of known working seeds to fall back to when max attempts exceeded?
 
+const waterCreatureCount: [number, number][] = [
+  [8, 12],
+  [12, 20],
+  [20, 30],
+]
+
 export async function createLevel(levelNumber: number): Promise<Vector2> {
   ;[mapWidth, mapHeight] = levelSizes[levelNumber - 1]
-  const minWaterCreatures = (mapWidth * mapHeight) / 180
+  const minWaterCreatures = waterCreatureCount[levelNumber - 1][0]
   let attempts = 0
   let enterExitGrids
   let waterSpawns
@@ -59,7 +66,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     showLevelGen(attempts)
     if (attempts % 10 === 0) await promisedFrame()
     ;({ lootSpawns, mushroomSpawns } = generateMap())
-    if (lootSpawns.length < CurrentLevel * 10) {
+    if (lootSpawns.length < levelNumber * 8) {
       console.log('too few loot spawns')
       continue
     }
@@ -72,19 +79,26 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     if (!enterExitGrids) continue
     const ponds = getPonds()
     waterSpawns = getWaterSpawns(ponds, enterExitGrids.enter)
-    if (waterSpawns.size >= minWaterCreatures) break
-    console.log('too few water spawns', waterSpawns.size)
+    if (waterSpawns.length >= minWaterCreatures) break
+    console.log('too few water spawns', waterSpawns.length)
   }
   console.log('success after', attempts)
   // TODO: Spawn number of loot and water creatures based on level number?
-  console.log('water spawns', waterSpawns.size)
+  console.log('water spawns', waterSpawns.length)
   Level.removeRedundantWalls()
   createMapSprites()
   EntityMap = new GridMap()
-  waterSpawns.forEach((tile) => createWaterCreature(tile, worldRNG))
+  const waterCreaturesToSpawn = Math.min(
+    minWaterCreatures,
+    worldRNG.getUniformInt(...waterCreatureCount[levelNumber - 1])
+  )
+  console.log('water creature count', waterCreaturesToSpawn)
+  waterSpawns.forEach((tile, i) => i < waterCreaturesToSpawn && createWaterCreature(tile, worldRNG))
   console.log(lootSpawns.length, 'loot spawns')
   console.log(mushroomSpawns.length, 'mushroom spawns')
-  lootSpawns.forEach((lootSpawn, i) => createLoot(lootSpawn, i < CurrentLevel * 2 ? LootType.Chest : LootType.Bag))
+  lootSpawns.forEach(
+    (lootSpawn, i) => i < levelNumber * 8 && createLoot(lootSpawn, i < levelNumber * 2 ? LootType.Chest : LootType.Bag)
+  )
   // for (let i = 0; i < 6; i++) {
   //   createLoot(
   //     { x: enterExitGrids.enter.x - 1 + (i % 3), y: enterExitGrids.enter.y + (i < 3 ? -1 : 1) },
@@ -93,7 +107,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   // }
   mushroomSpawns.forEach(createMushroom)
   createTurtle(enterExitGrids.enter, mapWidth / 2, worldRNG)
-  createLandCreatures(enterExitGrids.enter, worldRNG)
+  createGiantSnails(enterExitGrids.enter, worldRNG)
   createExit(enterExitGrids.exit)
   return enterExitGrids.enter
 }
@@ -180,16 +194,15 @@ function generateMap(): { lootSpawns: Vector2[]; mushroomSpawns: Vector2[] } {
   // Pick loot spawns
   const lootSpawns: Vector2[] = []
   const rooms = [...Level.data.values()].filter(
-    (tile) => tile.type === Tile.Path && Level.get8Neighbors(tile).filter((n) => n.type === Tile.Path).length >= 4
+    (tile) => tile.type === Tile.Path && Level.get8Neighbors(tile).filter((n) => n.type === Tile.Path).length >= 3
   )
   rooms.forEach((centerRoomTile) => {
-    if (!lootSpawns.some((c) => getDistance(c, centerRoomTile) < 12)) lootSpawns.push(centerRoomTile)
+    if (!lootSpawns.some((c) => getDistance(c, centerRoomTile) < 8)) lootSpawns.push(centerRoomTile)
   })
-  const holes = Level.getContiguousAreas((t) => t.type === Tile.Floor, 9)
-  holes.forEach((hole) => {
+  const isolatedFloors = Level.getContiguousAreas((t) => t.type === Tile.Floor, 20)
+  isolatedFloors.forEach((hole) => {
     const newLoot = worldRNG.getItem(hole)!
-    if (Level.get4Neighbors(newLoot).some((t) => isWet(t.type))) return
-    if (lootSpawns.some((c) => getDistance(c, newLoot) < 12)) return
+    if (lootSpawns.some((c) => getDistance(c, newLoot) < 4)) return
     lootSpawns.push(newLoot)
   })
   // Pick mushroom spawns
@@ -250,11 +263,11 @@ function getPonds() {
   })
 }
 
-function getWaterSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
+function getWaterSpawns(ponds: Vector2[][], player: Vector2): Vector2[] {
   const spawns: Set<Vector2> = new Set()
   for (const pond of ponds) {
-    const tilesPerFish = Math.max(7, worldRNG.getNormal(16, 5))
-    const fishCount = Math.min(8, Math.floor(pond.length / tilesPerFish))
+    const tilesPerFish = Math.max(6, worldRNG.getNormal(12, 3))
+    const fishCount = Math.min(4, Math.floor(pond.length / tilesPerFish))
     let spawnCandidate = [...pond]
     for (let i = 0; i < fishCount; i++) {
       let randomPick
@@ -265,7 +278,7 @@ function getWaterSpawns(ponds: Vector2[][], player: Vector2): Set<Vector2> {
       if (randomPick) spawns.add(randomPick)
     }
   }
-  return spawns
+  return [...spawns]
 }
 
 function createLoot(grid: Vector2, type: LootType) {
@@ -297,6 +310,13 @@ function createMushroom(grid: Vector2) {
 }
 
 function createExit(grid: Vector2) {
+  const entityHere = EntityMap.get(grid)
+  if (entityHere) {
+    SpritesByEID[entityHere].destroy()
+    delete SpritesByEID[entityHere]
+    deleteEntGrid(entityHere)
+    removeEntity(World, entityHere)
+  }
   const exit = addEntity(World)
   const exitSprite = new Sprite(getTexture('exit'))
   exitSprite.anchor.x = 0.25

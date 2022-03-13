@@ -1,6 +1,6 @@
 import { getDistance, Vector2 } from './vector2'
 import { World } from './ecs'
-import { AnimatedSprite, Sprite } from 'pixi.js'
+import { AnimatedSprite } from 'pixi.js'
 import { addSprite, getTexture } from './sprites'
 import {
   CalculateFOV,
@@ -24,7 +24,7 @@ import { ALL_VISIBLE, EntityMap, Level } from './level'
 import { addComponent, addEntity, hasComponent } from 'bitecs'
 import { RNG } from 'rot-js'
 import { isWet, TileData } from './map'
-import { CurrentLevel, PlayerEntity } from './index'
+import { CurrentLevel } from './'
 
 export enum Creature {
   Fish = 1,
@@ -128,16 +128,16 @@ export function createWaterCreature(grid: Vector2, rng: typeof RNG) {
   )
 }
 
-export function createLandCreatures(playerSpawn: Vector2, rng: typeof RNG) {
+export function createGiantSnails(playerSpawn: Vector2, rng: typeof RNG) {
   const openTiles = [...Level.data.values()].filter((t) => !t.solid)
-  const landCreatureCount = rng.getUniformInt(
+  const snailCount = rng.getUniformInt(
     ...(<[number, number]>[
       [1, 2],
       [2, 5],
       [4, 8],
     ][CurrentLevel - 1])
   )
-  for (let i = 0; i < landCreatureCount; i++) {
+  for (let i = 0; i < snailCount; i++) {
     let tile: TileData
     do {
       tile = rng.getItem(openTiles)!

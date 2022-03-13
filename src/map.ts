@@ -109,9 +109,10 @@ export class TileMap extends GridMap<TileData> {
       let currentTile: TileData
       do {
         currentTile = [...uncheckedNeighbors.values()][0]
+        if (crawled.has(currentTile)) return
         uncheckedNeighbors.delete(currentTile)
         area.push(currentTile)
-        if (maxSize && area.length > maxSize) return
+        // if (maxSize && area.length > maxSize) return
         crawled.add(currentTile)
         this.get4Neighbors(currentTile).forEach((t) => {
           if (!crawled.has(t) && tileCheck(t)) uncheckedNeighbors.add(t)

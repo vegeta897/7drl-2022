@@ -21,7 +21,7 @@ import {
 import { processInput, setPlayerState } from './ecs/input_systems'
 import { addComponent, addEntity, entityExists, removeEntity } from 'bitecs'
 import { EntityMap, Level } from './level'
-import { addScore, Colors, logMessage, updateHud } from './hud'
+import { addScore, Colors, logMessage } from './hud'
 import { ActiveLures, Lure, Supplies } from './inventory'
 import { activateSecondSight, deactivateSecondSight, triggerTileUpdate } from './fov'
 import { isWet } from './map'

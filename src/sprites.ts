@@ -3,7 +3,7 @@ import spriteData from '../assets/sprites.json'
 import { EntitySprites, WorldSprites } from './pixi'
 import { Tile, TileData } from './map'
 import { RNG } from 'rot-js'
-import { TILE_SIZE } from './index'
+import { TILE_SIZE } from './'
 import { ALL_VISIBLE, Level } from './level'
 import { get4Neighbors } from './vector2'
 
