@@ -30,6 +30,7 @@ export enum Tile {
   Shallows,
   Path,
   Stalagmite,
+  Rubble,
 }
 
 const EmptyTile = {
@@ -126,7 +127,7 @@ export class TileMap extends GridMap<TileData> {
   mineTile(grid: Vector2) {
     const tile = this.get(grid)
     tile.type = Tile.Floor
-    tile.sprite!.texture = getTexture(getTileTexture(tile))
+    tile.sprite!.texture = getTexture(getTileTexture({ ...tile, type: Tile.Rubble }))
     tile.solid = false
     tile.seeThrough = true
     for (const neighbor of get8Neighbors(grid)) {
@@ -135,8 +136,7 @@ export class TileMap extends GridMap<TileData> {
         createTileSprite(this.get(neighbor))
       } else if (getDistance(tile, neighbor) === 1) {
         const neighborTile = this.get(neighbor)
-        if (neighborTile.type === Tile.Floor || neighborTile.type === Tile.Wall)
-          neighborTile.sprite!.texture = getTexture(getTileTexture(neighborTile))
+        if (neighborTile.type === Tile.Wall) neighborTile.sprite!.texture = getTexture(getTileTexture(neighborTile))
       }
     }
   }

@@ -37,6 +37,7 @@ const getNeighborString = (tile: TileData, neighborTypes: Tile[]): string => {
 
 const floors = ['floor1', 'floor1', 'floor1', 'floor2', 'floor3', 'floor4', 'floor5', 'floor6']
 const stalagmites = ['stalagmites1', 'stalagmites2']
+const rubble = ['rubble1', 'rubble2', 'rubble3']
 export const getTileTexture = (tile: TileData): string => {
   switch (tile.type) {
     case Tile.Floor:
@@ -51,6 +52,8 @@ export const getTileTexture = (tile: TileData): string => {
       return 'floorBricks'
     case Tile.Stalagmite:
       return RNG.getItem(stalagmites)!
+    case Tile.Rubble:
+      return RNG.getItem(rubble)!
   }
   throw `No texture found for tile type ${tile}`
 }

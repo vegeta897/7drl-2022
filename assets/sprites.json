@@ -165,6 +165,21 @@
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
       "sourceSize": { "w": 16, "h": 16 }
     },
+    "rubble1": {
+      "frame": { "x": 16, "y": 176, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "rubble2": {
+      "frame": { "x": 32, "y": 176, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
+    "rubble3": {
+      "frame": { "x": 48, "y": 176, "w": 16, "h": 16 },
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
+      "sourceSize": { "w": 16, "h": 16 }
+    },
     "caveWall": {
       "frame": { "x": 32, "y": 48, "w": 16, "h": 16 },
       "spriteSourceSize": { "x": 0, "y": 0, "w": 16, "h": 16 },
