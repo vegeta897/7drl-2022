@@ -87,7 +87,7 @@ export const playerActionSystem: System = (world) => {
       removeEntity(world, targetEntity)
     } else if (hasComponent(world, Exit, targetEntity)) {
       setGameState('EndLevel')
-      addScore(1000 * CurrentLevel)
+      addScore([1500, 3000, 5000][CurrentLevel - 1])
       removeComponent(world, MoveAction, PlayerEntity)
     } else if (
       hasComponent(world, WaterCreature, targetEntity) &&
@@ -193,7 +193,6 @@ const attackQuery = defineQuery([AttackAction])
 export const attackSystem: System = (world) => {
   for (const eid of attackQuery(world)) {
     const distance = getDistance({ x: AttackAction.x[eid], y: AttackAction.y[eid] })
-    if (distance > 1) console.log('its a lunge')
     const target = AttackAction.target[eid]
     let damage = CanAttack.damage[eid]
     if (RNG.getUniform() > (distance > 1 ? 0.3 : 0.8)) damage += RNG.getUniformInt(1, CanAttack.maxAdditional[eid])
@@ -206,6 +205,7 @@ export const attackSystem: System = (world) => {
         stunnedByAttack = true
         NoAction.status[target] = Statuses.Stunned
         NoAction.remaining[target] = 1
+        NoAction.baitStillThere[target] = 1
       }
     }
     const healthLeft = (Health.current[target] -= damage)
@@ -215,13 +215,13 @@ export const attackSystem: System = (world) => {
       const targetGrid = getEntGrid(target)
       deleteEntGrid(target)
       removeEntity(world, target)
-      if (wasEating && RNG.getUniform() > 0.5) {
+      if ((NoAction.baitStillThere[target] || wasEating) && RNG.getUniform() > 0.3 ? 1 : 0) {
         logMessage('The bait can be used again!', Colors.GoodWater)
         spawnBait(targetGrid)
       }
     } else {
-      if (hasComponent(world, CanWalk, target)) CanWalk.slowTurns[eid] = 0
-      if (hasComponent(world, CanSwim, target)) CanSwim.slowTurns[eid] = 0
+      if (hasComponent(world, CanWalk, target)) CanWalk.slowTurns[target] = 0
+      if (hasComponent(world, CanSwim, target)) CanSwim.slowTurns[target] = 0
       logAttack(eid, target, damage, stunnedByAttack ? `, %c{${Colors.Warning}}stunning it` : '')
     }
     if (!hasComponent(world, Animate, eid)) {

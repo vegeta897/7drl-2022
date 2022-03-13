@@ -123,7 +123,7 @@ CreatureProps[Creature.GiantSnail] = {
 export function createWaterCreature(grid: Vector2, rng: typeof RNG) {
   createCreature(
     grid,
-    <Creature>(<unknown>rng.getWeightedValue({ [Creature.Alligator]: 2, [Creature.Fish]: 5, [Creature.Crayfish]: 3 })),
+    <Creature>(<unknown>rng.getWeightedValue({ [Creature.Alligator]: 1, [Creature.Fish]: 5, [Creature.Crayfish]: 3 })),
     true
   )
 }

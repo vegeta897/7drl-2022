@@ -71,7 +71,7 @@ export function getLoot(eid: number) {
     loot = RNG.getWeightedValue(isChest ? getChestLootChances() : bagLootChances)!
   } while (Inventory.size === lures.length && loot === 'lure')
   if (loot === 'bait') {
-    let baitAmount = Math.max(1, Math.round(RNG.getNormal(7, 2.5)))
+    let baitAmount = Math.max(1, Math.round(RNG.getNormal(6, 2)))
     if (isChest) baitAmount *= 2
     Supplies.bait += baitAmount
     logMessage(`You picked up ${baitAmount} bait`, Colors.White)

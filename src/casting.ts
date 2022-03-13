@@ -92,6 +92,7 @@ export function confirmCast() {
     MoveAction.x[PlayerEntity] = CastVector.x
     MoveAction.y[PlayerEntity] = CastVector.y
     MoveAction.noclip[PlayerEntity] = 1
+    logMessage(`Telecast used ${baitNeeded} bait`, Colors.Spooky)
     setPlayerState('Idle')
   } else {
     PlayerSprite.texture = getTexture(isWet(OnTileType.current[PlayerEntity]) ? 'playerCastSwim' : 'playerCast')
