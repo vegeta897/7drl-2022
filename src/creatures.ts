@@ -23,6 +23,7 @@ import { ALL_VISIBLE, EntityMap, Level } from './level'
 import { addComponent, addEntity } from 'bitecs'
 import { RNG } from 'rot-js'
 import { isWet, TileData } from './map'
+import { CurrentLevel } from './index'
 
 export enum Creature {
   Fish = 1,
@@ -114,7 +115,14 @@ export function createWaterCreature(grid: Vector2, rng: typeof RNG) {
 
 export function createLandCreatures(playerSpawn: Vector2, rng: typeof RNG) {
   const openTiles = [...Level.data.values()].filter((t) => !t.solid)
-  const landCreatureCount = Math.ceil(openTiles.length / rng.getUniformInt(600, 900))
+  const landCreatureCount = rng.getUniformInt(
+    ...(<[number, number]>[
+      [1, 2],
+      [2, 5],
+      [4, 8],
+    ][CurrentLevel - 1])
+  )
+  console.log('land creature count', landCreatureCount)
   for (let i = 0; i < landCreatureCount; i++) {
     let tile: TileData
     do {

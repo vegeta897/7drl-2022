@@ -23,6 +23,7 @@ import {
   WaterCreature,
   Wetness,
   Snail,
+  Mushroom,
 } from './components'
 import {
   addComponent,
@@ -76,6 +77,12 @@ export const playerActionSystem: System = (world) => {
       removeEntity(world, targetEntity)
     } else if (hasComponent(world, Loot, targetEntity)) {
       getLoot(targetEntity)
+    } else if (hasComponent(world, Mushroom, targetEntity)) {
+      logMessage('You ate the mushroom (+1 hp)', Colors.GoodWater)
+      Health.current[PlayerEntity]++
+      Health.max[PlayerEntity] = Math.max(Health.max[PlayerEntity], Health.current[PlayerEntity])
+      deleteEntGrid(targetEntity)
+      removeEntity(world, targetEntity)
     } else if (hasComponent(world, Exit, targetEntity)) {
       setGameState('EndLevel')
       removeComponent(world, MoveAction, PlayerEntity)
@@ -222,6 +229,7 @@ const onTileTypeQuery = defineQuery([OnTileType, Not(WaterCreature)])
 export const wetnessSystem: System = (world) => {
   for (const eid of onTileTypeQuery(world)) {
     const currentTile = Level.get(getEntGrid(eid)).type
+    const noPrevious = OnTileType.previous[eid] === 0
     OnTileType.previous[eid] = OnTileType.current[eid]
     OnTileType.current[eid] = currentTile
     const prevWet = isWet(OnTileType.previous[eid])
@@ -239,7 +247,7 @@ export const wetnessSystem: System = (world) => {
       } else if (eid === BaitEntity) {
         SpritesByEID[eid!].texture = getTexture('bait')
       }
-    } else if (nowWet && !prevWet) {
+    } else if (nowWet && (!prevWet || noPrevious)) {
       if (eid === PlayerEntity) {
         if (!hasComponent(world, Wetness, eid)) updateHud()
         if (!hasComponent(world, Animate, eid)) PlayerSprite.texture = getTexture('playerSwim')
@@ -262,6 +270,7 @@ const waterCreatures = defineQuery([WaterCreature, OnTileType])
 export const waterCreatureSystem: System = (world) => {
   for (const eid of waterCreatures(world)) {
     const currentTile = Level.get(getEntGrid(eid)).type
+    const noPrevious = OnTileType.previous[eid] === 0
     OnTileType.previous[eid] = OnTileType.current[eid]
     OnTileType.current[eid] = currentTile
     const prevWet = isWet(OnTileType.previous[eid])
@@ -283,8 +292,8 @@ export const waterCreatureSystem: System = (world) => {
       Spotting.current[eid] = newSpotting
       RecalcEntities.add(eid)
     }
-    if (prevWet === nowWet) continue
-    if (nowWet && !prevWet) {
+    if (prevWet === nowWet && !noPrevious) continue
+    if (nowWet && (!prevWet || noPrevious)) {
       if (!hasComponent(world, Animate, eid))
         changeAnimation(<AnimatedSprite>SpritesByEID[eid], WaterCreature.type[eid], true)
     } else {

@@ -1,13 +1,35 @@
 import * as ROT from 'rot-js'
 import { RNG } from 'rot-js'
 import { Sprite } from 'pixi.js'
-import { getDistance, getStraightLine, Vector2 } from './vector2'
+import {
+  addVector2,
+  Down,
+  DownLeft,
+  DownRight,
+  getDistance,
+  getStraightLine,
+  Left,
+  Right,
+  Up,
+  UpLeft,
+  UpRight,
+  Vector2,
+} from './vector2'
 import AStar from 'rot-js/lib/path/astar'
 import { GridMap, isWalkable, isWet, Tile, TileMap } from './map'
 import { addSprite, createMapSprites, getTexture } from './sprites'
 import { addComponent, addEntity } from 'bitecs'
 import { World } from './ecs'
-import { CalculateFOV, DisplayObject, Exit, GridPosition, initEntGrid, Loot, NonPlayer } from './ecs/components'
+import {
+  CalculateFOV,
+  DisplayObject,
+  Exit,
+  GridPosition,
+  initEntGrid,
+  Loot,
+  Mushroom,
+  NonPlayer,
+} from './ecs/components'
 import { OverlaySprites, promisedFrame, WorldSprites } from './pixi'
 import { showLevelGen } from './hud'
 import { createLandCreatures, createTurtle, createWaterCreature } from './creatures'
@@ -15,7 +37,7 @@ import { LootType } from './inventory'
 import { CurrentLevel, setGameState } from './index'
 
 export const ALL_VISIBLE = 1
-const seed = 1647143379095
+const seed = 0
 const worldRNG = RNG.clone()
 worldRNG.setSeed(seed || RNG.getSeed())
 console.log('rng seed', worldRNG.getSeed())
@@ -42,6 +64,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
   let enterExitGrids
   let waterSpawns
   let lootSpawns
+  let mushroomSpawns
   while (true) {
     attempts++
     if (attempts > 10000) {
@@ -50,7 +73,7 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     }
     showLevelGen(attempts)
     if (attempts % 10 === 0) await promisedFrame()
-    lootSpawns = generateMap()
+    ;({ lootSpawns, mushroomSpawns } = generateMap())
     // TODO: Change chest spawns to look for tiles with many surrounding walls/waters in a 5x5 area? Sort by most secluded to least, cutoff at X number of open tiles
 
     // TODO: Crawl map to find furthest tiles from spawn (for exit, or chests)
@@ -60,13 +83,17 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
     const ponds = getPonds()
     waterSpawns = getWaterSpawns(ponds, enterExitGrids.enter)
     if (waterSpawns.size >= minWaterCreatures) break
-    console.log('too few water creatures', waterSpawns.size)
+    console.log('too few water spawns', waterSpawns.size)
   }
   console.log('success after', attempts)
+  // TODO: Spawn number of loot and water creatures based on level number?
+  console.log('water spawns', waterSpawns.size)
   Level.removeRedundantWalls()
   createMapSprites()
   EntityMap = new GridMap()
   waterSpawns.forEach((tile) => createWaterCreature(tile, worldRNG))
+  console.log(lootSpawns.length, 'loot spawns')
+  console.log(mushroomSpawns.length, 'mushroom spawns')
   lootSpawns.forEach((lootSpawn, i) => createLoot(lootSpawn, i < CurrentLevel * 2 ? LootType.Chest : LootType.Bag))
   for (let i = 0; i < 6; i++) {
     createLoot(
@@ -74,13 +101,14 @@ export async function createLevel(levelNumber: number): Promise<Vector2> {
       LootType.Chest
     )
   }
+  mushroomSpawns.forEach(createMushroom)
   createTurtle(enterExitGrids.enter, mapWidth / 2, worldRNG)
   createLandCreatures(enterExitGrids.enter, worldRNG)
   createExit(enterExitGrids.exit)
   return enterExitGrids.enter
 }
 
-function generateMap(): Vector2[] {
+function generateMap(): { lootSpawns: Vector2[]; mushroomSpawns: Vector2[] } {
   Level = new TileMap(mapWidth, mapHeight)
   const caves = new ROT.Map.Cellular(mapWidth, mapHeight)
   RNG.setState(worldRNG.getState()) // Because rot.js maps use the global RNG
@@ -88,13 +116,13 @@ function generateMap(): Vector2[] {
   for (let i = 0; i < 2; i++) {
     caves.create()
   }
-  let longestConnection = 0
+  // let longestConnection = 0
   caves.connect(
     () => {},
     1,
     (from, to) => {
-      let distance = Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1])
-      longestConnection = Math.max(longestConnection, distance)
+      // let distance = Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1])
+      // longestConnection = Math.max(longestConnection, distance)
       getStraightLine({ x: from[0], y: from[1] }, { x: to[0], y: to[1] }).forEach(({ x, y }) => {
         caves.set(x, y, 2)
       })
@@ -103,7 +131,6 @@ function generateMap(): Vector2[] {
   worldRNG.setState(RNG.getState())
   // console.log('longest tunnel', longestConnection)
   Level.loadRotJSMap(<(0 | 1)[][]>caves._map)
-
   // Connect path gaps
   let pathsAdded: number
   do {
@@ -116,7 +143,7 @@ function generateMap(): Vector2[] {
       }
     })
   } while (pathsAdded > 0)
-
+  // Create water pools
   const water = new ROT.Map.Cellular(mapWidth, mapHeight)
   RNG.setState(worldRNG.getState()) // Because rot.js maps use the global RNG
   water.randomize(0.45)
@@ -148,37 +175,44 @@ function generateMap(): Vector2[] {
       Level.createTile(tile, Tile.Shallows)
     }
   })
-
   // Create stalactites
   Level.data.forEach((tile) => {
     if (tile.type === Tile.Wall) {
       if (Level.isOutOfBounds(tile)) return
-      const neighbors4 = Level.get4Neighbors(tile)
-      if (neighbors4.every((n) => n.type === Tile.Wall)) return
+      if (Level.get4Neighbors(tile).every((n) => n.type === Tile.Wall)) return
       if (Level.get8Neighbors(tile).some((n) => n.type === Tile.Path)) return
       if (worldRNG.getUniform() > 0.9) Level.createTile(tile, Tile.Stalagmite)
     } else if (tile.type === Tile.Floor) {
-      const neighbors8 = Level.get8Neighbors(tile)
-      if (neighbors8.some((n) => n.solid)) return
+      if (Level.get8Neighbors(tile).some((n) => n.solid)) return
       if (worldRNG.getUniform() > 0.9) Level.createTile(tile, Tile.Stalagmite)
     }
   })
-
+  // Pick loot spawns
   const lootSpawns: Vector2[] = []
   const rooms = [...Level.data.values()].filter(
     (tile) => tile.type === Tile.Path && Level.get8Neighbors(tile).filter((n) => n.type === Tile.Path).length >= 4
   )
   rooms.forEach((centerRoomTile) => {
-    if (!lootSpawns.some((c) => getDistance(c, centerRoomTile) < 16)) lootSpawns.push(centerRoomTile)
+    if (!lootSpawns.some((c) => getDistance(c, centerRoomTile) < 12)) lootSpawns.push(centerRoomTile)
   })
   const holes = Level.getContiguousAreas((t) => t.type === Tile.Floor, 9)
   holes.forEach((hole) => {
     const newLoot = worldRNG.getItem(hole)!
     if (Level.get4Neighbors(newLoot).some((t) => isWet(t.type))) return
-    if (lootSpawns.some((c) => getDistance(c, newLoot) < 16)) return
+    if (lootSpawns.some((c) => getDistance(c, newLoot) < 12)) return
     lootSpawns.push(newLoot)
   })
-  return lootSpawns
+  // Pick mushroom spawns
+  const mushroomSpawns: Vector2[] = []
+  Level.data.forEach((tile) => {
+    if (tile.type !== Tile.Floor) return
+    if (
+      !mushroomSpawns.some((c) => getDistance(c, tile) < 4) &&
+      Level.get8Neighbors(tile).filter((n) => n.solid).length >= 6
+    )
+      mushroomSpawns.push(tile)
+  })
+  return { lootSpawns, mushroomSpawns }
 }
 
 const between = (val: number, min: number, max: number) => val > min && val < max
@@ -187,24 +221,37 @@ function getEnterExitGrids(): { enter: Vector2; exit: Vector2 } | false {
   const outer = 3
   const inner = 12
   const validSpawns: Vector2[] = []
+  const validExits: Vector2[] = []
   Level.data.forEach((tile) => {
-    if (!isWalkable(tile.type)) return
+    if (isWet(tile.type) || !isWalkable(tile.type)) return
     if (!between(tile.x, outer, inner) && !between(tile.x, mapWidth - inner, mapWidth - outer)) return
     if (!between(tile.y, outer, inner) && !between(tile.y, mapHeight - inner, mapHeight - outer)) return
     if (Level.getDiamondAround(tile, 2).every((t) => isWalkable(t.type))) validSpawns.push(tile)
-  })
-  if (validSpawns.length < 2) return false
-  worldRNG.shuffle(validSpawns)
-  let enter
-  let exit
-  for (let i = 0; i < validSpawns.length; i++) {
-    enter = validSpawns[i]
-    for (let ii = i + 1; ii < validSpawns.length; ii++) {
-      exit = validSpawns[ii]
-      if (getDistance(enter, exit) > Math.max(mapWidth, mapHeight)) {
-        return { enter, exit }
-      }
+    if (
+      [
+        addVector2(tile, Up),
+        addVector2(addVector2(tile, Up), Up),
+        addVector2(tile, UpLeft),
+        addVector2(tile, UpRight),
+      ].every((n) => Level.get(n).type === Tile.Wall) &&
+      [
+        addVector2(tile, Down),
+        addVector2(tile, Left),
+        addVector2(tile, Right),
+        addVector2(tile, DownLeft),
+        addVector2(tile, DownRight),
+      ].every((n) => !Level.get(n).solid)
+    ) {
+      validExits.push(tile)
     }
+  })
+  if (validSpawns.length === 0) return false
+  if (validExits.length === 0) return false
+  const enter = worldRNG.shuffle(validSpawns)[0]
+  let exit
+  for (let i = 1; i < validExits.length; i++) {
+    exit = validExits[i]
+    if (getDistance(enter, exit) > Math.max(mapWidth, mapHeight)) return { enter, exit }
   }
   return false
 }
@@ -249,6 +296,20 @@ function createLoot(grid: Vector2, type: LootType) {
   addComponent(World, CalculateFOV, loot)
   addComponent(World, Loot, loot)
   Loot.type[loot] = type
+}
+
+function createMushroom(grid: Vector2) {
+  if (EntityMap.has(grid)) return
+  const mushroom = addEntity(World)
+  const lootSprite = new Sprite(getTexture('mushroom'))
+  if (!ALL_VISIBLE) lootSprite.alpha = 0
+  addSprite(mushroom, lootSprite, WorldSprites)
+  addComponent(World, NonPlayer, mushroom)
+  addComponent(World, DisplayObject, mushroom)
+  addComponent(World, GridPosition, mushroom)
+  initEntGrid(mushroom, grid)
+  addComponent(World, CalculateFOV, mushroom)
+  addComponent(World, Mushroom, mushroom)
 }
 
 function createExit(grid: Vector2) {

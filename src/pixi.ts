@@ -22,7 +22,7 @@ export const PixiViewport = new Viewport({
   screenHeight: gameHeight,
 })
 // PixiViewport.setZoom(2)
-PixiViewport.setZoom(2)
+PixiViewport.setZoom(1)
 PixiViewport.visible = false
 
 export let WorldSprites: Container

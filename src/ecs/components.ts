@@ -5,8 +5,6 @@ import { PlayerEntity, TILE_SIZE } from '../'
 import { RecalcEntities, triggerTileUpdate } from '../fov'
 import { SpritesByEID } from '../sprites'
 
-export const NonPlayer = defineComponent()
-
 export const DisplayObject = defineComponent()
 
 const GridC = {
@@ -32,6 +30,7 @@ export const Animate = defineComponent(
 
 // TODO: Change SeekWater to PreferWater, or something
 
+export const NonPlayer = defineComponent()
 export const Health = defineComponent({ current: Types.ui16, max: Types.ui16 }, 200)
 export const CanWalk = defineComponent({ slowness: Types.ui8, slowTurns: Types.ui8 })
 export const CanSwim = defineComponent({ slowness: Types.ui8, slowTurns: Types.ui8 })
@@ -44,7 +43,6 @@ export const Predator = defineComponent(
 export const NoAction = defineComponent({ status: Types.ui8, remaining: Types.ui8 }, 20)
 export const SeekWater = defineComponent({ distance: Types.ui8 }, 100)
 export const CanAttack = defineComponent({ damage: Types.ui8 })
-
 export const OnTileType = defineComponent({ current: Types.ui8, previous: Types.ui8 })
 
 export const WaterCreature = defineComponent({ type: Types.ui8 }, 200)
@@ -52,6 +50,7 @@ export const Bait = defineComponent({ waterVolume: Types.ui16 }, 300)
 export const Loot = defineComponent({ type: Types.ui8 })
 export const Exit = defineComponent({}, 10)
 export const Snail = defineComponent()
+export const Mushroom = defineComponent()
 
 export const Scent = defineComponent({ range: Types.ui8 })
 export const Wetness = defineComponent({ factor: Types.f32 })

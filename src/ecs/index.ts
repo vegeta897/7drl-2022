@@ -25,6 +25,7 @@ import {
   AttackAction,
   NonPlayer,
   Snail,
+  Mushroom,
 } from './components'
 import { inputSystem, waitForInput, WaitingForInput } from './input_systems'
 import { wanderSystem, predatorSystem, seekWaterSystem, noActionSystem, slowSystem } from './enemy_systems'
@@ -110,4 +111,5 @@ registerComponents(World, [
   AttackAction,
   NonPlayer,
   Snail,
+  Mushroom,
 ])

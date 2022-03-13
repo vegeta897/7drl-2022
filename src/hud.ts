@@ -1,5 +1,5 @@
 import { Display } from 'rot-js'
-import { Health, Statuses, WaterCreature, Wetness } from './ecs/components'
+import { Health, Snail, Statuses, WaterCreature, Wetness } from './ecs/components'
 import { CurrentLevel, GameState, LastLevel, PlayerEntity } from './index'
 import { PlayerState } from './ecs/input_systems'
 import { hasComponent } from 'bitecs'
@@ -58,7 +58,8 @@ export function showLevelGen(attempt: number) {
 function getEntityName(eid: number, _capitalize = false) {
   let name = 'unknown'
   if (eid === PlayerEntity) name = 'you'
-  if (hasComponent(World, WaterCreature, eid))
+  else if (hasComponent(World, Snail, eid)) name = 'the giant snail'
+  else if (hasComponent(World, WaterCreature, eid))
     name = `the ${CreatureProps[WaterCreature.type[eid]].name || CreatureProps[WaterCreature.type[eid]].texture}`
   return _capitalize ? capitalize(name) : name
 }
